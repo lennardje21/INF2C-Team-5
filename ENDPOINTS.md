@@ -13,7 +13,6 @@ All endpoints are prefixed with `/api/v1`.
 |  POST  | /warehouses                   | Create a warehouse               |
 |  PUT   | /warehouses/{id}              | Update a warehouse               |
 | DELETE | /warehouses/{id}              | Delete a warehouse               |
-|--------|-------------------------------|----------------------------------|
 
 ## Locations (5 routes)
 
@@ -24,7 +23,6 @@ All endpoints are prefixed with `/api/v1`.
 |  POST  | /locations                    | Create a location                |
 |  PUT   | /locations/{id}               | Update a location                |
 | DELETE | /locations/{id}               | Delete a location                |
-|--------|-------------------------------|----------------------------------|
 
 ## Transfers (7 routes)
 
@@ -37,7 +35,6 @@ All endpoints are prefixed with `/api/v1`.
 |  PUT   | /transfers/{id}               | Update a transfer                |
 |  PUT   | /transfers/{id}/commit        | Process transfer, move stock     |
 | DELETE | /transfers/{id}               | Delete a transfer                |
-|--------|-------------------------------|----------------------------------|
 
 ## Items (7 routes)
 
@@ -50,7 +47,6 @@ All endpoints are prefixed with `/api/v1`.
 |  POST  | /items                        | Create an item                   |
 |  PUT   | /items/{id}                   | Update an item                   |
 | DELETE | /items/{id}                   | Delete an item                   |
-|--------|-------------------------------|----------------------------------|
 
 ## Item Lines (6 routes)
 
@@ -62,7 +58,6 @@ All endpoints are prefixed with `/api/v1`.
 |  POST  | /item_lines                   | Create an item line              |
 |  PUT   | /item_lines/{id}              | Update an item line              |
 | DELETE | /item_lines/{id}              | Delete an item line              |
-|--------|-------------------------------|----------------------------------|
 
 ## Item Groups (6 routes)
 
@@ -74,7 +69,6 @@ All endpoints are prefixed with `/api/v1`.
 |  POST  | /item_groups                  | Create an item group             |
 |  PUT   | /item_groups/{id}             | Update an item group             |
 | DELETE | /item_groups/{id}             | Delete an item group             |
-|--------|-------------------------------|----------------------------------|
 
 ## Item Types (6 routes)
 
@@ -86,7 +80,6 @@ All endpoints are prefixed with `/api/v1`.
 |  POST  | /item_types                   | Create an item type              |
 |  PUT   | /item_types/{id}              | Update an item type              |
 | DELETE | /item_types/{id}              | Delete an item type              |
-|--------|-------------------------------|----------------------------------|
 
 ## Inventories (4 routes)
 
@@ -96,7 +89,6 @@ All endpoints are prefixed with `/api/v1`.
 |  POST  | /inventories                  | Create an inventory record       |
 |  PUT   | /inventories/{id}             | Not implemented (404)            |
 | DELETE | /inventories/{id}             | Not implemented (404)            |
-|--------|-------------------------------|----------------------------------|
 
 ## Suppliers (6 routes)
 
@@ -108,7 +100,6 @@ All endpoints are prefixed with `/api/v1`.
 |  POST  | /suppliers                    | Create a supplier                |
 |  PUT   | /suppliers/{id}               | Update a supplier                |
 | DELETE | /suppliers/{id}               | Delete a supplier                |
-|--------|-------------------------------|----------------------------------|
 
 ## Orders (7 routes)
 
@@ -121,7 +112,6 @@ All endpoints are prefixed with `/api/v1`.
 |  PUT   | /orders/{id}                  | Update an order                  |
 |  PUT   | /orders/{id}/items            | Update items in an order         |
 | DELETE | /orders/{id}                  | Delete an order                  |
-|--------|-------------------------------|----------------------------------|
 
 ## Clients (6 routes)
 
@@ -133,7 +123,6 @@ All endpoints are prefixed with `/api/v1`.
 |  POST  | /clients                      | Create a client                  |
 |  PUT   | /clients/{id}                 | Update a client                  |
 | DELETE | /clients/{id}                 | Delete a client                  |
-|--------|-------------------------------|----------------------------------|
 
 ## Shipments (9 routes)
 
@@ -148,4 +137,3 @@ All endpoints are prefixed with `/api/v1`.
 |  PUT   | /shipments/{id}/orders        | Update orders in a shipment      |
 |  PUT   | /shipments/{id}/items         | Update items in a shipment       |
 | DELETE | /shipments/{id}               | Delete a shipment                |
-|--------|-------------------------------|----------------------------------|
