@@ -85,8 +85,8 @@ All endpoints are prefixed with `/api/v1`.
 
 | Method |             Path              |           description            |
 |--------|-------------------------------|----------------------------------|
-|  GET   | /inventories                  | List inventory records           |
-|  POST  | /inventories                  | Create an inventory record       |
+|  GET   | /inventories                  | List inventories                 |
+|  POST  | /inventories                  | Create an inventories            |
 |  PUT   | /inventories/{id}             | Not implemented (404)            |
 | DELETE | /inventories/{id}             | Not implemented (404)            |
 
