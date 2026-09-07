@@ -1,5 +1,7 @@
 # INF2C-Team-5
 
+Issue #2 note: Primera Espada.
+
 ## Workflow guidelines
 
 To ensure code quality and catch issues early, we stick to the following agreements:
@@ -10,4 +12,3 @@ To ensure code quality and catch issues early, we stick to the following agreeme
 - **Write clear commit messages** that explain what changed and why.
 - **Write code comments in English**, so the codebase stays consistent and understandable for the whole team.
 - **Delete your branch** after it has been merged, to keep the repository tidy.
-
