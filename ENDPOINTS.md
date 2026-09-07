@@ -33,7 +33,7 @@ All endpoints are prefixed with `/api/v1`.
 |  GET   | /transfers/{id}/items         | List items in a transfer         |
 |  POST  | /transfers                    | Create a transfer                |
 |  PUT   | /transfers/{id}               | Update a transfer                |
-|  PUT   | /transfers/{id}/commit        | Process transfer, move stock     |
+|  PUT   | /transfers/{id}/commit        | ?                                |
 | DELETE | /transfers/{id}               | Delete a transfer                |
 
 ## Items (7 routes)
