@@ -2,7 +2,7 @@ import json
 import os
 
 _ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "data")
+    os.path.join(os.path.dirname(__file__), "..", "..", "test-data")
 )
 
 ROOT_PATH = _ROOT + os.sep
