@@ -373,8 +373,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_GET(self):
-        # api_key = self.headers.get("API_KEY")
-        api_key = 'd4s2a0b0a1n4a0l0y7t'
+        api_key = self.headers.get("API_KEY")
+        # api_key = 'd4s2a0b0a1n4a0l0y7t'
         user = auth_provider.get_user(api_key)
         if user == None:
             self.send_response(401)
@@ -397,24 +397,35 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
             new_warehouse = json.loads(post_data.decode())
-            data_provider.fetch_warehouse_pool().add_warehouse(new_warehouse)
-            data_provider.fetch_warehouse_pool().save()
+            # data_provider.fetch_warehouse_pool().add_warehouse(new_warehouse)
+            # data_provider.fetch_warehouse_pool().save()
+            warehouse_pool = data_provider.fetch_warehouse_pool()
+            warehouse_pool.add_warehouse(new_warehouse)
+            warehouse_pool.save()
             self.send_response(201)
             self.end_headers()
         elif paths[0] == "locations":
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
             new_location = json.loads(post_data.decode())
-            data_provider.fetch_location_pool().add_location(new_location)
-            data_provider.fetch_location_pool().save()
+            # data_provider.fetch_location_pool().add_location(new_location)
+            # data_provider.fetch_location_pool().save()
+            location_pool = data_provider.fetch_location_pool()
+            location_pool.add_location(new_location)
+            location_pool.save()
             self.send_response(201)
             self.end_headers()
         elif paths[0] == "transfers":
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
             new_transfer = json.loads(post_data.decode())
-            data_provider.fetch_transfer_pool().add_transfer(new_transfer)
-            data_provider.fetch_transfer_pool().save()
+            # data_provider.fetch_transfer_pool().add_transfer(new_transfer)
+            # data_provider.fetch_transfer_pool().save()
+            transfer_pool = data_provider.fetch_transfer_pool()
+            transfer_item_pool = data_provider.fetch_transfer_item_pool()
+            transfer_pool.add_transfer(new_transfer)
+            transfer_pool.save()
+            transfer_item_pool.save()
             notification_processor.push(f"Scheduled batch transfer {new_transfer['id']}")
             self.send_response(201)
             self.end_headers()
@@ -495,8 +506,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_POST(self):
-        # api_key = self.headers.get("API_KEY")
-        api_key = 'd4s2a0b0a1n4a0l0y7t'
+        api_key = self.headers.get("API_KEY")
+        # api_key = 'd4s2a0b0a1n4a0l0y7t'
         user = auth_provider.get_user(api_key)
         if user == None:
             self.send_response(401)
@@ -520,8 +531,11 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
             updated_warehouse = json.loads(post_data.decode())
-            data_provider.fetch_warehouse_pool().update_warehouse(warehouse_id, updated_warehouse)
-            data_provider.fetch_warehouse_pool().save()
+            # data_provider.fetch_warehouse_pool().update_warehouse(warehouse_id, updated_warehouse)
+            # data_provider.fetch_warehouse_pool().save()
+            warehouse_pool = data_provider.fetch_warehouse_pool()
+            warehouse_pool.update_warehouse(warehouse_id, updated_warehouse)
+            warehouse_pool.save()
             self.send_response(200)
             self.end_headers()
         elif paths[0] == "locations":
@@ -529,8 +543,11 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
             updated_location = json.loads(post_data.decode())
-            data_provider.fetch_location_pool().update_location(location_id, updated_location)
-            data_provider.fetch_location_pool().save()
+            # data_provider.fetch_location_pool().update_location(location_id, updated_location)
+            # data_provider.fetch_location_pool().save()
+            location_pool = data_provider.fetch_location_pool()
+            location_pool.update_location(location_id, updated_location)
+            location_pool.save()
             self.send_response(200)
             self.end_headers()
         elif paths[0] == "transfers":
@@ -541,14 +558,26 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                     content_length = int(self.headers["Content-Length"])
                     post_data = self.rfile.read(content_length)
                     updated_transfer = json.loads(post_data.decode())
-                    data_provider.fetch_transfer_pool().update_transfer(transfer_id, updated_transfer)
-                    data_provider.fetch_transfer_pool().save()
+                    # data_provider.fetch_transfer_pool().update_transfer(transfer_id, updated_transfer)
+                    # data_provider.fetch_transfer_pool().save()
+                    transfer_pool = data_provider.fetch_transfer_pool()
+                    transfer_item_pool = data_provider.fetch_transfer_item_pool()
+
+                    transfer_pool.update_transfer(transfer_id, updated_transfer)
+                    transfer_pool.save()
+                    transfer_item_pool.save()
                     self.send_response(200)
                     self.end_headers()
                 case 3:
                     if paths[2] == "commit":
                         transfer_id = int(paths[1])
-                        transfer = data_provider.fetch_transfer_pool().get_transfer(transfer_id)
+
+                        transfer_pool = data_provider.fetch_transfer_pool()
+                        inventory_pool = data_provider.fetch_inventory_pool()
+
+                        transfer = transfer_pool.get_transfer(transfer_id)
+
+                        # transfer = data_provider.fetch_transfer_pool().get_transfer(transfer_id)
                         from_location_id = transfer["from_location_id"]
                         to_location_id = transfer["to_location_id"]
                         inventory_pool = data_provider.fetch_inventory_pool()
@@ -576,10 +605,14 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
                                 })
                         transfer["transfer_status"] = "Processed"
                         transfer.pop("items", None)
-                        data_provider.fetch_transfer_pool().update_transfer(transfer_id, transfer)
+                        # data_provider.fetch_transfer_pool().update_transfer(transfer_id, transfer)
+                        # notification_processor.push(f"Processed batch transfer with id:{transfer['id']}")
+                        # data_provider.fetch_transfer_pool().save()
+                        # data_provider.fetch_inventory_pool().save()
+                        transfer_pool.update_transfer(transfer_id, transfer)
                         notification_processor.push(f"Processed batch transfer with id:{transfer['id']}")
-                        data_provider.fetch_transfer_pool().save()
-                        data_provider.fetch_inventory_pool().save()
+                        transfer_pool.save()
+                        inventory_pool.save()
                         self.send_response(200)
                         self.end_headers()
                     else:
@@ -717,8 +750,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_PUT(self):
-        # api_key = self.headers.get("API_KEY")
-        api_key = 'd4s2a0b0a1n4a0l0y7t'
+        api_key = self.headers.get("API_KEY")
+        # api_key = 'd4s2a0b0a1n4a0l0y7t'
         user = auth_provider.get_user(api_key)
         if user == None:
             self.send_response(401)
@@ -739,14 +772,20 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             return
         if paths[0] == "warehouses":
             warehouse_id = int(paths[1])
-            data_provider.fetch_warehouse_pool().remove_warehouse(warehouse_id)
-            data_provider.fetch_warehouse_pool().save()
+            # data_provider.fetch_warehouse_pool().remove_warehouse(warehouse_id)
+            # data_provider.fetch_warehouse_pool().save()
+            warehouse_pool = data_provider.fetch_warehouse_pool()
+            warehouse_pool.remove_warehouse(warehouse_id)
+            warehouse_pool.save()
             self.send_response(200)
             self.end_headers()
         elif paths[0] == "locations":
             location_id = int(paths[1])
-            data_provider.fetch_location_pool().remove_location(location_id)
-            data_provider.fetch_location_pool().save()
+            # data_provider.fetch_location_pool().remove_location(location_id)
+            # data_provider.fetch_location_pool().save()
+            location_pool = data_provider.fetch_location_pool()
+            location_pool.remove_location(location_id)
+            location_pool.save()
             self.send_response(200)
             self.end_headers()
         elif paths[0] == "transfers":
@@ -811,8 +850,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_DELETE(self):
-        # api_key = self.headers.get("API_KEY")
-        api_key = 'd4s2a0b0a1n4a0l0y7t'
+        api_key = self.headers.get("API_KEY")
+        # api_key = 'd4s2a0b0a1n4a0l0y7t'
         user = auth_provider.get_user(api_key)
         if user == None:
             self.send_response(401)
