@@ -405,9 +405,9 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
             new_location = json.loads(post_data.decode())
-            locations_pool = data_provider.fetch_location_pool()
-            locations_pool.add_location(new_location)
-            locations_pool.save()
+            location_pool = data_provider.fetch_location_pool()
+            location_pool.add_location(new_location)
+            location_pool.save()
             self.send_response(201)
             self.end_headers()
         elif paths[0] == "transfers":
