@@ -373,8 +373,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_GET(self):
-        # api_key = self.headers.get("API_KEY")
-        api_key = 'd4s2a0b0a1n4a0l0y7t'
+        api_key = self.headers.get("API_KEY")
+        #api_key = 'd4s2a0b0a1n4a0l0y7t'
         user = auth_provider.get_user(api_key)
         if user == None:
             self.send_response(401)
@@ -495,8 +495,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_POST(self):
-        # api_key = self.headers.get("API_KEY")
-        api_key = 'd4s2a0b0a1n4a0l0y7t'
+        api_key = self.headers.get("API_KEY")
+        #api_key = 'd4s2a0b0a1n4a0l0y7t'
         user = auth_provider.get_user(api_key)
         if user == None:
             self.send_response(401)
@@ -717,8 +717,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_PUT(self):
-        # api_key = self.headers.get("API_KEY")
-        api_key = 'd4s2a0b0a1n4a0l0y7t'
+        api_key = self.headers.get("API_KEY")
+        #api_key = 'd4s2a0b0a1n4a0l0y7t'
         user = auth_provider.get_user(api_key)
         if user == None:
             self.send_response(401)
@@ -811,8 +811,8 @@ class ApiRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_DELETE(self):
-        # api_key = self.headers.get("API_KEY")
-        api_key = 'd4s2a0b0a1n4a0l0y7t'
+        api_key = self.headers.get("API_KEY")
+        #api_key = 'd4s2a0b0a1n4a0l0y7t'
         user = auth_provider.get_user(api_key)
         if user == None:
             self.send_response(401)
