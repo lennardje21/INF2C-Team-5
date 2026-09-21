@@ -68,3 +68,8 @@ venv.bak/
 
 # macOS
 .DS_Store
+
+# Postman
+.postman/
+*.postman_environment.json
+newman/
