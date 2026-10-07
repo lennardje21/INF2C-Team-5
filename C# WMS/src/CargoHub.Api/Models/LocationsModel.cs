@@ -9,4 +9,8 @@ public class LocationsModel
     public string Code { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
+
+    public datetime? CreatedAt { get; set; }
+
+    public datetime? UpdatedAt { get; set; }
 }
