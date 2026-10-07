@@ -1,6 +1,6 @@
 namespace CargoHub.Api.Models;
 
-public class ItemsLinesModel
+public class ItemLinesModel
 {
     public int Id { get; set; }
 
