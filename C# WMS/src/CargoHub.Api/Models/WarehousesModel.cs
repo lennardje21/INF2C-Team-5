@@ -24,7 +24,7 @@ public class WarehousesModel
 
     public string ContactEmail { get; set; } = string.Empty;
 
-    public datetime? CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
-    public datetime? UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

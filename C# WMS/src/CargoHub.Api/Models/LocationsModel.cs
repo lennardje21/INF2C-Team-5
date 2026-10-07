@@ -10,7 +10,7 @@ public class LocationsModel
 
     public string Name { get; set; } = string.Empty;
 
-    public datetime? CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
-    public datetime? UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }
