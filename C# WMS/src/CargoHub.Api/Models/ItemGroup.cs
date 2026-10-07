@@ -1,11 +1,8 @@
-namespace Cargohub.Api.Models;
+namespace CargoHub.Api.Models;
 
-public class ItemGroupsModel : BaseModel
+public class ItemGroup : BaseModel
 {
-    public int Id { get; set; }
-
     public string Name { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;
-
 }

@@ -1,9 +1,7 @@
 namespace CargoHub.Api.Models;
 
-public class ItemsModel
+public class Item : BaseModel
 {
-    public int Id { get; set; }
-
     public string Code { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;
@@ -33,8 +31,4 @@ public class ItemsModel
     public int SupplierId { get; set; }
 
     public string SupplierSku { get; set; } = string.Empty;
-
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime UpdatedAt { get; set; }
 }

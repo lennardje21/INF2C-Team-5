@@ -1,12 +1,10 @@
 namespace CargoHub.Api.Models;
 
-public class Shipment
+public class Shipment : BaseModel
 {
-    public int Id { get; set; }
-
     public string Reference { get; set; } = string.Empty;
 
-    public int? OrderId { get; set; }
+    public int OrderId { get; set; }
 
     public DateTime ShipmentDate { get; set; }
 
@@ -20,7 +18,5 @@ public class Shipment
 
     public string PaymentType { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime UpdatedAt { get; set; }
+    public List<ShipmentItem> Items { get; set; } = [];
 }
