@@ -1,9 +1,7 @@
 namespace CargoHub.Api.Models;
 
-public class WarehousesModel
+public class Supplier : BaseModel
 {
-    public int Id { get; set; }
-
     public string Code { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
@@ -20,11 +18,7 @@ public class WarehousesModel
 
     public string ContactName { get; set; } = string.Empty;
 
-    public string ContactPhone { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
 
-    public string ContactEmail { get; set; } = string.Empty;
-
-    public DateTime? CreatedAt { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
+    public string Reference { get; set; } = string.Empty;
 }
