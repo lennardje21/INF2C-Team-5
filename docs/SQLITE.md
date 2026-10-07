@@ -2,12 +2,12 @@
 
 ## Wat is opgeleverd?
 
-`Python WMS/data/cargohub.sqlite` bevat alle 80.471 records uit de 16 bestaande JSON-bestanden.
+`C# WMS/src/CargoHub.Api/Data/cargohub.sqlite` bevat alle 80.471 records uit de 16 bestaande JSON-bestanden.
 Alle gewone velden zijn afzonderlijke SQL-kolommen; er worden geen JSON-blobs opgeslagen.
 De geneste `endpoint_access` van gebruikers is genormaliseerd naar `user_endpoint`
 en `user_permission`. Daardoor zijn er 18 tabellen.
 
-`Python WMS/data/schema.sql` is het volledige, uitvoerbare schema met primaire sleutels,
+`C# WMS/src/CargoHub.Api/Data/schema.sql` is het volledige, uitvoerbare schema met primaire sleutels,
 foreign keys, indexen en schemaversie 1 (`PRAGMA user_version`).
 De database en het schema volgen de nieuwe repositorystructuur. De bestaande
 C#- en Python-projecten zijn niet gekoppeld aan deze SQLite-database. De huidige
@@ -21,9 +21,13 @@ gesynchroniseerd. Voor de nieuwe C#-applicatie wordt SQLite de actieve opslag.
 
 ## Database gebruiken en controleren
 
-De database is al aangemaakt. Open `Python WMS/data/cargohub.sqlite` met een
+De database is al aangemaakt. Open `C# WMS/src/CargoHub.Api/Data/cargohub.sqlite` met een
 SQLite-client of gebruik het C#-voorbeeld hieronder. Het schema is beschikbaar
-in `Python WMS/data/schema.sql`. Alle paden in deze handleiding zijn relatief
+in `C# WMS/src/CargoHub.Api/Data/schema.sql`. De JSON-bronbestanden blijven in `Python WMS/data`; de SQLite-bestanden staan
+in de datamap van het C#-project. Vanuit de C#-projectmap is het databasepad
+`Data/cargohub.sqlite`. In ASP.NET Core kun je het absolute pad bepalen met
+`Path.Combine(builder.Environment.ContentRootPath, "Data", "cargohub.sqlite")`.
+Alle paden in deze handleiding zijn relatief
 ten opzichte van de repositoryroot; geef paden met spaties tussen aanhalingstekens.
 
 Controleer het bestand in een SQLite-client met:
@@ -71,7 +75,7 @@ database is een momentopname van de huidige repositorydata.
 | user_permission | 288 | (api_key, resource, method) | user_endpoint |
 
 Kolomnamen volgen exact de JSON-velden. De volledige kolommen, typen en
-`NOT NULL`-regels staan in `Python WMS/data/schema.sql`. `order` en `user` worden in SQL
+`NOT NULL`-regels staan in `C# WMS/src/CargoHub.Api/Data/schema.sql`. `order` en `user` worden in SQL
 steeds met dubbele aanhalingstekens geschreven, bijvoorbeeld `SELECT * FROM "order"`.
 
 Foreign keys gebruiken `ON DELETE RESTRICT` voor bedrijfsdata: verwijderen van

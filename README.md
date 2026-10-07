@@ -2,8 +2,8 @@
 
 ## SQLite-data en overstap naar C#
 
-Alle JSON-brondata is geïmporteerd in [`Python WMS/data/cargohub.sqlite`](<Python WMS/data/cargohub.sqlite>).
-Het [databaseschema](<Python WMS/data/schema.sql>) en de
+Alle JSON-brondata is geïmporteerd in [`C# WMS/src/CargoHub.Api/Data/cargohub.sqlite`](<C# WMS/src/CargoHub.Api/Data/cargohub.sqlite>).
+Het [databaseschema](<C# WMS/src/CargoHub.Api/Data/schema.sql>) en de
 [migratie- en C#-implementatiehandleiding](docs/SQLITE.md) beschrijven de tabellen,
 relaties, herhaalbare import, verbindingen en transacties.
 De bestaande Python-endpoints gebruiken voorlopig nog de ongewijzigde JSON-bestanden.
