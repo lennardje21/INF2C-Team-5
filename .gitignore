@@ -73,3 +73,8 @@ venv.bak/
 .postman/
 *.postman_environment.json
 newman/
+
+# SQLite runtime sidecar files (the migrated database itself is included)
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal

@@ -1,5 +1,15 @@
 # INF2C-Team-5
 
+## SQLite-data en overstap naar C#
+
+Alle JSON-brondata is geïmporteerd in [`data/cargohub.sqlite`](data/cargohub.sqlite).
+Het [databaseschema](data/schema.sql) en de
+[migratie- en C#-implementatiehandleiding](docs/SQLITE.md) beschrijven de tabellen,
+relaties, herhaalbare import, verbindingen en transacties.
+De bestaande Python-endpoints gebruiken voorlopig nog de ongewijzigde JSON-bestanden.
+
+Controleer de migratie met `python3 -m unittest discover -s tests -v`.
+
 ## Workflow guidelines
 
 To ensure code quality and catch issues early, we stick to the following agreements:
@@ -10,4 +20,3 @@ To ensure code quality and catch issues early, we stick to the following agreeme
 - **Write clear commit messages** that explain what changed and why.
 - **Write code comments in English**, so the codebase stays consistent and understandable for the whole team.
 - **Delete your branch** after it has been merged, to keep the repository tidy.
-
