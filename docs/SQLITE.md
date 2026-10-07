@@ -2,43 +2,45 @@
 
 ## Wat is opgeleverd?
 
-`data/cargohub.sqlite` bevat alle 80.471 records uit de 16 bestaande JSON-bestanden.
+`Python WMS/data/cargohub.sqlite` bevat alle 80.471 records uit de 16 bestaande JSON-bestanden.
 Alle gewone velden zijn afzonderlijke SQL-kolommen; er worden geen JSON-blobs opgeslagen.
 De geneste `endpoint_access` van gebruikers is genormaliseerd naar `user_endpoint`
 en `user_permission`. Daardoor zijn er 18 tabellen.
 
-`data/schema.sql` is het volledige, uitvoerbare schema met primaire sleutels,
+`Python WMS/data/schema.sql` is het volledige, uitvoerbare schema met primaire sleutels,
 foreign keys, indexen en schemaversie 1 (`PRAGMA user_version`).
-`scripts/migrate_to_sqlite.py` maakt de database reproduceerbaar aan en controleert
-alle velden tegen de brondata, inclusief de gereconstrueerde gebruikersrechten.
+De database en het schema volgen de nieuwe repositorystructuur. De bestaande
+C#- en Python-projecten zijn niet gekoppeld aan deze SQLite-database. De huidige
+C#-projectinstructies gebruiken MySQL; SQLite is een afzonderlijke voorbereide
+dataset. Kies bij de implementatie expliciet welke database de C#-applicatie gebruikt.
 
 De Python-API, providers en endpoints zijn niet aangepast en gebruiken dus nog
 JSON. De oorspronkelijke JSON-bestanden zijn behouden als migratiebron en voor
 controle. Wijzigingen aan die bestanden worden **niet** automatisch naar SQLite
 gesynchroniseerd. Voor de nieuwe C#-applicatie wordt SQLite de actieve opslag.
 
-## Migratie uitvoeren
+## Database gebruiken en controleren
 
-Python 3 met de standaardbibliotheek is voldoende. Vanuit de repositoryroot:
+De database is al aangemaakt. Open `Python WMS/data/cargohub.sqlite` met een
+SQLite-client of gebruik het C#-voorbeeld hieronder. Het schema is beschikbaar
+in `Python WMS/data/schema.sql`. Alle paden in deze handleiding zijn relatief
+ten opzichte van de repositoryroot; geef paden met spaties tussen aanhalingstekens.
 
-```sh
-python3 scripts/migrate_to_sqlite.py
+Controleer het bestand in een SQLite-client met:
+
+```sql
+PRAGMA integrity_check;
+PRAGMA foreign_key_check;
+PRAGMA user_version;
 ```
 
-De database is al aangemaakt. Het script weigert een bestaand doelbestand te
-overschrijven. Voor een nieuwe import of controle gebruik je een ander pad:
-
-```sh
-python3 scripts/migrate_to_sqlite.py --source data --database /tmp/cargohub-check.sqlite
-python3 -m unittest discover -s tests -v
-```
-
-Het script leest alle 16 bronbestanden, past het schema toe op een tijdelijk bestand
-en importeert alle records in één transactie. Bij ontbrekende bestanden, onbekende
-velden, ongeldige rechten, dubbele sleutels of ongeldige relaties faalt de migratie.
-Na een veldvergelijking, `PRAGMA foreign_key_check` en `PRAGMA integrity_check`
-wordt alleen de geverifieerde database gepubliceerd. Bij fouten blijft geen
-gedeeltelijke doeldatabase achter. Bronbestanden worden nooit aangepast.
+De verwachte resultaten zijn respectievelijk `ok`, geen rijen en `1`.
+Het migratiescript en de automatische migratietests uit de oorspronkelijke
+werksessie zijn niet opgenomen in deze checkout. Deze handleiding verwijst daarom
+niet naar uitvoercommando's voor ontbrekende bestanden. Voor een nieuwe import
+moeten alle 16 JSON-bronbestanden in één transactie volgens het meegeleverde
+schema worden ingelezen en daarna veld voor veld gecontroleerd, inclusief de
+gebruikersrechten. Overschrijf daarbij geen bestaande actieve database.
 
 Stop bij de uiteindelijke overstap eerst writes in de oude applicatie. Importeer
 de laatste JSON-versie naar een nieuw databasepad en laat C# vervolgens dat bestand
@@ -69,7 +71,7 @@ database is een momentopname van de huidige repositorydata.
 | user_permission | 288 | (api_key, resource, method) | user_endpoint |
 
 Kolomnamen volgen exact de JSON-velden. De volledige kolommen, typen en
-`NOT NULL`-regels staan in `data/schema.sql`. `order` en `user` worden in SQL
+`NOT NULL`-regels staan in `Python WMS/data/schema.sql`. `order` en `user` worden in SQL
 steeds met dubbele aanhalingstekens geschreven, bijvoorbeeld `SELECT * FROM "order"`.
 
 Foreign keys gebruiken `ON DELETE RESTRICT` voor bedrijfsdata: verwijderen van
@@ -271,7 +273,5 @@ nadat de C#-overstap en de onafhankelijke backup zijn afgerond.
 Alle 80.471 oorspronkelijke records zijn veld voor veld gecontroleerd. De
 72 resources en 288 methodepermissies reconstrueren exact de rechten van de
 6 gebruikers. De database-integriteitscontrole en foreign-keycontrole zijn geslaagd.
-De zeven automatische tests controleren volledige gegevensoverdracht,
-overschrijfbeveiliging, primaire sleutels, foreign keys, foutopruiming, onbekende
-velden en booleanrechten. Er is nog geen C#-applicatie of endpointimplementatie
-toegevoegd; de C#-fragmenten hierboven dienen als implementatiehandleiding.
+De migratie wijzigde geen API-code. Het C#-project is apart toegevoegd door het
+team; de fragmenten hierboven beschrijven de nog uit te voeren SQLite-koppeling.
