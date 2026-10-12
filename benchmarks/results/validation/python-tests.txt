@@ -1,0 +1,11 @@
+test_csharp_scalar_properties_match_schema (test_mysql_export.MySqlExportTests.test_csharp_scalar_properties_match_schema) ... ok
+test_every_seed_field_matches_json (test_mysql_export.MySqlExportTests.test_every_seed_field_matches_json) ... ok
+test_invalid_source_does_not_write_seed (test_mysql_export.MySqlExportTests.test_invalid_source_does_not_write_seed) ... ok
+test_manifest_and_deterministic_regeneration (test_mysql_export.MySqlExportTests.test_manifest_and_deterministic_regeneration) ... ok
+test_strings_are_sql_mode_independent (test_mysql_export.MySqlExportTests.test_strings_are_sql_mode_independent) ... ok
+test_timestamps_normalize_offsets_to_utc (test_mysql_export.MySqlExportTests.test_timestamps_normalize_offsets_to_utc) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 9.989s
+
+OK

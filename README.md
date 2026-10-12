@@ -1,10 +1,22 @@
 # INF2C-Team-5
 
+## MySQL-data en C#
+
+Alle 80.471 JSON-bronrecords zijn omgezet naar het
+[MySQL-schema](<C# WMS/src/CargoHub.Api/Data/MySql/01-schema.sql>) en het
+[importbestand](<C# WMS/src/CargoHub.Api/Data/MySql/02-seed.sql>).
+Docker Compose importeert deze bestanden bij de eerste start met een leeg datavolume.
+De [MySQL-implementatiehandleiding](docs/MYSQL.md) beschrijft herexport, import in
+bestaande installaties en de C#-repositories. De Python-API blijft JSON gebruiken.
+
+Het [vergelijkingsrapport Python/JSON versus C#/MySQL](docs/PYTHON_MYSQL_BENCHMARK.md)
+bevat succespercentages, gemeten snelheid, P95-latency en reproduceerbare testresultaten.
+
 ## Workflow guidelines
 
 To ensure code quality and catch issues early, we stick to the following agreements:
 
-- **Always work in a separate branch.** Never make changes directly on `main`. Use a clear branch name, for example `feature/name-of-the-feature` or `fix/name-of-the-bug`.
+- **Always work in a separate branch.** Never make changes directly on `main`. Use a clear branch name,preferrably create a branch through the github projects/issues system.
 - **Open a pull request for your changes.** Only merge into `main` through a pull request, not via a direct push or merge.
 - **Have your code reviewed by another team member.** Every pull request must be reviewed and approved by at least one other team member before it is merged. This gives everyone a good overview of what has been done and prevents new bugs from ending up on main.
 - **Write clear commit messages** that explain what changed and why.
@@ -32,8 +44,8 @@ The endpoints of the original API are listed in [`Python WMS/ENDPOINTS.md`](Pyth
 From the `C# WMS/` folder:
 
 ```sh
-cp .env.example .env        # then choose your own passwords in .env
-docker compose up -d        # starts MySQL 8.4 on localhost:3307
+test -f .env || cp .env.example .env  # preserve existing credentials
+docker compose up -d        # starts MySQL 8.4 and imports the data on an empty volume
 ```
 
 `.env` contains your local passwords and is ignored by Git. Never commit it.
@@ -44,11 +56,21 @@ docker compose up -d        # starts MySQL 8.4 on localhost:3307
 | `docker compose down` | Stop MySQL (data is kept) |
 | `docker compose down -v` | Stop MySQL and delete all data |
 
+The import runs only on a new, empty volume. For an existing database, follow
+[the manual import instructions](docs/MYSQL.md). Do not remove a volume that contains work.
+
 ### 2. Run the API
 
+Set the connection string with the same database credentials as `.env`:
+
 ```sh
+export ConnectionStrings__CargoHub='Server=localhost;Port=3307;Database=cargohub;User ID=cargohub;Password=YOUR_PASSWORD'
 dotnet run --project src/CargoHub.Api
 ```
+
+The repositories are registered for dependency injection. Existing controllers
+and services have not been wired to them; implement that integration as described
+in [the MySQL guide](docs/MYSQL.md).
 
 The API runs on `http://localhost:3000`, the same port as the Python version, so existing Postman requests keep working. Stop the Python server first if it is running.
 

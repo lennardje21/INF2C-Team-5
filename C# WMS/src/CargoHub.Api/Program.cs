@@ -1,5 +1,8 @@
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSingleton<CargoHub.Api.Data.MySqlConnectionFactory>();
+builder.Services.AddScoped(typeof(CargoHub.Api.Data.MySqlRepository<>));
+
 // Add services to the container.
 
 builder.Services.AddControllers();

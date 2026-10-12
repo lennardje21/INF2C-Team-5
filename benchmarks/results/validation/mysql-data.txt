@@ -1,0 +1,17 @@
+warehouse: 10 records verified
+client: 300 records verified
+supplier: 21 records verified
+item_line: 14 records verified
+item_group: 3 records verified
+item_type: 3 records verified
+location: 400 records verified
+item: 600 records verified
+inventory: 4800 records verified
+order: 4854 records verified
+order_item: 26498 records verified
+shipment: 6132 records verified
+shipment_item: 33660 records verified
+transfer: 800 records verified
+transfer_item: 2370 records verified
+user: 6 records verified
+Verified all fields of 80471 source records in live MySQL.
