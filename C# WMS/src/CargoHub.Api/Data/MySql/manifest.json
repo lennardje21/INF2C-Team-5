@@ -1,0 +1,42 @@
+{
+  "source_records": 80471,
+  "table_counts": {
+    "warehouse": 10,
+    "client": 300,
+    "supplier": 21,
+    "item_line": 14,
+    "item_group": 3,
+    "item_type": 3,
+    "location": 400,
+    "item": 600,
+    "inventory": 4800,
+    "order": 4854,
+    "order_item": 26498,
+    "shipment": 6132,
+    "shipment_item": 33660,
+    "transfer": 800,
+    "transfer_item": 2370,
+    "user": 6,
+    "user_endpoint": 72,
+    "user_permission": 288
+  },
+  "source_sha256": {
+    "warehouse": "e6c83ab320189f0ddad7c3e02d75be3cc5c508c0a5ac12e1cdca68289d82d5de",
+    "client": "329c107efc2e5ffd72938090033e6fd83fec2a63c33ddd26e51be001ac6ed1e8",
+    "supplier": "65f8ebf9deb4d8b163a69a6f8ba2c7e1294adfa781d26bb99ecf728d8fe44974",
+    "item_line": "9b8d5f93ebd78b04d8bc133fc822de5a05943c4ddac8d73809ff6ecadd7f17af",
+    "item_group": "80c2d6968f7f487d7d652fe2269268084ca4f23dcf89c8799fd5525da9261715",
+    "item_type": "029601081216c12131faf05d55316cc7918fbda0092c889726868ff15ec02f62",
+    "location": "af47548bc9d0755080479b1ecea8087e0317a966478d8a7191597c79381b25c7",
+    "item": "e1d971d10c4ca9faab9e60494ab421f123e9eb2d8937caf57c232230813b7bdc",
+    "inventory": "0daeca0a54d59e0285e7e1de7f7940e4458b2b1573afdc1573db58a7003f3d3a",
+    "order": "6d2f36957671110d629e0b06570ce3831204855db6bf91dc751741a13ed4da3b",
+    "order_item": "63163af41c010c8a06720683159535ef5595d02c5f32dfef1ce7c4e0a6bcac96",
+    "shipment": "fd94222f3c753a4e77a943e1210d8250c5abe88427656f08b1698fbf7552c9ba",
+    "shipment_item": "991ea5b921e301264fcdf3afdf87ab7cd9f397103886a6b3f651a3e9058953e4",
+    "transfer": "4c490ac808481d52214f71d92319f8d0696e4178a4ce88b9723d7b526f43b3fc",
+    "transfer_item": "d30ed3b9919de5bc74041e472591ca9863f65f0c5d2b911ea3074461f10cda32",
+    "user": "31c7bfd1b8f008aa15bd24402c09cd4cf21f929acabdd5b36fb99614069cdfb1"
+  },
+  "seed_sha256": "9426e35811cda51866289ef3519c38192389ac05f7cfd07fd470a3d155b4181e"
+}

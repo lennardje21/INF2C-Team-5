@@ -1,14 +1,16 @@
 # INF2C-Team-5
 
-## SQLite-data en overstap naar C#
+## MySQL-data en C#
 
-Alle JSON-brondata is geïmporteerd in [`C# WMS/src/CargoHub.Api/Data/cargohub.sqlite`](<C# WMS/src/CargoHub.Api/Data/cargohub.sqlite>).
-Het [databaseschema](<C# WMS/src/CargoHub.Api/Data/schema.sql>) en de
-[migratie- en C#-implementatiehandleiding](docs/SQLITE.md) beschrijven de tabellen,
-relaties, herhaalbare import, verbindingen en transacties.
-De bestaande Python-endpoints gebruiken voorlopig nog de ongewijzigde JSON-bestanden.
+Alle 80.471 JSON-bronrecords zijn omgezet naar het
+[MySQL-schema](<C# WMS/src/CargoHub.Api/Data/MySql/01-schema.sql>) en het
+[importbestand](<C# WMS/src/CargoHub.Api/Data/MySql/02-seed.sql>).
+Docker Compose importeert deze bestanden bij de eerste start met een leeg datavolume.
+De [MySQL-implementatiehandleiding](docs/MYSQL.md) beschrijft herexport, import in
+bestaande installaties en de C#-repositories. De Python-API blijft JSON gebruiken.
 
-De database is voorbereid voor de C#-implementatie; er is geen runtime-koppeling toegevoegd.
+Het [vergelijkingsrapport Python/JSON versus C#/MySQL](docs/PYTHON_MYSQL_BENCHMARK.md)
+bevat succespercentages, gemeten snelheid, P95-latency en reproduceerbare testresultaten.
 
 ## Workflow guidelines
 
@@ -42,8 +44,8 @@ The endpoints of the original API are listed in [`Python WMS/ENDPOINTS.md`](Pyth
 From the `C# WMS/` folder:
 
 ```sh
-cp .env.example .env        # then choose your own passwords in .env
-docker compose up -d        # starts MySQL 8.4 on localhost:3307
+test -f .env || cp .env.example .env  # preserve existing credentials
+docker compose up -d        # starts MySQL 8.4 and imports the data on an empty volume
 ```
 
 `.env` contains your local passwords and is ignored by Git. Never commit it.
@@ -54,11 +56,21 @@ docker compose up -d        # starts MySQL 8.4 on localhost:3307
 | `docker compose down` | Stop MySQL (data is kept) |
 | `docker compose down -v` | Stop MySQL and delete all data |
 
+The import runs only on a new, empty volume. For an existing database, follow
+[the manual import instructions](docs/MYSQL.md). Do not remove a volume that contains work.
+
 ### 2. Run the API
 
+Set the connection string with the same database credentials as `.env`:
+
 ```sh
+export ConnectionStrings__CargoHub='Server=localhost;Port=3307;Database=cargohub;User ID=cargohub;Password=YOUR_PASSWORD'
 dotnet run --project src/CargoHub.Api
 ```
+
+The repositories are registered for dependency injection. Existing controllers
+and services have not been wired to them; implement that integration as described
+in [the MySQL guide](docs/MYSQL.md).
 
 The API runs on `http://localhost:3000`, the same port as the Python version, so existing Postman requests keep working. Stop the Python server first if it is running.
 
