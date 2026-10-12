@@ -1,9 +1,7 @@
 namespace CargoHub.Api.Models;
 
-public class Order
+public class Order : BaseModel
 {
-    public int Id { get; set; }
-
     public int ClientId { get; set; }
 
     public DateTime OrderDate { get; set; }
@@ -24,7 +22,5 @@ public class Order
 
     public int BillToClientId { get; set; }
 
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime UpdatedAt { get; set; }
+    public List<OrderItem> Items { get; set; } = [];
 }

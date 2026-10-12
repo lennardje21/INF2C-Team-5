@@ -1,9 +1,7 @@
 namespace CargoHub.Api.Models;
 
-public class Client
+public class Client : BaseModel
 {
-    public int Id { get; set; }
-
     public string Name { get; set; } = string.Empty;
 
     public string Address { get; set; } = string.Empty;
@@ -21,8 +19,4 @@ public class Client
     public string ContactPhone { get; set; } = string.Empty;
 
     public string ContactEmail { get; set; } = string.Empty;
-
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime UpdatedAt { get; set; }
 }
