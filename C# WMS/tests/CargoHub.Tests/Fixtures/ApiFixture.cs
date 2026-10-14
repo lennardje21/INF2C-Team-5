@@ -60,6 +60,28 @@ public sealed class ApiFixture : IAsyncLifetime
         return Convert.ToInt32(await command.ExecuteScalarAsync());
     }
 
+    public async Task<string> QueryStringAsync(string sql, params (string Name, object Value)[] parameters)
+    {
+        await using var connection = new MySqlConnection(ConnectionString);
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        foreach (var (name, value) in parameters)
+            command.Parameters.AddWithValue(name, value);
+        return (string)(await command.ExecuteScalarAsync())!;
+    }
+
+    public async Task ExecuteAsync(string sql, params (string Name, object Value)[] parameters)
+    {
+        await using var connection = new MySqlConnection(ConnectionString);
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        foreach (var (name, value) in parameters)
+            command.Parameters.AddWithValue(name, value);
+        await command.ExecuteNonQueryAsync();
+    }
+
     // MySQL runs the init scripts on a temporary server that is not reachable over TCP,
     // so the seed is complete once a TCP connection sees the data.
     private async Task WaitForSeedAsync()
@@ -95,4 +117,6 @@ public sealed class ApiFixture : IAsyncLifetime
 }
 
 [CollectionDefinition("Api")]
-public sealed class ApiCollection : ICollectionFixture<ApiFixture>;
+public sealed class ApiCollection : ICollectionFixture<ApiFixture>
+{
+}
