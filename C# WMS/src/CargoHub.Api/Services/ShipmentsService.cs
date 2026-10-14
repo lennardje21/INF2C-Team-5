@@ -4,11 +4,13 @@ using MySqlConnector;
 
 namespace CargoHub.Api.Services;
 
+/// <summary>Business logic for shipments; each change runs in one transaction.</summary>
 public sealed class ShipmentsService(
     MySqlConnectionFactory factory,
     MySqlRepository<Shipment> shipments,
     MySqlRepository<ShipmentItem> shipmentItems)
 {
+    /// <summary>Returns all shipments with their items.</summary>
     public async Task<IReadOnlyList<Shipment>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var result = await shipments.GetAsync(cancellationToken: cancellationToken);
@@ -19,18 +21,24 @@ public sealed class ShipmentsService(
         return result;
     }
 
+    /// <summary>Returns one shipment with its items, or null if not found.</summary>
     public async Task<Shipment?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await factory.OpenAsync(cancellationToken);
         return await FindAsync(connection, null, id, cancellationToken);
     }
 
+    /// <summary>Returns the items of a shipment, or null if not found.</summary>
     public async Task<IReadOnlyList<ShipmentItem>?> GetItemsAsync(int id, CancellationToken cancellationToken = default)
     {
         var shipment = await GetByIdAsync(id, cancellationToken);
         return shipment?.Items;
     }
 
+    /// <summary>
+    /// Creates a shipment with its items; id, reference and timestamps are set here.
+    /// Does not change the inventory, same as the Python API.
+    /// </summary>
     public async Task<Shipment> CreateAsync(Shipment shipment, CancellationToken cancellationToken = default)
     {
         ValidateShipment(shipment);
@@ -45,7 +53,7 @@ public sealed class ShipmentsService(
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            // The reference is built from the id, which MySQL only assigns on insert.
+            // The reference uses the id, which MySQL only assigns on insert.
             shipment.Reference = string.Empty;
             await shipments.InsertAsync(shipment, connection, transaction, cancellationToken);
             shipment.Reference = ReferenceFor(shipment.Id);
@@ -60,7 +68,7 @@ public sealed class ShipmentsService(
         return shipment;
     }
 
-    // Updates the shipment's own fields; items change through UpdateItemsAsync.
+    /// <summary>Updates the shipment's fields, not its items. Returns false if not found.</summary>
     public async Task<bool> UpdateAsync(int id, Shipment shipment, CancellationToken cancellationToken = default)
     {
         ValidateShipment(shipment);
@@ -88,7 +96,7 @@ public sealed class ShipmentsService(
         return true;
     }
 
-    // A shipment belongs to a single order; the list form is kept from the Python API.
+    /// <summary>Links the shipment to another order. Returns false if not found.</summary>
     public async Task<bool> UpdateOrdersAsync(int id, IReadOnlyList<int> orderIds,
         CancellationToken cancellationToken = default)
     {
@@ -115,8 +123,7 @@ public sealed class ShipmentsService(
         return true;
     }
 
-    // Replaces the items and moves the difference in amount onto quantity_ordered,
-    // on the inventory row with the most stock for each item (as in the Python API).
+    /// <summary>Replaces the items and updates quantity_ordered in the inventory. Returns false if not found.</summary>
     public async Task<bool> UpdateItemsAsync(int id, IReadOnlyList<ShipmentItem> items,
         CancellationToken cancellationToken = default)
     {
@@ -155,6 +162,10 @@ public sealed class ShipmentsService(
         return true;
     }
 
+    /// <summary>
+    /// Deletes the shipment and its items. Returns false if not found.
+    /// Does not change the inventory, same as the Python API.
+    /// </summary>
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await factory.OpenAsync(cancellationToken);
@@ -163,6 +174,7 @@ public sealed class ShipmentsService(
         if (shipment is null)
             return false;
 
+        // Items first: the database refuses to delete a shipment that still has items.
         foreach (var item in shipment.Items)
             await shipmentItems.DeleteAsync(item, connection, transaction, cancellationToken);
         await shipments.DeleteAsync(shipment, connection, transaction, cancellationToken);
@@ -170,6 +182,7 @@ public sealed class ShipmentsService(
         return true;
     }
 
+    /// <summary>Loads one shipment with its items.</summary>
     private async Task<Shipment?> FindAsync(MySqlConnection connection, MySqlTransaction? transaction,
         int id, CancellationToken cancellationToken)
     {
@@ -181,7 +194,7 @@ public sealed class ShipmentsService(
         return shipment;
     }
 
-    // Locks the shipment row so concurrent changes to the same shipment run one after another.
+    /// <summary>Locks the shipment until the transaction ends, so changes to it run one at a time.</summary>
     private async Task<Shipment?> LockAsync(MySqlConnection connection, MySqlTransaction transaction,
         int id, CancellationToken cancellationToken)
     {
@@ -194,6 +207,7 @@ public sealed class ShipmentsService(
         return await FindAsync(connection, transaction, id, cancellationToken);
     }
 
+    /// <summary>Inserts the items for a shipment.</summary>
     private async Task InsertItemsAsync(int shipmentId, IEnumerable<ShipmentItem> items,
         MySqlConnection connection, MySqlTransaction transaction, CancellationToken cancellationToken)
     {
@@ -205,7 +219,10 @@ public sealed class ShipmentsService(
         }
     }
 
-    // A single UPDATE, so concurrent requests cannot overwrite each other's change.
+    /// <summary>
+    /// Adds the change in amount to quantity_ordered on the inventory row with the most stock.
+    /// One UPDATE statement, so simultaneous requests cannot overwrite each other's change.
+    /// </summary>
     private static async Task AddToQuantityOrderedAsync(int itemId, int delta, DateTime now,
         MySqlConnection connection, MySqlTransaction transaction, CancellationToken cancellationToken)
     {
@@ -221,10 +238,10 @@ public sealed class ShipmentsService(
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    // Every shipment reference is "SHP-" followed by its id, padded to 6 digits.
+    /// <summary>Builds the reference, e.g. SHP-006133.</summary>
     private static string ReferenceFor(int id) => $"SHP-{id:D6}";
 
-    // Missing text fields arrive as "" because the model defaults to string.Empty.
+    /// <summary>Checks that the required fields are filled in.</summary>
     private static void ValidateShipment(Shipment shipment)
     {
         var missing = new (string Name, string Value)[]
@@ -241,6 +258,7 @@ public sealed class ShipmentsService(
             throw new ArgumentException($"Missing required fields: {string.Join(", ", missing)}.");
     }
 
+    /// <summary>Checks that every amount is positive and no item appears twice.</summary>
     private static void ValidateItems(IReadOnlyCollection<ShipmentItem> items)
     {
         if (items.Any(i => i.Amount <= 0))
@@ -249,7 +267,7 @@ public sealed class ShipmentsService(
             throw new ArgumentException("An item can only appear once in a shipment.");
     }
 
-    // Dates sent without a time zone are treated as UTC, like the stored data.
+    /// <summary>Treats dates without a time zone as UTC.</summary>
     private static DateTime AsUtc(DateTime date) => date.Kind switch
     {
         DateTimeKind.Unspecified => DateTime.SpecifyKind(date, DateTimeKind.Utc),

@@ -4,16 +4,19 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
 
+/// <summary>HTTP endpoints for shipments; the logic is in ShipmentsService.</summary>
 [ApiController]
 [Route("api/v1/shipments")]
 public class ShipmentsController(ShipmentsService shipmentsService) : ControllerBase
 {
+    /// <summary>Returns all shipments with their items.</summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Shipment>>> GetShipments(CancellationToken cancellationToken)
     {
         return Ok(await shipmentsService.GetAllAsync(cancellationToken));
     }
 
+    /// <summary>Returns one shipment with its items.</summary>
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Shipment>> GetShipment(int id, CancellationToken cancellationToken)
     {
@@ -27,6 +30,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         return Ok(shipment);
     }
 
+    /// <summary>Returns the order id of the shipment, as a list.</summary>
     [HttpGet("{id:int}/orders")]
     public async Task<ActionResult<IEnumerable<int>>> GetShipmentOrders(int id, CancellationToken cancellationToken)
     {
@@ -40,6 +44,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         return Ok(new[] { shipment.OrderId });
     }
 
+    /// <summary>Returns the items of the shipment.</summary>
     [HttpGet("{id:int}/items")]
     public async Task<ActionResult<IEnumerable<ShipmentItem>>> GetShipmentItems(int id, CancellationToken cancellationToken)
     {
@@ -53,6 +58,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         return Ok(items);
     }
 
+    /// <summary>Creates a shipment with its items.</summary>
     [HttpPost]
     public async Task<ActionResult<Shipment>> CreateShipment(Shipment shipment, CancellationToken cancellationToken)
     {
@@ -68,6 +74,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         }
     }
 
+    /// <summary>Updates the shipment's fields, not its items.</summary>
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateShipment(int id, Shipment shipment, CancellationToken cancellationToken)
     {
@@ -81,6 +88,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         }
     }
 
+    /// <summary>Links the shipment to another order.</summary>
     [HttpPut("{id:int}/orders")]
     public async Task<IActionResult> UpdateShipmentOrders(int id, List<int> orderIds, CancellationToken cancellationToken)
     {
@@ -94,6 +102,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         }
     }
 
+    /// <summary>Replaces the items of the shipment.</summary>
     [HttpPut("{id:int}/items")]
     public async Task<IActionResult> UpdateShipmentItems(int id, List<ShipmentItem> items, CancellationToken cancellationToken)
     {
@@ -107,6 +116,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         }
     }
 
+    /// <summary>Deletes the shipment and its items.</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteShipment(int id, CancellationToken cancellationToken)
     {
