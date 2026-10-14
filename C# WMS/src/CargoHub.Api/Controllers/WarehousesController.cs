@@ -1,40 +1,27 @@
-using Microsoft.AspNetCore.Mvc;
 using CargoHub.Api.Models;
+using CargoHub.Api.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/warehouses")]
-public class WarehousesController : ControllerBase
+public class WarehousesController(WarehousesService warehousesService) : ControllerBase
 {
-    private static readonly List<WarehousesModel> Warehouses =
-    [
-        new WarehousesModel
-        {
-            Id = 1,
-            Code = "VGH-AMB",
-            Name = "Jumbo DC Veghel Ambient",
-            Address = "De Amert 409",
-            City = "Veghel",
-            ZipCode = "5462 GH",
-            Province = "Noord-Brabant",
-            Country = "Netherlands",
-            ContactName = "Ali Schellekens",
-            ContactPhone = "(032) 1819600",
-            ContactEmail = "vgh-amb@jumbo-logistiek.nl"
-        }
-    ];
-
+	// GET: api/v1/warehouses
     [HttpGet]
-    public ActionResult<IEnumerable<WarehousesModel>> GetWarehouses()
+    public async Task<ActionResult<IEnumerable<Warehouse>>> GetWarehouses(
+        CancellationToken cancellationToken)
     {
-        return Ok(Warehouses);
+        return Ok(await warehousesService.GetAllAsync(cancellationToken));
     }
 
+	// GET: api/v1/warehouses/{id}
     [HttpGet("{id:int}")]
-    public ActionResult<WarehousesModel> GetWarehouse(int id)
+    public async Task<ActionResult<Warehouse>> GetWarehouse(
+        int id, CancellationToken cancellationToken)
     {
-        var warehouse = Warehouses.FirstOrDefault(x => x.Id == id);
+        var warehouse = await warehousesService.GetByIdAsync(id, cancellationToken);
 
         if (warehouse is null)
         {
@@ -44,55 +31,69 @@ public class WarehousesController : ControllerBase
         return Ok(warehouse);
     }
 
+	// GET: api/v1/warehouses/{id}/locations
+    [HttpGet("{id:int}/locations")]
+    public async Task<ActionResult<IEnumerable<Location>>> GetWarehouseLocations(
+        int id, CancellationToken cancellationToken)
+    {
+        var locations = await warehousesService.GetLocationsAsync(id, cancellationToken);
+
+        if (locations is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(locations);
+    }
+
+	// POST: api/v1/warehouses
     [HttpPost]
-    public ActionResult<WarehousesModel> CreateWarehouse(
-        WarehousesModel warehouse)
+    public async Task<ActionResult<Warehouse>> CreateWarehouse(
+        Warehouse warehouse, CancellationToken cancellationToken)
     {
-        if (Warehouses.Any(x => x.Id == warehouse.Id))
+        try
         {
-            return Conflict($"Warehouse with id {warehouse.Id} already exists.");
+            var created = await warehousesService.CreateAsync(warehouse, cancellationToken);
+
+            return CreatedAtAction(nameof(GetWarehouse), new { id = created.Id }, created);
         }
-
-        Warehouses.Add(warehouse);
-
-        return CreatedAtAction(
-            nameof(GetWarehouse),
-            new { id = warehouse.Id },
-            warehouse);
+        catch (ArgumentException e)
+        {
+            return BadRequest(e.Message);
+        }
     }
 
+	// PUT: api/v1/warehouses/{id}
     [HttpPut("{id:int}")]
-    public IActionResult UpdateWarehouse(
-        int id,
-        WarehousesModel updatedWarehouse)
+    public async Task<IActionResult> UpdateWarehouse(
+        int id, Warehouse warehouse, CancellationToken cancellationToken)
     {
-        var warehouse = Warehouses.FirstOrDefault(x => x.Id == id);
-
-        if (warehouse is null)
+        try
         {
-            return NotFound();
+            return await warehousesService.UpdateAsync(id, warehouse, cancellationToken)
+                ? NoContent()
+                : NotFound();
         }
-
-        updatedWarehouse.Id = id;
-
-        var index = Warehouses.IndexOf(warehouse);
-        Warehouses[index] = updatedWarehouse;
-
-        return NoContent();
+        catch (ArgumentException e)
+        {
+            return BadRequest(e.Message);
+        }
     }
 
+	// DELETE: api/v1/warehouses/{id}
     [HttpDelete("{id:int}")]
-    public IActionResult DeleteWarehouse(int id)
+    public async Task<IActionResult> DeleteWarehouse(
+        int id, CancellationToken cancellationToken)
     {
-        var warehouse = Warehouses.FirstOrDefault(x => x.Id == id);
-
-        if (warehouse is null)
+        try
         {
-            return NotFound();
+            return await warehousesService.DeleteAsync(id, cancellationToken)
+                ? NoContent()
+                : NotFound();
         }
-
-        Warehouses.Remove(warehouse);
-
-        return NoContent();
+        catch (ArgumentException e)
+        {
+            return BadRequest(e.Message);
+        }
     }
 }
