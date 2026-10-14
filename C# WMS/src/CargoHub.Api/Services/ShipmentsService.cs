@@ -45,7 +45,11 @@ public sealed class ShipmentsService(
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
+            // The reference is built from the id, which MySQL only assigns on insert.
+            shipment.Reference = string.Empty;
             await shipments.InsertAsync(shipment, connection, transaction, cancellationToken);
+            shipment.Reference = ReferenceFor(shipment.Id);
+            await shipments.UpdateAsync(shipment, connection, transaction, cancellationToken);
             await InsertItemsAsync(shipment.Id, shipment.Items, connection, transaction, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
@@ -68,6 +72,7 @@ public sealed class ShipmentsService(
             return false;
 
         shipment.Id = id;
+        shipment.Reference = existing.Reference;
         shipment.ShipmentDate = AsUtc(shipment.ShipmentDate);
         shipment.CreatedAt = existing.CreatedAt;
         shipment.UpdatedAt = DateTime.UtcNow;
@@ -216,12 +221,14 @@ public sealed class ShipmentsService(
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    // Every shipment reference is "SHP-" followed by its id, padded to 6 digits.
+    private static string ReferenceFor(int id) => $"SHP-{id:D6}";
+
     // Missing text fields arrive as "" because the model defaults to string.Empty.
     private static void ValidateShipment(Shipment shipment)
     {
         var missing = new (string Name, string Value)[]
         {
-            (nameof(Shipment.Reference), shipment.Reference),
             (nameof(Shipment.ShipmentType), shipment.ShipmentType),
             (nameof(Shipment.ShipmentStatus), shipment.ShipmentStatus),
             (nameof(Shipment.CarrierName), shipment.CarrierName),

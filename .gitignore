@@ -71,6 +71,7 @@ venv.bak/
 
 # Postman
 .postman/
+postman/
 *.postman_environment.json
 newman/
 

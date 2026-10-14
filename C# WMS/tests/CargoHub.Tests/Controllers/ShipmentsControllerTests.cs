@@ -14,19 +14,22 @@ public sealed class ShipmentsControllerTests(ApiFixture fixture)
 
     // Tests that change data use their own shipments and items, so they do not
     // depend on each other. Creating a shipment does not change the inventory.
-    private static object NewShipment(int orderId = 3, string? reference = "SHP-TEST",
-        string shipmentDate = "2026-10-12T10:00:00Z", params object[] items) => new
+    // A dictionary, so a test can add fields such as "reference" or "id".
+    private static Dictionary<string, object> NewShipment(int orderId = 3, string shipmentType = "Outgoing",
+        string shipmentStatus = "Scheduled", string shipmentDate = "2026-10-12T10:00:00Z",
+        params object[] items) => new()
     {
-        reference,
-        orderId,
-        shipmentDate,
-        shipmentType = "Outgoing",
-        shipmentStatus = "Scheduled",
-        carrierName = "DHL Parcel",
-        shippingMethod = "Express",
-        paymentType = "Manual",
-        items
+        ["orderId"] = orderId,
+        ["shipmentDate"] = shipmentDate,
+        ["shipmentType"] = shipmentType,
+        ["shipmentStatus"] = shipmentStatus,
+        ["carrierName"] = "DHL Parcel",
+        ["shippingMethod"] = "Express",
+        ["paymentType"] = "Manual",
+        ["items"] = items
     };
+
+    private static string ReferenceFor(int id) => $"SHP-{id:D6}";
 
     private static object Item(int itemId, int amount) => new { itemId, amount };
 
@@ -102,34 +105,38 @@ public sealed class ShipmentsControllerTests(ApiFixture fixture)
         var created = (await response.Content.ReadFromJsonAsync<Shipment>())!;
         Assert.Equal($"{Url}/{created.Id}", response.Headers.Location!.AbsolutePath);
         Assert.True(created.Id > 6132);
+        Assert.Equal(ReferenceFor(created.Id), created.Reference);
         Assert.True(created.CreatedAt >= before);
         Assert.Equal(created.CreatedAt, created.UpdatedAt);
 
         var stored = await _client.GetFromJsonAsync<Shipment>($"{Url}/{created.Id}");
-        Assert.Equal("SHP-TEST", stored!.Reference);
+        Assert.Equal(ReferenceFor(created.Id), stored!.Reference);
         var item = Assert.Single(stored.Items);
         Assert.Equal((10, 2), (item.ItemId, item.Amount));
     }
 
     [Fact]
-    public async Task CreateShipment_IgnoresIdAndTimestampsFromTheRequest()
+    public async Task CreateShipment_IgnoresIdReferenceAndTimestampsFromTheRequest()
     {
-        var created = await CreateAsync(new
-        {
-            id = 1,
-            createdAt = "2000-01-01T00:00:00Z",
-            reference = "SHP-TEST",
-            orderId = 3,
-            shipmentDate = "2026-10-12T10:00:00Z",
-            shipmentType = "Outgoing",
-            shipmentStatus = "Scheduled",
-            carrierName = "DHL Parcel",
-            shippingMethod = "Express",
-            paymentType = "Manual"
-        });
+        var shipment = NewShipment();
+        shipment["id"] = 1;
+        shipment["reference"] = "SHP-000001";
+        shipment["createdAt"] = "2000-01-01T00:00:00Z";
+
+        var created = await CreateAsync(shipment);
 
         Assert.NotEqual(1, created.Id);
+        Assert.Equal(ReferenceFor(created.Id), created.Reference);
         Assert.True(created.CreatedAt.Year >= 2026);
+    }
+
+    [Fact]
+    public async Task CreateShipment_ConcurrentRequests_EachGetTheirOwnReference()
+    {
+        var created = await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => CreateAsync(NewShipment())));
+
+        Assert.Equal(20, created.Select(s => s.Id).Distinct().Count());
+        Assert.All(created, s => Assert.Equal(ReferenceFor(s.Id), s.Reference));
     }
 
     [Fact]
@@ -145,8 +152,8 @@ public sealed class ShipmentsControllerTests(ApiFixture fixture)
     public static TheoryData<object> InvalidShipments => new()
     {
         NewShipment(orderId: 999999),
-        NewShipment(reference: null),
-        NewShipment(reference: "  "),
+        NewShipment(shipmentType: ""),
+        NewShipment(shipmentStatus: "  "),
         NewShipment(items: Item(999999, 1)),
         NewShipment(items: Item(10, 0)),
         NewShipment(items: [Item(10, 1), Item(10, 2)])
@@ -165,16 +172,19 @@ public sealed class ShipmentsControllerTests(ApiFixture fixture)
     }
 
     [Fact]
-    public async Task UpdateShipment_ChangesFieldsButKeepsCreatedAtAndItems()
+    public async Task UpdateShipment_ChangesFieldsButKeepsReferenceCreatedAtAndItems()
     {
         var created = await CreateAsync(NewShipment(items: Item(11, 4)));
         await Task.Delay(10);
+        var changes = NewShipment(shipmentStatus: "Transit");
+        changes["reference"] = "SHP-CHANGED";
 
-        var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}", NewShipment(reference: "SHP-CHANGED"));
+        var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}", changes);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         var updated = await _client.GetFromJsonAsync<Shipment>($"{Url}/{created.Id}");
-        Assert.Equal("SHP-CHANGED", updated!.Reference);
+        Assert.Equal("Transit", updated!.ShipmentStatus);
+        Assert.Equal(ReferenceFor(created.Id), updated.Reference);
         Assert.Equal(created.CreatedAt, updated.CreatedAt);
         Assert.True(updated.UpdatedAt > created.UpdatedAt);
         Assert.Equal(11, Assert.Single(updated.Items).ItemId);
