@@ -71,5 +71,14 @@ venv.bak/
 
 # Postman
 .postman/
+postman/
 *.postman_environment.json
 newman/
+
+# .NET build output, test results and local IDE files
+[Bb]in/
+[Oo]bj/
+TestResults/
+coverage-report/
+.vs/
+*.user
