@@ -5,6 +5,7 @@ builder.Services.AddScoped(typeof(CargoHub.Api.Data.MySqlRepository<>));
 builder.Services.AddScoped<CargoHub.Api.Services.WarehousesService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ShipmentsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ItemsService>();
+builder.Services.AddScoped<CargoHub.Api.Services.ClientsService>();
 
 // Add services to the container.
 
