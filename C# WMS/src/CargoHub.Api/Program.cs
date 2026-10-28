@@ -6,10 +6,12 @@ builder.Services.AddScoped<CargoHub.Api.Services.WarehousesService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ShipmentsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ClientsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.SuppliersService>();
+builder.Services.AddScoped<CargoHub.Api.Services.OrdersService>();
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
