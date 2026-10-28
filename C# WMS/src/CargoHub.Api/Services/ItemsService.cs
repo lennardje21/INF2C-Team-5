@@ -4,19 +4,19 @@ using MySqlConnector;
 
 namespace CargoHub.Api.Services;
 
-/// Business logic for items and their inventory summaries.</summary>
+// Business logic for items and their inventory summaries.
 public sealed class ItemsService(
     MySqlConnectionFactory factory,
     MySqlRepository<Item> items,
     MySqlRepository<Inventory> inventories)
 {
-    ///   Returns all items.</summary>
+    // Returns all items.
     public Task<IReadOnlyList<Item>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return items.GetAsync(cancellationToken: cancellationToken);
     }
 
-    ///   Returns one item, or null if it does not exist.</summary>
+    // Returns one item, or null if it does not exist.
     public async Task<Item?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var result = await items.GetAsync(
@@ -24,7 +24,7 @@ public sealed class ItemsService(
         return result.SingleOrDefault();
     }
 
-    /// Returns an item's inventory by location, or null if the item does not exist.</summary>
+    // Returns an item's inventory by location, or null if the item does not exist.
     public async Task<IReadOnlyList<Inventory>?> GetInventoryAsync(
         int id, CancellationToken cancellationToken = default)
     {
@@ -35,7 +35,7 @@ public sealed class ItemsService(
             new Dictionary<string, object?> { ["item_id"] = id }, cancellationToken);
     }
 
-    /// Returns the summed inventory quantities, or null if the item does not exist.</summary>
+    // Returns the summed inventory quantities, or null if the item does not exist.
     public async Task<ItemInventoryTotals?> GetInventoryTotalsAsync(
         int id, CancellationToken cancellationToken = default)
     {
@@ -50,7 +50,7 @@ public sealed class ItemsService(
             itemInventory.Sum(inventory => (long)inventory.QuantityOnHand - inventory.QuantityAllocated));
     }
 
-    /// Creates an item and sets its id and timestamps.</summary>
+    // Creates an item and sets its id and timestamps.
     public async Task<Item> CreateAsync(Item item, CancellationToken cancellationToken = default)
     {
         ValidateItem(item);
@@ -74,7 +74,7 @@ public sealed class ItemsService(
         return item;
     }
 
-    /// Updates an item. Returns false if the item does not exist.</summary>
+    // Updates an item. Returns false if the item does not exist.
     public async Task<bool> UpdateAsync(
         int id, Item item, CancellationToken cancellationToken = default)
     {
@@ -102,7 +102,7 @@ public sealed class ItemsService(
         return true;
     }
 
-    /// Deletes an item. Returns false if it does not exist.</summary>
+    // Deletes an item. Returns false if it does not exist.
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         await using var connection = await factory.OpenAsync(cancellationToken);
