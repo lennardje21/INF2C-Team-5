@@ -99,6 +99,7 @@ public sealed class MySqlRepository<T>(MySqlConnectionFactory factory) where T :
         for (var i = 0; i < fields.Length; i++)
             command.Parameters.AddWithValue($"@p{i}", ToDatabase(fields[i].Value.GetValue(model)));
         await command.ExecuteNonQueryAsync(cancellationToken);
+        NormalizeModelDates(model);
         if (generatedId)
             id!.SetValue(model, checked((int)command.LastInsertedId));
     }
@@ -117,6 +118,7 @@ public sealed class MySqlRepository<T>(MySqlConnectionFactory factory) where T :
         AddKeys(command, model);
         if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
             throw new KeyNotFoundException($"No {typeof(T).Name} matched the primary key.");
+        NormalizeModelDates(model);
     }
 
     public async Task DeleteAsync(T model, MySqlConnection connection,
@@ -137,12 +139,21 @@ public sealed class MySqlRepository<T>(MySqlConnectionFactory factory) where T :
             command.Parameters.AddWithValue($"@key{i}", Columns[Keys[i]].GetValue(model));
     }
 
+    // DATETIME(6) stores microseconds; DateTime has 100-nanosecond ticks.
+    // Keep returned models identical to the values actually sent to MySQL.
+    private static void NormalizeModelDates(T model)
+    {
+        foreach (var property in Properties.Where(p => p.PropertyType == typeof(DateTime)))
+            property.SetValue(model, ToDatabase(property.GetValue(model)));
+    }
+
     private static object ToDatabase(object? value) => value switch
     {
         null => DBNull.Value,
-        DateTime date when date.Kind == DateTimeKind.Local => date.ToUniversalTime(),
+        DateTime date when date.Kind == DateTimeKind.Local => ToDatabase(date.ToUniversalTime()),
         DateTime date when date.Kind == DateTimeKind.Unspecified =>
             throw new ArgumentException("Use an explicitly UTC or local DateTime."),
+        DateTime date => new DateTime(date.Ticks - date.Ticks % TimeSpan.TicksPerMicrosecond, DateTimeKind.Utc),
         _ => value
     };
 }

@@ -1,0 +1,115 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main, ci/setup-ci-cd]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: 'C# WMS'
+    env:
+      MYSQL_DATABASE: cargohub
+      MYSQL_USER: cargohub
+      MYSQL_PASSWORD: ci-test-password
+      MYSQL_ROOT_PASSWORD: ci-root-password
+      MYSQL_PORT: '3307'
+      CARGOHUB_TEST_MYSQL: 'Server=localhost;Port=3307;Database=cargohub;User ID=cargohub;Password=ci-test-password'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate JSON to MySQL export
+        working-directory: .
+        run: python -m unittest discover -s tests -v
+      - name: Restore
+        run: dotnet restore CargoHub.slnx
+      - name: Build
+        run: dotnet build CargoHub.slnx --configuration Release --no-restore
+      - name: Start isolated repository test database
+        run: docker compose up -d --wait --wait-timeout 300
+      - name: Wait for seed import over TCP
+        run: |
+          for attempt in {1..60}; do
+            count=$(docker compose exec -T mysql sh -c \
+              'MYSQL_PWD="$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u "$MYSQL_USER" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM shipment"' 2>/dev/null) || count=''
+            if [ "$count" = '6132' ]; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo 'MySQL seed import did not finish within five minutes.' >&2
+          exit 1
+      - name: Test with coverage
+        run: >-
+          dotnet test CargoHub.slnx --configuration Release --no-build
+          --logger "trx;LogFileName=tests.trx"
+          --collect:"XPlat Code Coverage"
+          --results-directory "${{ github.workspace }}/test-results"
+          --blame-hang-timeout 5m
+      - name: Upload test results and coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Database logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Remove isolated database
+        if: always()
+        run: docker compose down --volumes
+
+  container:
+    name: Build and deliver Docker image
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          image="ghcr.io/${REPOSITORY,,}"
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+          docker build --tag "$image:$GITHUB_SHA" "C# WMS"
+      - name: Publish image from main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USER" --password-stdin
+          docker push "$IMAGE:$GITHUB_SHA"
+          docker tag "$IMAGE:$GITHUB_SHA" "$IMAGE:latest"
+          docker push "$IMAGE:latest"
+      - name: Log out of registry
+        if: always()
+        run: docker logout ghcr.io

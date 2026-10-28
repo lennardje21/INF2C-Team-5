@@ -80,6 +80,40 @@ The API runs on `http://localhost:3000`, the same port as the Python version, so
 dotnet test
 ```
 
+## CI/CD
+
+De [GitHub Actions-pipeline](.github/workflows/ci-cd.yml) draait bij iedere pull
+request, bij pushes naar `main` en `ci/setup-ci-cd`, en via **Actions → CI/CD →
+Run workflow**.
+
+- Controleert met Python 3.12 de JSON-naar-MySQL-export.
+- Bouwt de C#-oplossing met .NET 10 in Release-modus.
+- Voert alle xUnit-tests uit met coverage. Repositorytests gebruiken een tijdelijke,
+  gevulde MySQL 8.4-database; API-tests starten zelf een aparte database via
+  Testcontainers. Testresultaten en coverage blijven 14 dagen beschikbaar als artifact.
+- Bouwt na geslaagde tests het Docker-image. Alleen een push naar `main`
+  publiceert dit naar `ghcr.io/lennardje21/inf2c-team-5`, met de commit-SHA en
+  `latest` als tags. Hiervoor wordt het ingebouwde `GITHUB_TOKEN` gebruikt.
+
+De pipeline verzorgt continuous delivery naar de containerregistry. Automatische
+uitrol naar een server vereist nog een hostingdoel en bijbehorende configuratie.
+Bij een bestaand GHCR-package moet deze repository schrijfrechten op dat package
+hebben. Stel in GitHub voor `main` ook branch protection in met **Build and test**
+en **Build and deliver Docker image** als verplichte checks en minimaal één review.
+
+Lokaal een productie-image bouwen en starten:
+
+```sh
+docker build -t cargohub-api "C# WMS"
+docker run --rm -p 3000:8080 \
+  -e ConnectionStrings__CargoHub='Server=host.docker.internal;Port=3307;Database=cargohub;User ID=cargohub;Password=YOUR_PASSWORD' \
+  cargohub-api
+```
+
+Dit voorbeeld gebruikt Docker Desktop en de lokaal gestarte MySQL-database.
+Het image draait als een gebruiker zonder rootrechten en luistert op poort 8080.
+Voor publieke hosting hoort een reverse proxy of hostingplatform HTTPS af te handelen.
+
 ### Project structure
 
 ```
