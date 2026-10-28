@@ -66,13 +66,17 @@ public sealed class ClientsControllerTests(ApiFixture fixture)
     {
         var expected = await fixture.QueryIntAsync(
             "SELECT COUNT(*) FROM `order` WHERE `client_id` = 1 OR `ship_to_client_id` = 1 OR `bill_to_client_id` = 1");
+        // Counted from the database, since other tests in the collection create orders without items.
+        var expectedItems = await fixture.QueryIntAsync(
+            "SELECT COUNT(*) FROM `order_item` oi JOIN `order` o ON o.`id` = oi.`order_id` " +
+            "WHERE o.`client_id` = 1 OR o.`ship_to_client_id` = 1 OR o.`bill_to_client_id` = 1");
 
         var orders = (await _client.GetFromJsonAsync<List<Order>>($"{Url}/1/orders"))!;
 
         Assert.Equal(expected, orders.Count);
         Assert.Equal(orders.Count, orders.Select(o => o.Id).Distinct().Count());
         Assert.All(orders, o => Assert.Contains(1, new[] { o.ClientId, o.ShipToClientId, o.BillToClientId }));
-        Assert.All(orders, o => Assert.NotEmpty(o.Items));
+        Assert.Equal(expectedItems, orders.Sum(o => o.Items.Count));
     }
 
     [Fact]
