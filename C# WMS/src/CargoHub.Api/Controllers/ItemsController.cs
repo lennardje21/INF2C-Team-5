@@ -4,19 +4,19 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
 
-///  HTTP endpoints for items; the logic is in ItemsService.</summary>
+// HTTP endpoints for items; the logic is in ItemsService.
 [ApiController]
 [Route("api/v1/items")]
 public class ItemsController(ItemsService itemsService) : ControllerBase
 {
-    ///  Returns all items.</summary>
+    // Returns all items.
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Item>>> GetItems(CancellationToken cancellationToken)
     {
         return Ok(await itemsService.GetAllAsync(cancellationToken));
     }
 
-    ///  Returns one item.</summary>
+    // Returns one item.
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Item>> GetItem(int id, CancellationToken cancellationToken)
     {
@@ -24,7 +24,7 @@ public class ItemsController(ItemsService itemsService) : ControllerBase
         return item is null ? NotFound() : Ok(item);
     }
 
-    ///  Returns the inventory for an item at each location.</summary>
+    // Returns the inventory for an item at each location.
     [HttpGet("{id:int}/inventory")]
     public async Task<ActionResult<IEnumerable<Inventory>>> GetItemInventory(
         int id, CancellationToken cancellationToken)
@@ -33,7 +33,7 @@ public class ItemsController(ItemsService itemsService) : ControllerBase
         return inventory is null ? NotFound() : Ok(inventory);
     }
 
-    ///  Returns the combined inventory quantities for an item.</summary>
+    // Returns the combined inventory quantities for an item.
     [HttpGet("{id:int}/inventory/totals")]
     public async Task<ActionResult<ItemInventoryTotals>> GetItemInventoryTotals(
         int id, CancellationToken cancellationToken)
@@ -42,7 +42,7 @@ public class ItemsController(ItemsService itemsService) : ControllerBase
         return totals is null ? NotFound() : Ok(totals);
     }
 
-    ///  Creates an item.</summary>
+    // Creates an item.
     [HttpPost]
     public async Task<ActionResult<Item>> CreateItem(Item item, CancellationToken cancellationToken)
     {
@@ -57,7 +57,7 @@ public class ItemsController(ItemsService itemsService) : ControllerBase
         }
     }
 
-    ///  Updates an item's fields.</summary>
+    // Updates an item's fields.
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateItem(
         int id, Item item, CancellationToken cancellationToken)
@@ -74,7 +74,7 @@ public class ItemsController(ItemsService itemsService) : ControllerBase
         }
     }
 
-    ///  Deletes an item that is not referenced by other records.</summary>
+    // Deletes an item that is not referenced by other records.
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteItem(int id, CancellationToken cancellationToken)
     {
