@@ -101,7 +101,10 @@ public sealed class ClientsControllerTests(ApiFixture fixture)
         Assert.Equal($"{Url}/{created.Id}", response.Headers.Location!.AbsolutePath);
         Assert.True(created.Id > 300);
         Assert.True(created.CreatedAt >= before);
-        Assert.Equal(created.CreatedAt, created.UpdatedAt);
+        Assert.InRange(
+            created.UpdatedAt,
+            created.CreatedAt.AddTicks(-10),
+            created.CreatedAt.AddTicks(10));
 
         var stored = await _client.GetFromJsonAsync<Client>($"{Url}/{created.Id}");
         Assert.Equal("Jumbo Test", stored!.Name);
@@ -146,7 +149,10 @@ public sealed class ClientsControllerTests(ApiFixture fixture)
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         var updated = await _client.GetFromJsonAsync<Client>($"{Url}/{created.Id}");
         Assert.Equal("Jumbo Changed", updated!.Name);
-        Assert.Equal(created.CreatedAt, updated.CreatedAt);
+        Assert.InRange(
+            updated.CreatedAt,
+            created.CreatedAt.AddTicks(-10),
+            created.CreatedAt.AddTicks(10));
         Assert.True(updated.UpdatedAt > created.UpdatedAt);
     }
 

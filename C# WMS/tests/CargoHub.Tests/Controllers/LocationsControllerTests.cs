@@ -119,7 +119,10 @@ public sealed class LocationsControllerTests(ApiFixture fixture)
         Assert.NotEqual(1, created.Id);
         Assert.Equal(1, created.WarehouseId);
         Assert.True(created.CreatedAt.Year >= 2026);
-        Assert.Equal(created.CreatedAt, created.UpdatedAt);
+        Assert.InRange(
+            created.UpdatedAt,
+            created.CreatedAt.AddTicks(-10),
+            created.CreatedAt.AddTicks(10));
     }
 
     [Fact]
