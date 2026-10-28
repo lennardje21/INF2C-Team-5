@@ -36,6 +36,37 @@ public sealed class MySqlRepositoryTests
     }
 
     [MySqlFact]
+    public async Task InsertAndUpdateReturnTheSameTimestampPrecisionAsMySql()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<ItemGroup>(factory);
+        await using var connection = await factory.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        var timestamp = new DateTime(2026, 10, 28, 10, 0, 0, DateTimeKind.Utc).AddTicks(1234567);
+        var group = new ItemGroup
+        {
+            Name = "Timestamp precision test", Description = "Test",
+            CreatedAt = timestamp, UpdatedAt = timestamp
+        };
+
+        await repository.InsertAsync(group, connection, transaction);
+        var filters = new Dictionary<string, object?> { ["id"] = group.Id };
+        var stored = Assert.Single(await repository.GetAsync(connection, transaction, filters));
+        Assert.Equal(timestamp.AddTicks(-7), group.CreatedAt);
+        Assert.Equal(group.CreatedAt, stored.CreatedAt);
+        Assert.Equal(group.UpdatedAt, stored.UpdatedAt);
+        Assert.Equal(DateTimeKind.Utc, group.CreatedAt.Kind);
+
+        group.UpdatedAt = timestamp.AddTicks(12);
+        await repository.UpdateAsync(group, connection, transaction);
+        stored = Assert.Single(await repository.GetAsync(connection, transaction, filters));
+        Assert.Equal(timestamp.AddTicks(3), group.UpdatedAt);
+        Assert.Equal(group.UpdatedAt, stored.UpdatedAt);
+        Assert.Equal(group.CreatedAt, stored.CreatedAt);
+        await transaction.RollbackAsync();
+    }
+
+    [MySqlFact]
     public async Task CrudAndRollbackPreserveTheSeed()
     {
         var factory = Factory();
