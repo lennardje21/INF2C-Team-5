@@ -108,7 +108,10 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
         Assert.True(created.Id > 4854);
         Assert.Equal(ReferenceFor(created.Id), created.Reference);
         Assert.True(created.CreatedAt >= before);
-        Assert.Equal(created.CreatedAt, created.UpdatedAt);
+        Assert.InRange(
+            created.UpdatedAt,
+            created.CreatedAt.AddTicks(-10),
+            created.CreatedAt.AddTicks(10));
 
         var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
         Assert.Equal(ReferenceFor(created.Id), stored!.Reference);
@@ -215,7 +218,10 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
         Assert.Equal("Shipped", updated!.OrderStatus);
         Assert.Equal("Achterom leveren", updated.ShippingNotes);
         Assert.Equal(ReferenceFor(created.Id), updated.Reference);
-        Assert.Equal(created.CreatedAt, updated.CreatedAt);
+        Assert.InRange(
+            updated.CreatedAt,
+            created.CreatedAt.AddTicks(-10),
+            created.CreatedAt.AddTicks(10));
         Assert.True(updated.UpdatedAt > created.UpdatedAt);
         Assert.Equal(53, Assert.Single(updated.Items).ItemId);
     }

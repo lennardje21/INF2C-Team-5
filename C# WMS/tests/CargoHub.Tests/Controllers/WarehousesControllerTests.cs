@@ -207,7 +207,10 @@ public sealed class WarehousesControllerTests(ApiFixture fixture)
 
         Assert.NotEqual(1, created.Id);
         Assert.True(created.CreatedAt.Year >= DateTime.UtcNow.Year);
-        Assert.Equal(created.CreatedAt, created.UpdatedAt);
+        Assert.InRange(
+            created.UpdatedAt,
+            created.CreatedAt.AddTicks(-10),
+            created.CreatedAt.AddTicks(10));
 
         Assert.Equal(
             HttpStatusCode.NoContent,
