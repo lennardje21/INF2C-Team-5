@@ -1,3 +1,4 @@
+using CargoHub.Api.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -31,6 +32,20 @@ public sealed class ApiFixture : IAsyncLifetime
         await _mysql.StartAsync();
         await WaitForSeedAsync();
 
+        // This user exists only in the disposable test database. Keep production
+        // authentication enabled while controller tests exercise all CRUD routes.
+        var apiKey = Guid.NewGuid().ToString("N");
+        await ExecuteAsync("INSERT INTO `user` (`api_key`, `app`) VALUES (@key, 'integration-tests')",
+            ("@key", apiKey));
+        await ExecuteAsync("""
+            INSERT INTO `user_endpoint` (`api_key`, `resource`)
+            SELECT DISTINCT @key, `resource` FROM `user_endpoint`
+            """, ("@key", apiKey));
+        await ExecuteAsync("""
+            INSERT INTO `user_permission` (`api_key`, `resource`, `method`, `allowed`)
+            SELECT DISTINCT @key, `resource`, `method`, 1 FROM `user_permission`
+            """, ("@key", apiKey));
+
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             // Not "Development", so a developer's own user secrets are not loaded.
@@ -39,7 +54,10 @@ public sealed class ApiFixture : IAsyncLifetime
                 new Dictionary<string, string?> { ["ConnectionStrings:CargoHub"] = ConnectionString }));
         });
         Client = _factory.CreateClient();
+        Client.DefaultRequestHeaders.Add(ApiKeyMiddleware.HeaderName, apiKey);
     }
+
+    public HttpClient CreateUnauthenticatedClient() => _factory!.CreateClient();
 
     public async Task DisposeAsync()
     {
