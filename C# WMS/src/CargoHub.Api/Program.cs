@@ -9,6 +9,8 @@ builder.Services.AddScoped<CargoHub.Api.Services.ItemsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ClientsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.SuppliersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.OrdersService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
 
 // Add services to the container.
 
@@ -26,6 +28,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<CargoHub.Api.Authentication.ApiKeyMiddleware>();
 
 app.UseAuthorization();
 
