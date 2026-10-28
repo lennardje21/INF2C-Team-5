@@ -1,0 +1,37 @@
+# Production stack for the project server: MySQL plus the API image that CI
+# publishes from main. Settings come from deploy/.env (see .env.example).
+name: cargohub
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    # No published port: only the api container can reach MySQL.
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../src/CargoHub.Api/Data/MySql/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ../src/CargoHub.Api/Data/MySql/02-seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: ghcr.io/lennardje21/inf2c-team-5:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__CargoHub: Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User ID=${MYSQL_USER};Password=${MYSQL_PASSWORD}
+    ports:
+      - "${API_PORT:-8000}:8080"
+
+volumes:
+  mysql-data:
