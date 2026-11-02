@@ -1,3 +1,5 @@
+using Scalar.AspNetCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<CargoHub.Api.Data.MySqlConnectionFactory>();
@@ -18,15 +20,25 @@ builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
 builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+    options.AddDocumentTransformer<CargoHub.Api.Authentication.ApiKeyDocumentTransformer>()
+);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+// Endpoint overview: /openapi/v1.json for tools, /docs for people.
+// Both are outside /api, so they need no API key; calling an endpoint still does.
+app.MapOpenApi();
+app.MapScalarApiReference(
+    "/docs",
+    options =>
+    {
+        options
+            .WithTitle("CargoHub API")
+            .AddPreferredSecuritySchemes(CargoHub.Api.Authentication.ApiKeyMiddleware.HeaderName);
+        options.HideModels = true;
+    }
+);
 
 app.UseHttpsRedirection();
 
@@ -40,3 +52,4 @@ app.Run();
 
 // Expose the entry point to WebApplicationFactory in the integration tests.
 public partial class Program { }
+
