@@ -4,6 +4,7 @@ builder.Services.AddSingleton<CargoHub.Api.Data.MySqlConnectionFactory>();
 builder.Services.AddScoped(typeof(CargoHub.Api.Data.MySqlRepository<>));
 builder.Services.AddScoped<CargoHub.Api.Services.WarehousesService>();
 builder.Services.AddScoped<CargoHub.Api.Services.LocationsService>();
+builder.Services.AddScoped<CargoHub.Api.Services.TransfersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ShipmentsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ItemsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ClientsService>();
