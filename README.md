@@ -1,132 +1,72 @@
-# INF2C-Team-5
+# CargoHub – INF2C Team 5
 
-## MySQL-data en C#
-
-Alle 80.471 JSON-bronrecords zijn omgezet naar het
-[MySQL-schema](<C# WMS/src/CargoHub.Api/Data/MySql/01-schema.sql>) en het
-[importbestand](<C# WMS/src/CargoHub.Api/Data/MySql/02-seed.sql>).
-Docker Compose importeert deze bestanden bij de eerste start met een leeg datavolume.
-De [MySQL-implementatiehandleiding](docs/MYSQL.md) beschrijft herexport, import in
-bestaande installaties en de C#-repositories. De Python-API blijft JSON gebruiken.
-
-Het [vergelijkingsrapport Python/JSON versus C#/MySQL](docs/PYTHON_MYSQL_BENCHMARK.md)
-bevat succespercentages, gemeten snelheid, P95-latency en reproduceerbare testresultaten.
-
-## Workflow guidelines
-
-To ensure code quality and catch issues early, we stick to the following agreements:
-
-- **Always work in a separate branch.** Never make changes directly on `main`. Use a clear branch name,preferrably create a branch through the github projects/issues system.
-- **Open a pull request for your changes.** Only merge into `main` through a pull request, not via a direct push or merge.
-- **Have your code reviewed by another team member.** Every pull request must be reviewed and approved by at least one other team member before it is merged. This gives everyone a good overview of what has been done and prevents new bugs from ending up on main.
-- **Write clear commit messages** that explain what changed and why.
-- **Write code comments in English**, so the codebase stays consistent and understandable for the whole team.
-- **Delete your branch** after it has been merged, to keep the repository tidy.
+CargoHub is a warehouse management API. We are migrating it from Python with JSON
+files to C# (ASP.NET Core) with MySQL. The C# API keeps the same `/api/v1/...` routes.
 
 ## Repository structure
 
 | Folder | Contents |
 |--------|----------|
-| `Python WMS/` | The original CargoHub API (Python, JSON files). Kept as reference during the migration. |
-| `C# WMS/` | The new CargoHub API (C#, ASP.NET Core, MySQL). All new work happens here. |
+| `C# WMS/` | The new C# API. All new work happens here. |
+| `Python WMS/` | The original Python API, kept as reference. Endpoints are listed in [`ENDPOINTS.md`](Python%20WMS/ENDPOINTS.md). |
+| `docs/` | Guides for MySQL and deployment, and the benchmark report. |
+| `postman/` | Postman collections for testing the API. |
+| `benchmarks/`, `scripts/`, `tests/` | Benchmarks, data export scripts and their tests. |
 
-The endpoints of the original API are listed in [`Python WMS/ENDPOINTS.md`](Python%20WMS/ENDPOINTS.md). The C# version keeps the same `/api/v1/...` routes.
+## Workflow guidelines
 
-## Getting started (C# WMS)
+- **Always work in a separate branch**, preferably created from a GitHub issue. Never change `main` directly.
+- **Merge into `main` only through a pull request**, reviewed and approved by at least one other team member.
+- **Write clear commit messages** that explain what changed and why.
+- **Write code comments in English.**
+- **Delete your branch** after it has been merged.
 
-### Requirements
+## Getting started
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop)
-
-### 1. Start the database
+Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/download) and
+[Docker Desktop](https://www.docker.com/products/docker-desktop).
 
 From the `C# WMS/` folder:
 
 ```sh
-test -f .env || cp .env.example .env  # preserve existing credentials
-docker compose up -d        # starts MySQL 8.4 and imports the data on an empty volume
-```
+test -f .env || cp .env.example .env   # local passwords, never commit this file
+docker compose up -d                   # start MySQL and import the data
 
-`.env` contains your local passwords and is ignored by Git. Never commit it.
-
-| Command | What it does |
-|---------|--------------|
-| `docker compose up -d` | Start MySQL |
-| `docker compose down` | Stop MySQL (data is kept) |
-| `docker compose down -v` | Stop MySQL and delete all data |
-
-The import runs only on a new, empty volume. For an existing database, follow
-[the manual import instructions](docs/MYSQL.md). Do not remove a volume that contains work.
-
-### 2. Run the API
-
-Set the connection string with the same database credentials as `.env`:
-
-```sh
 export ConnectionStrings__CargoHub='Server=localhost;Port=3307;Database=cargohub;User ID=cargohub;Password=YOUR_PASSWORD'
-dotnet run --project src/CargoHub.Api
+dotnet run --project src/CargoHub.Api  # API on http://localhost:3000
+
+dotnet test                            # run the tests
 ```
 
-The repositories are registered for dependency injection. Existing controllers
-and services have not been wired to them; implement that integration as described
-in [the MySQL guide](docs/MYSQL.md).
+Use the password from your `.env`. `docker compose down` stops MySQL and keeps the
+data; `docker compose down -v` also deletes it. More about the database is in
+[docs/MYSQL.md](docs/MYSQL.md).
 
-The API runs on `http://localhost:3000`, the same port as the Python version, so existing Postman requests keep working. Stop the Python server first if it is running.
+## Authentication
 
-### 3. Run the tests
+Every request needs an `API_KEY` header. Locally you can use the keys from the seed data.
 
 ```sh
-dotnet test
+curl -H "API_KEY: your-key" http://localhost:3000/api/v1/warehouses/1
 ```
+
+A missing or unknown key returns `401`; a key without permission for that action
+returns `403`. Use Postman or curl: a browser cannot send this header.
 
 ## CI/CD
 
-De [GitHub Actions-pipeline](.github/workflows/ci-cd.yml) draait bij iedere pull
-request, bij pushes naar `main` en `ci/setup-ci-cd`, en via **Actions → CI/CD →
-Run workflow**.
+The [pipeline](.github/workflows/ci-cd.yml) runs on every pull request and on `main`.
+It builds the C# solution and runs all tests. On `main` it also publishes a Docker
+image to `ghcr.io/lennardje21/inf2c-team-5`.
 
-- Controleert met Python 3.12 de JSON-naar-MySQL-export.
-- Bouwt de C#-oplossing met .NET 10 in Release-modus.
-- Voert alle xUnit-tests uit met coverage. Repositorytests gebruiken een tijdelijke,
-  gevulde MySQL 8.4-database; API-tests starten zelf een aparte database via
-  Testcontainers. Testresultaten en coverage blijven 14 dagen beschikbaar als artifact.
-- Bouwt na geslaagde tests het Docker-image. Alleen een push naar `main`
-  publiceert dit naar `ghcr.io/lennardje21/inf2c-team-5`, met de commit-SHA en
-  `latest` als tags. Hiervoor wordt het ingebouwde `GITHUB_TOKEN` gebruikt.
+## Deployment
 
-De pipeline verzorgt continuous delivery naar de containerregistry. Automatische
-uitrol naar een server vereist nog een hostingdoel en bijbehorende configuratie.
-Bij een bestaand GHCR-package moet deze repository schrijfrechten op dat package
-hebben. Stel in GitHub voor `main` ook branch protection in met **Build and test**
-en **Build and deliver Docker image** als verplichte checks en minimaal één review.
-
-Lokaal een productie-image bouwen en starten:
-
-```sh
-docker build -t cargohub-api "C# WMS"
-docker run --rm -p 3000:8080 \
-  -e ConnectionStrings__CargoHub='Server=host.docker.internal;Port=3307;Database=cargohub;User ID=cargohub;Password=YOUR_PASSWORD' \
-  cargohub-api
-```
-
-Dit voorbeeld gebruikt Docker Desktop en de lokaal gestarte MySQL-database.
-Het image draait als een gebruiker zonder rootrechten en luistert op poort 8080.
-Voor publieke hosting hoort een reverse proxy of hostingplatform HTTPS af te handelen.
-
-### Project structure
+The API runs on our project server:
 
 ```
-C# WMS/
-├── docker-compose.yml          MySQL container
-├── .env.example                template for your local .env
-├── CargoHub.slnx               solution file
-├── src/CargoHub.Api/
-│   ├── Controllers/            one controller per resource, handles requests and status codes
-│   ├── Services/               business rules (e.g. transfer commit, stock checks)
-│   ├── Models/                 entities that map to the MySQL tables
-│   └── Data/                   database context and migrations
-└── tests/CargoHub.Tests/       xUnit tests
-    ├── Controllers/
-    └── Services/
+http://145.24.237.19:8000/api/v1/...
 ```
+
+The server checks for a new image every 5 minutes, so a merged pull request is live
+a few minutes after the pipeline passes. Server access, setup and maintenance are
+described in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
