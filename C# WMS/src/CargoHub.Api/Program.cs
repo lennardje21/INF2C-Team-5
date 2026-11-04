@@ -21,8 +21,10 @@ builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi(options =>
-    options.AddDocumentTransformer<CargoHub.Api.Authentication.ApiKeyDocumentTransformer>()
-);
+{
+    options.AddDocumentTransformer<CargoHub.Api.Authentication.ApiKeyDocumentTransformer>();
+    options.AddSchemaTransformer<CargoHub.Api.OpenApi.ServerSetFieldsSchemaTransformer>();
+});
 
 var app = builder.Build();
 
