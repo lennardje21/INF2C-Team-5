@@ -252,11 +252,17 @@ public sealed class ShipmentsService(
     private static string ReferenceFor(int id) => $"SHP-{id:D6}";
 
     /// <summary>
-    /// Checks that the required fields are filled in, fit in the database and use a known value,
-    /// and that the order id and shipment date are valid.
+    /// Trims the text fields, then checks that the required fields are filled in, fit in the
+    /// database and use a known value, and that the order id and shipment date are valid.
     /// </summary>
     private static void ValidateShipment(Shipment shipment)
     {
+        shipment.ShipmentType = shipment.ShipmentType?.Trim() ?? string.Empty;
+        shipment.ShipmentStatus = shipment.ShipmentStatus?.Trim() ?? string.Empty;
+        shipment.CarrierName = shipment.CarrierName?.Trim() ?? string.Empty;
+        shipment.ShippingMethod = shipment.ShippingMethod?.Trim() ?? string.Empty;
+        shipment.PaymentType = shipment.PaymentType?.Trim() ?? string.Empty;
+
         var fields = new (string Name, string Value)[]
         {
             (nameof(Shipment.ShipmentType), shipment.ShipmentType),
@@ -292,6 +298,8 @@ public sealed class ShipmentsService(
     /// <summary>Checks the number of items, every item id and amount, and that no item appears twice.</summary>
     private static void ValidateItems(IReadOnlyCollection<ShipmentItem> items)
     {
+        if (items.Any(i => i is null))
+            throw new ArgumentException("Items must not contain null.");
         if (items.Count > MaxItems)
             throw new ArgumentException($"A shipment can have at most {MaxItems} items.");
         if (items.Any(i => i.ItemId <= 0))
