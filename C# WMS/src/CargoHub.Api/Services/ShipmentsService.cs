@@ -10,6 +10,16 @@ public sealed class ShipmentsService(
     MySqlRepository<Shipment> shipments,
     MySqlRepository<ShipmentItem> shipmentItems)
 {
+    private static readonly string[] ShipmentTypes = ["Incoming", "Outgoing"];
+    private static readonly string[] ShipmentStatuses = ["Scheduled", "Transit", "Delivered"];
+    private static readonly string[] ShippingMethods = ["Standard", "Express", "Overnight", "Freight"];
+    private static readonly string[] PaymentTypes = ["Manual", "Automated"];
+    private static readonly DateTime MinShipmentDate = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime MaxShipmentDate = new(2100, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private const int MaxTextLength = 255;
+    private const int MaxItems = 100;
+    private const int MaxAmount = 1_000_000;
+
     /// <summary>Returns all shipments with their items.</summary>
     public async Task<IReadOnlyList<Shipment>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -241,30 +251,70 @@ public sealed class ShipmentsService(
     /// <summary>Builds the reference, e.g. SHP-006133.</summary>
     private static string ReferenceFor(int id) => $"SHP-{id:D6}";
 
-    /// <summary>Checks that the required fields are filled in.</summary>
+    /// <summary>
+    /// Trims the text fields, then checks that the required fields are filled in, fit in the
+    /// database and use a known value, and that the order id and shipment date are valid.
+    /// </summary>
     private static void ValidateShipment(Shipment shipment)
     {
-        var missing = new (string Name, string Value)[]
+        shipment.ShipmentType = shipment.ShipmentType?.Trim() ?? string.Empty;
+        shipment.ShipmentStatus = shipment.ShipmentStatus?.Trim() ?? string.Empty;
+        shipment.CarrierName = shipment.CarrierName?.Trim() ?? string.Empty;
+        shipment.ShippingMethod = shipment.ShippingMethod?.Trim() ?? string.Empty;
+        shipment.PaymentType = shipment.PaymentType?.Trim() ?? string.Empty;
+
+        var fields = new (string Name, string Value)[]
         {
             (nameof(Shipment.ShipmentType), shipment.ShipmentType),
             (nameof(Shipment.ShipmentStatus), shipment.ShipmentStatus),
             (nameof(Shipment.CarrierName), shipment.CarrierName),
             (nameof(Shipment.ShippingMethod), shipment.ShippingMethod),
             (nameof(Shipment.PaymentType), shipment.PaymentType)
-        }.Where(f => string.IsNullOrWhiteSpace(f.Value)).Select(f => f.Name).ToList();
+        };
+        var missing = fields.Where(f => string.IsNullOrWhiteSpace(f.Value)).Select(f => f.Name).ToList();
         if (shipment.ShipmentDate == default)
             missing.Add(nameof(Shipment.ShipmentDate));
         if (missing.Count > 0)
             throw new ArgumentException($"Missing required fields: {string.Join(", ", missing)}.");
+
+        var tooLong = fields.Where(f => f.Value.Length > MaxTextLength).Select(f => f.Name).ToList();
+        if (tooLong.Count > 0)
+            throw new ArgumentException(
+                $"Fields must not exceed {MaxTextLength} characters: {string.Join(", ", tooLong)}.");
+
+        RequireOneOf(nameof(Shipment.ShipmentType), shipment.ShipmentType, ShipmentTypes);
+        RequireOneOf(nameof(Shipment.ShipmentStatus), shipment.ShipmentStatus, ShipmentStatuses);
+        RequireOneOf(nameof(Shipment.ShippingMethod), shipment.ShippingMethod, ShippingMethods);
+        RequireOneOf(nameof(Shipment.PaymentType), shipment.PaymentType, PaymentTypes);
+
+        if (shipment.OrderId <= 0)
+            throw new ArgumentException("OrderId must be greater than 0.");
+        var date = AsUtc(shipment.ShipmentDate);
+        if (date < MinShipmentDate || date >= MaxShipmentDate)
+            throw new ArgumentException(
+                $"ShipmentDate must be between {MinShipmentDate.Year} and {MaxShipmentDate.Year - 1}.");
     }
 
-    /// <summary>Checks that every amount is positive and no item appears twice.</summary>
+    /// <summary>Checks the number of items, every item id and amount, and that no item appears twice.</summary>
     private static void ValidateItems(IReadOnlyCollection<ShipmentItem> items)
     {
-        if (items.Any(i => i.Amount <= 0))
-            throw new ArgumentException("Every item needs an amount greater than 0.");
+        if (items.Any(i => i is null))
+            throw new ArgumentException("Items must not contain null.");
+        if (items.Count > MaxItems)
+            throw new ArgumentException($"A shipment can have at most {MaxItems} items.");
+        if (items.Any(i => i.ItemId <= 0))
+            throw new ArgumentException("Every item needs an itemId greater than 0.");
+        if (items.Any(i => i.Amount <= 0 || i.Amount > MaxAmount))
+            throw new ArgumentException($"Every item needs an amount between 1 and {MaxAmount}.");
         if (items.GroupBy(i => i.ItemId).Any(g => g.Count() > 1))
             throw new ArgumentException("An item can only appear once in a shipment.");
+    }
+
+    /// <summary>Checks that the value is one of the allowed values (case-sensitive).</summary>
+    private static void RequireOneOf(string name, string value, string[] allowed)
+    {
+        if (!allowed.Contains(value))
+            throw new ArgumentException($"{name} must be one of: {string.Join(", ", allowed)}.");
     }
 
     /// <summary>Treats dates without a time zone as UTC.</summary>
