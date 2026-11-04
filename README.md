@@ -51,7 +51,15 @@ curl -H "API_KEY: your-key" http://localhost:3000/api/v1/warehouses/1
 ```
 
 A missing or unknown key returns `401`; a key without permission for that action
-returns `403`. Use Postman or curl: a browser cannot send this header.
+returns `403`. Use Postman, curl or the endpoint overview below: a browser address
+bar cannot send this header.
+
+## Endpoint overview
+
+All endpoints are listed at [`http://localhost:3000/docs`](http://localhost:3000/docs),
+with their parameters and responses. Click **Authentication**, enter your API key, and
+use **Test Request** to call an endpoint from the browser. The raw OpenAPI document
+is at `/openapi/v1.json`. Neither page needs a key.
 
 ## CI/CD
 
@@ -66,6 +74,8 @@ The API runs on our project server:
 ```
 http://145.24.237.19:8000/api/v1/...
 ```
+
+The endpoint overview is at [`http://145.24.237.19:8000/docs`](http://145.24.237.19:8000/docs).
 
 The server checks for a new image every 5 minutes, so a merged pull request is live
 a few minutes after the pipeline passes. Server access, setup and maintenance are
