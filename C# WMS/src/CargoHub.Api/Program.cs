@@ -11,6 +11,7 @@ builder.Services.AddScoped<CargoHub.Api.Services.ShipmentsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ItemsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ItemLinesService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ItemGroupsService>();
+builder.Services.AddScoped<CargoHub.Api.Services.ItemTypesService>();
 builder.Services.AddScoped<CargoHub.Api.Services.ClientsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.SuppliersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.OrdersService>();
