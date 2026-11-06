@@ -15,6 +15,8 @@ builder.Services.AddScoped<CargoHub.Api.Services.SuppliersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.OrdersService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
+builder.Services.AddHealthChecks()
+    .AddCheck<CargoHub.Api.Data.MySqlHealthCheck>("mysql", timeout: TimeSpan.FromSeconds(5));
 
 // Add services to the container.
 
@@ -50,5 +52,9 @@ app.UseMiddleware<CargoHub.Api.Authentication.ApiKeyMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// For uptime monitors and the Docker healthcheck: 200 "Healthy", or 503 "Unhealthy" when
+// MySQL is down. Outside /api, so it needs no API key.
+app.MapHealthChecks("/health");
 
 app.Run();

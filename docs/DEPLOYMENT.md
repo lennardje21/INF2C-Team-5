@@ -5,9 +5,16 @@ The API runs on the project server at `http://145.24.237.19:8000/api/v1/...`.
 ## How it works
 
 The server runs [`C# WMS/deploy/docker-compose.prod.yml`](<../C# WMS/deploy/docker-compose.prod.yml>):
-MySQL (not reachable from outside) and the API image that CI publishes from `main`.
+MySQL (not reachable from outside), two containers of the API image that CI publishes
+from `main` (`api-a` and `api-b`), and nginx on port 8000 in front of them
+([`nginx/default.conf`](<../C# WMS/deploy/nginx/default.conf>)). When one API container
+is down, nginx sends every request to the other one.
+
 Every 5 minutes a timer runs [`deploy.sh`](<../C# WMS/deploy/deploy.sh>), which updates
-to the latest `main` and restarts the API when there is a new image.
+to the latest `main`. When there is a new image it restarts `api-a`, waits until it is
+healthy, and only then restarts `api-b`, so the API stays up during a deployment. If
+`api-a` does not become healthy, the deployment stops there and `api-b` keeps running
+the old version.
 
 Not updated automatically:
 
@@ -70,9 +77,25 @@ Run these from `/srv/cargohub/C# WMS/deploy`:
 | Command | What it does |
 |---------|--------------|
 | `sudo -u cargohub docker compose -f docker-compose.prod.yml ps` | Container status |
-| `sudo -u cargohub docker compose -f docker-compose.prod.yml logs -f api` | API logs |
+| `sudo -u cargohub docker compose -f docker-compose.prod.yml logs -f api-a api-b` | API logs |
+| `sudo -u cargohub docker compose -f docker-compose.prod.yml logs -f nginx` | Requests, and errors reaching the API |
+| `sudo -u cargohub docker compose -f docker-compose.prod.yml restart api-a` | Restart one API container (the other keeps serving) |
 | `sudo systemctl start cargohub-deploy` | Deploy now |
 | `journalctl -u cargohub-deploy -n 50` | Output of recent deployments |
+
+## Monitoring
+
+`http://145.24.237.19:8000/health` returns `200 Healthy`, or `503 Unhealthy` when the API
+cannot reach MySQL. It needs no API key. Docker uses it as the healthcheck of both API
+containers, so `ps` shows `(healthy)` or `(unhealthy)` next to the uptime.
+
+To track the uptime percentage and get an email when the API goes down, add an HTTP
+monitor for that URL in a free service such as [UptimeRobot](https://uptimerobot.com).
+It has to run outside the server: a check on the server itself cannot report that the
+server is down.
+
+Docker restarts a container that crashes (`restart: unless-stopped`), but not one that
+is only `unhealthy`; restart that one by hand with the command above.
 
 ## API keys
 
