@@ -1,4 +1,4 @@
-"""v1 counterpart of ClientsControllerTests.cs."""
+"""Python version of ClientsControllerTests.cs; runs against v1 or v2."""
 
 import time
 from datetime import datetime, timedelta, timezone
@@ -46,9 +46,9 @@ class ClientsControllerTests(ApiTestCase):
 
     def test_GetClientOrders_ReturnsOrdersForAllThreeClientFieldsWithItems(self):
         order_ids = {
-            o["id"] for o in self.records("order")
+            o["id"] for o in self.rows("order")
             if 1 in (o["client_id"], o["ship_to_client_id"], o["bill_to_client_id"])}
-        expected_items = sum(1 for i in self.records("order_item") if i["order_id"] in order_ids)
+        expected_items = sum(1 for i in self.rows("order_item") if i["order_id"] in order_ids)
 
         orders = self.get_json(f"{self.url}/1/orders")
 
@@ -59,7 +59,7 @@ class ClientsControllerTests(ApiTestCase):
         self.assertEqual(expected_items, sum(len(o["items"]) for o in orders))
 
     def test_GetClientOrders_ClientWithoutOrders_ReturnsEmptyList(self):
-        created = self.create(new_client(), self.file)
+        created = self.create(new_client())
 
         orders = self.get_json(f"{self.url}/{created['id']}/orders")
 
@@ -67,7 +67,7 @@ class ClientsControllerTests(ApiTestCase):
 
     def test_CreateClient_StoresTheClient(self):
         client = new_client()
-        client["id"] = self.next_id(self.file)
+        self.with_id(client)
         before = utc_now() - timedelta(seconds=1)
 
         response = self.post(self.url, client)
@@ -76,7 +76,7 @@ class ClientsControllerTests(ApiTestCase):
         self.assertEqual(f"{self.url}/{created['id']}", response.location_path())
         self.assertGreater(created["id"], 300)
         self.assertGreaterEqual(parse_time(created["created_at"]), before)
-        self.assertEqual(created["created_at"], created["updated_at"])
+        self.assert_same_time(created["created_at"], created["updated_at"])
 
         stored = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("Jumbo Test", stored["name"])
@@ -96,7 +96,7 @@ class ClientsControllerTests(ApiTestCase):
         for field, value in [("name", ""), ("city", "  "), ("contact_email", "")]:
             with self.subTest(field=field, value=value):
                 client = new_client()
-                client["id"] = self.next_id(self.file)
+                self.with_id(client)
                 client[field] = value
 
                 response = self.post(self.url, client)
@@ -104,7 +104,7 @@ class ClientsControllerTests(ApiTestCase):
                 self.assertEqual(400, response.status)
 
     def test_UpdateClient_ChangesFieldsButKeepsCreatedAt(self):
-        created = self.create(new_client(), self.file)
+        created = self.create(new_client())
         time.sleep(0.01)
 
         response = self.put(f"{self.url}/{created['id']}", new_client(name="Jumbo Changed"))
@@ -112,7 +112,7 @@ class ClientsControllerTests(ApiTestCase):
         self.assert_no_content(response)
         updated = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("Jumbo Changed", updated["name"])
-        self.assertEqual(created["created_at"], updated.get("created_at"))
+        self.assert_same_time(created["created_at"], updated.get("created_at"))
         self.assertGreater(parse_time(updated["updated_at"]), parse_time(created["updated_at"]))
 
     def test_UpdateClient_UnknownClient_ReturnsNotFound(self):
@@ -121,14 +121,14 @@ class ClientsControllerTests(ApiTestCase):
         self.assertEqual(404, response.status)
 
     def test_UpdateClient_MissingField_ReturnsBadRequest(self):
-        created = self.create(new_client(), self.file)
+        created = self.create(new_client())
 
         response = self.put(f"{self.url}/{created['id']}", new_client(name=""))
 
         self.assertEqual(400, response.status)
 
     def test_DeleteClient_RemovesTheClient(self):
-        created = self.create(new_client(), self.file)
+        created = self.create(new_client())
 
         response = self.delete(f"{self.url}/{created['id']}")
 

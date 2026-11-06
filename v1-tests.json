@@ -1,0 +1,6341 @@
+{
+  "target": "v1",
+  "started_at": "2026-11-06T14:50:18.018133+00:00",
+  "python": "3.14.7",
+  "platform": "macOS-15.1-arm64-arm-64bit-Mach-O",
+  "startup_s": 0.5395184580120258,
+  "total_duration_s": 200.0401072910172,
+  "tests_passed": 28,
+  "tests_total": 148,
+  "checks_passed": 477,
+  "checks_total": 695,
+  "tests": [
+    {
+      "class": "AuthenticationTests",
+      "method": "InvalidApiKey_ReturnsUnauthorized",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0010617910302244127,
+      "setup_s": 0.023161708959378302,
+      "http_ms": 0.8802080410532653,
+      "checks_passed": 1,
+      "checks_total": 1,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses",
+          "status": 401,
+          "ms": 0.8802080410532653
+        }
+      ]
+    },
+    {
+      "class": "AuthenticationTests",
+      "method": "MissingApiKey_ReturnsUnauthorized",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0007121670059859753,
+      "setup_s": 0.016019499977119267,
+      "http_ms": 0.6201249780133367,
+      "checks_passed": 1,
+      "checks_total": 1,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses",
+          "status": 401,
+          "ms": 0.6201249780133367
+        }
+      ]
+    },
+    {
+      "class": "AuthenticationTests",
+      "method": "ReadOnlyApiKey_CanReadButCannotCreate",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0011487079900689423,
+      "setup_s": 0.013512999983504415,
+      "http_ms": 0.9837500401772559,
+      "checks_passed": 2,
+      "checks_total": 2,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses",
+          "status": 200,
+          "ms": 0.6588750402443111
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 403,
+          "ms": 0.3248749999329448
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "CreateClient_IgnoresIdAndTimestampsFromTheRequest",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.004675082978792489,
+      "setup_s": 0.01876845903461799,
+      "http_ms": 3.3344170078635216,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/clients",
+          "status": 201,
+          "ms": 3.3344170078635216
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "CreateClient_MissingField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.01081075007095933,
+      "setup_s": 0.012502999976277351,
+      "http_ms": 7.883667014539242,
+      "checks_passed": 0,
+      "checks_total": 3,
+      "failed_checks": [
+        {
+          "case": "(field='name', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='city', value='  ')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='contact_email', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/clients",
+          "status": 201,
+          "ms": 2.500041970051825
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/clients",
+          "status": 201,
+          "ms": 2.529667050112039
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/clients",
+          "status": 201,
+          "ms": 2.853957994375378
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "CreateClient_StoresTheClient",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.0033903750008903444,
+      "setup_s": 0.015867666981648654,
+      "http_ms": 2.410624991171062,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/clients",
+          "status": 201,
+          "ms": 2.410624991171062
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "DeleteClient_RemovesTheClient",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.006632749980781227,
+      "setup_s": 0.013919499993789941,
+      "http_ms": 5.828666966408491,
+      "checks_passed": 4,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/clients",
+          "status": 201,
+          "ms": 2.309792034793645
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/301",
+          "status": 200,
+          "ms": 0.6951669929549098
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/clients/301",
+          "status": 200,
+          "ms": 2.203082956839353
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/301",
+          "status": 200,
+          "ms": 0.6206249818205833
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "DeleteClient_UnknownClient_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0025571250007487833,
+      "setup_s": 0.01358495798194781,
+      "http_ms": 2.327041991520673,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/clients/999999",
+          "status": 200,
+          "ms": 2.327041991520673
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "DeleteClient_WithOrders_ReturnsConflictAndKeepsTheClient",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0035014580353163183,
+      "setup_s": 0.014826625003479421,
+      "http_ms": 3.278499993029982,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "409 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/clients/1",
+          "status": 200,
+          "ms": 2.6148330071009696
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/1",
+          "status": 200,
+          "ms": 0.6636669859290123
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "GetClientOrders_ClientWithoutOrders_ReturnsEmptyList",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.012401417014189065,
+      "setup_s": 0.016534874972421676,
+      "http_ms": 11.743000010028481,
+      "checks_passed": 5,
+      "checks_total": 5,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/clients",
+          "status": 201,
+          "ms": 2.61554098688066
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/301",
+          "status": 200,
+          "ms": 0.9166250238195062
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/301/orders",
+          "status": 200,
+          "ms": 8.210833999328315
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "GetClientOrders_ReturnsOrdersForAllThreeClientFieldsWithItems",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.9457867079763673,
+      "setup_s": 0.016854917048476636,
+      "http_ms": 915.7132499967702,
+      "checks_passed": 61,
+      "checks_total": 61,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/1/orders",
+          "status": 200,
+          "ms": 915.7132499967702
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "GetClient_ReturnsTheClient",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0011470000026747584,
+      "setup_s": 0.016683416964951903,
+      "http_ms": 1.0643340065144002,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/1",
+          "status": 200,
+          "ms": 1.0643340065144002
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "GetClients_ReturnsSeededClients",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0018300410592928529,
+      "setup_s": 0.015381958975922316,
+      "http_ms": 1.3869160320609808,
+      "checks_passed": 3,
+      "checks_total": 3,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/clients",
+          "status": 200,
+          "ms": 1.3869160320609808
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "GetRoutes_UnknownClient_ReturnNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.010455042007379234,
+      "setup_s": 0.017853999976068735,
+      "http_ms": 9.886707994155586,
+      "checks_passed": 0,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": "(route='')",
+          "passed": false,
+          "message": "404 != 200"
+        },
+        {
+          "case": "(route='/orders')",
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/999999",
+          "status": 200,
+          "ms": 0.9856249671429396
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/999999/orders",
+          "status": 200,
+          "ms": 8.901083027012646
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "UpdateClient_ChangesFieldsButKeepsCreatedAt",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.02028437500121072,
+      "setup_s": 0.01331654196837917,
+      "http_ms": 7.299916062038392,
+      "checks_passed": 7,
+      "checks_total": 8,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:50:19.805036Z != None"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/clients",
+          "status": 201,
+          "ms": 2.8886250220239162
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/301",
+          "status": 200,
+          "ms": 0.9220000356435776
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/clients/301",
+          "status": 200,
+          "ms": 2.558708016294986
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/301",
+          "status": 200,
+          "ms": 0.930582988075912
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "UpdateClient_MissingField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.005654792068526149,
+      "setup_s": 0.014309207967016846,
+      "http_ms": 4.864541930146515,
+      "checks_passed": 3,
+      "checks_total": 4,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/clients",
+          "status": 201,
+          "ms": 2.3438750067725778
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/clients/301",
+          "status": 200,
+          "ms": 0.6792919593863189
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/clients/301",
+          "status": 200,
+          "ms": 1.8413749639876187
+        }
+      ]
+    },
+    {
+      "class": "ClientsControllerTests",
+      "method": "UpdateClient_UnknownClient_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.002579042047727853,
+      "setup_s": 0.01582704100292176,
+      "http_ms": 2.359667036216706,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/clients/999999",
+          "status": 200,
+          "ms": 2.359667036216706
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "CreateItemGroup_IgnoresIdAndTimestampsFromTheRequest",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.001421125023625791,
+      "setup_s": 0.015400415984913707,
+      "http_ms": 0.7189160096459091,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.7189160096459091
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "CreateItemGroup_MissingField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0027156249852851033,
+      "setup_s": 0.01574216701555997,
+      "http_ms": 1.8867080216296017,
+      "checks_passed": 0,
+      "checks_total": 4,
+      "failed_checks": [
+        {
+          "case": "(field='name', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='name', value='  ')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='description', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='description', value='  ')",
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.6164159858599305
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.5317499744705856
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.3730420139618218
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.3655000473372638
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "CreateItemGroup_NameOver255Characters_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0008117490215227008,
+      "setup_s": 0.013463167008012533,
+      "http_ms": 0.542541965842247,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.542541965842247
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "CreateItemGroup_StoresTheItemGroup",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.0011570010101422668,
+      "setup_s": 0.01662858296185732,
+      "http_ms": 0.707291008438915,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.707291008438915
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "DeleteItemGroup_RemovesTheItemGroup",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.002175624016672373,
+      "setup_s": 0.01544016698608175,
+      "http_ms": 1.920668059028685,
+      "checks_passed": 4,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.8034170023165643
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_groups/4",
+          "status": 200,
+          "ms": 0.2850840101018548
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/item_groups/4",
+          "status": 200,
+          "ms": 0.45083300210535526
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_groups/4",
+          "status": 200,
+          "ms": 0.3813340445049107
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "DeleteItemGroup_UnknownItemGroup_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0008013760088942945,
+      "setup_s": 0.013508207979612052,
+      "http_ms": 0.6032920209690928,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/item_groups/999999",
+          "status": 200,
+          "ms": 0.6032920209690928
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "DeleteItemGroup_WithItems_ReturnsBadRequestAndKeepsTheItemGroup",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.002569959033280611,
+      "setup_s": 0.0128264160011895,
+      "http_ms": 1.007291954010725,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/item_groups/3",
+          "status": 200,
+          "ms": 0.7579999510198832
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_groups/3",
+          "status": 200,
+          "ms": 0.24929200299084187
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "GetItemGroup_ReturnsTheItemGroup",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.001521291967947036,
+      "setup_s": 0.013156125030945987,
+      "http_ms": 1.3970010331831872,
+      "checks_passed": 8,
+      "checks_total": 8,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.8194170077331364
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_groups/4",
+          "status": 200,
+          "ms": 0.30812498880550265
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_groups/4",
+          "status": 200,
+          "ms": 0.2694590366445482
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "GetItemGroup_UnknownItemGroup_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0006050420342944562,
+      "setup_s": 0.017461582960095257,
+      "http_ms": 0.42454199865460396,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/item_groups/999999",
+          "status": 200,
+          "ms": 0.42454199865460396
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "GetItemGroups_ReturnsSeededItemGroups",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0006570420227944851,
+      "setup_s": 0.015604040992911905,
+      "http_ms": 0.5657919682562351,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/item_groups",
+          "status": 200,
+          "ms": 0.5657919682562351
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "UpdateItemGroup_ChangesFieldsButKeepsCreatedAt",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.015163458010647446,
+      "setup_s": 0.01929966697935015,
+      "http_ms": 2.231332939118147,
+      "checks_passed": 8,
+      "checks_total": 9,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:50:20.045499Z != None"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.7500419742427766
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_groups/4",
+          "status": 200,
+          "ms": 0.41391601553186774
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/item_groups/4",
+          "status": 200,
+          "ms": 0.76149997767061
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_groups/4",
+          "status": 200,
+          "ms": 0.30587497167289257
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "UpdateItemGroup_MissingField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.001594790956005454,
+      "setup_s": 0.013217042025644332,
+      "http_ms": 1.3470420963130891,
+      "checks_passed": 3,
+      "checks_total": 4,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_groups",
+          "status": 201,
+          "ms": 0.5830420413985848
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_groups/4",
+          "status": 200,
+          "ms": 0.3712500329129398
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/item_groups/4",
+          "status": 200,
+          "ms": 0.3927500220015645
+        }
+      ]
+    },
+    {
+      "class": "ItemGroupsControllerTests",
+      "method": "UpdateItemGroup_UnknownItemGroup_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0009646660182625055,
+      "setup_s": 0.026294875016901642,
+      "http_ms": 0.7631250191479921,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/item_groups/999999",
+          "status": 200,
+          "ms": 0.7631250191479921
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "CreateItemLine_IgnoresIdAndTimestampsFromTheRequest",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.0013557500205934048,
+      "setup_s": 0.02091729099629447,
+      "http_ms": 0.6680410006083548,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 0.6680410006083548
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "CreateItemLine_MissingField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.003965082927607,
+      "setup_s": 0.011453459039330482,
+      "http_ms": 2.8296250966377556,
+      "checks_passed": 0,
+      "checks_total": 4,
+      "failed_checks": [
+        {
+          "case": "(field='name', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='name', value='  ')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='description', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='description', value='  ')",
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 0.7975830230861902
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 0.5169170326553285
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 0.748958031181246
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 0.7661670097149909
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "CreateItemLine_NameOver255Characters_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0009415409876964986,
+      "setup_s": 0.013739791989792138,
+      "http_ms": 0.6734170019626617,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 0.6734170019626617
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "CreateItemLine_StoresTheItemLine",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.001294707995839417,
+      "setup_s": 0.015527666953857988,
+      "http_ms": 0.829166965559125,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 0.829166965559125
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "DeleteItemLine_RemovesTheItemLine",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0021745830308645964,
+      "setup_s": 0.014213791990187019,
+      "http_ms": 1.8876258982345462,
+      "checks_passed": 4,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 0.6534999702125788
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_lines/15",
+          "status": 200,
+          "ms": 0.5832919850945473
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/item_lines/15",
+          "status": 200,
+          "ms": 0.38058398058637977
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_lines/15",
+          "status": 200,
+          "ms": 0.2702499623410404
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "DeleteItemLine_UnknownItemLine_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0008872920298017561,
+      "setup_s": 0.017694415990263224,
+      "http_ms": 0.6764169665984809,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/item_lines/999999",
+          "status": 200,
+          "ms": 0.6764169665984809
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "DeleteItemLine_WithItems_ReturnsBadRequestAndKeepsTheItemLine",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0031784999882802367,
+      "setup_s": 0.013000458013266325,
+      "http_ms": 1.332125044427812,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/item_lines/5",
+          "status": 200,
+          "ms": 0.9227500413544476
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_lines/5",
+          "status": 200,
+          "ms": 0.4093750030733645
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "GetItemLine_ReturnsTheItemLine",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0012753750197589397,
+      "setup_s": 0.010666624992154539,
+      "http_ms": 1.1435829801484942,
+      "checks_passed": 8,
+      "checks_total": 8,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 0.6318329833447933
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_lines/15",
+          "status": 200,
+          "ms": 0.25641598040238023
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_lines/15",
+          "status": 200,
+          "ms": 0.2553340164013207
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "GetItemLine_UnknownItemLine_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0006961670005694032,
+      "setup_s": 0.02042625000467524,
+      "http_ms": 0.5044169956818223,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/item_lines/999999",
+          "status": 200,
+          "ms": 0.5044169956818223
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "GetItemLines_ReturnsSeededItemLines",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0006491660024039447,
+      "setup_s": 0.014692083990667015,
+      "http_ms": 0.5148750497028232,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/item_lines",
+          "status": 200,
+          "ms": 0.5148750497028232
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "UpdateItemLine_ChangesFieldsButKeepsCreatedAt",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.017513416009023786,
+      "setup_s": 0.03264175000367686,
+      "http_ms": 4.809083940926939,
+      "checks_passed": 8,
+      "checks_total": 9,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:50:20.304348Z != None"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 3.224124957341701
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_lines/15",
+          "status": 200,
+          "ms": 0.2798749483190477
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/item_lines/15",
+          "status": 200,
+          "ms": 0.794875028077513
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_lines/15",
+          "status": 200,
+          "ms": 0.5102090071886778
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "UpdateItemLine_MissingField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.003167125047184527,
+      "setup_s": 0.005547499982640147,
+      "http_ms": 2.8478329768404365,
+      "checks_passed": 3,
+      "checks_total": 4,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_lines",
+          "status": 201,
+          "ms": 0.6622499786317348
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_lines/15",
+          "status": 200,
+          "ms": 0.4877499886788428
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/item_lines/15",
+          "status": 200,
+          "ms": 1.6978330095298588
+        }
+      ]
+    },
+    {
+      "class": "ItemLinesControllerTests",
+      "method": "UpdateItemLine_UnknownItemLine_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0010414579883217812,
+      "setup_s": 0.008194916998036206,
+      "http_ms": 0.6436249823309481,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/item_lines/999999",
+          "status": 200,
+          "ms": 0.6436249823309481
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "CreateItemType_IgnoresIdAndTimestampsFromTheRequest",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.0015037489938549697,
+      "setup_s": 0.006161666999105364,
+      "http_ms": 0.9246660047210753,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 0.9246660047210753
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "CreateItemType_MissingField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.002920583006925881,
+      "setup_s": 0.009734291990753263,
+      "http_ms": 2.0043750409968197,
+      "checks_passed": 0,
+      "checks_total": 4,
+      "failed_checks": [
+        {
+          "case": "(field='name', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='name', value='  ')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='description', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='description', value='  ')",
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 0.6217500194907188
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 0.5970420315861702
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 0.4123329999856651
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 0.3732499899342656
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "CreateItemType_NameOver255Characters_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0016561670345254242,
+      "setup_s": 0.008329665986821055,
+      "http_ms": 1.2757499935105443,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 1.2757499935105443
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "CreateItemType_StoresTheItemType",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.0009805840090848505,
+      "setup_s": 0.008080540981609374,
+      "http_ms": 0.5763750523328781,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 0.5763750523328781
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "DeleteItemType_RemovesTheItemType",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.003600125026423484,
+      "setup_s": 0.0055003329762257636,
+      "http_ms": 3.3362499671056867,
+      "checks_passed": 4,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 1.2094160192646086
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_types/4",
+          "status": 200,
+          "ms": 0.46004197793081403
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/item_types/4",
+          "status": 200,
+          "ms": 1.1752499849535525
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_types/4",
+          "status": 200,
+          "ms": 0.49154198495671153
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "DeleteItemType_UnknownItemType_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0009627919644117355,
+      "setup_s": 0.006522500014398247,
+      "http_ms": 0.7567909779027104,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/item_types/999999",
+          "status": 200,
+          "ms": 0.7567909779027104
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "DeleteItemType_WithItems_ReturnsBadRequestAndKeepsTheItemType",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0035087919677607715,
+      "setup_s": 0.0053659999975934625,
+      "http_ms": 1.214749994687736,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/item_types/2",
+          "status": 200,
+          "ms": 0.7504170062020421
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_types/2",
+          "status": 200,
+          "ms": 0.46433298848569393
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "GetItemType_ReturnsTheItemType",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.001580708019901067,
+      "setup_s": 0.005909166997298598,
+      "http_ms": 1.4458319637924433,
+      "checks_passed": 8,
+      "checks_total": 8,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 0.8336249738931656
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_types/4",
+          "status": 200,
+          "ms": 0.3055409761145711
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_types/4",
+          "status": 200,
+          "ms": 0.3066660137847066
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "GetItemType_UnknownItemType_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0007142499671317637,
+      "setup_s": 0.005436500010546297,
+      "http_ms": 0.5314170266501606,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/item_types/999999",
+          "status": 200,
+          "ms": 0.5314170266501606
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "GetItemTypes_ReturnsSeededItemTypes",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.000624332984443754,
+      "setup_s": 0.005923291959334165,
+      "http_ms": 0.5129579803906381,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/item_types",
+          "status": 200,
+          "ms": 0.5129579803906381
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "UpdateItemType_ChangesFieldsButKeepsCreatedAt",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.015028916008304805,
+      "setup_s": 0.005315874994266778,
+      "http_ms": 2.339708968065679,
+      "checks_passed": 8,
+      "checks_total": 9,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:50:20.430299Z != None"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 0.8919169777072966
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_types/4",
+          "status": 200,
+          "ms": 0.28441601898521185
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/item_types/4",
+          "status": 200,
+          "ms": 0.875958998221904
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_types/4",
+          "status": 200,
+          "ms": 0.2874169731512666
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "UpdateItemType_MissingField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0016141260275617242,
+      "setup_s": 0.006243208015803248,
+      "http_ms": 1.3871670234948397,
+      "checks_passed": 3,
+      "checks_total": 4,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/item_types",
+          "status": 201,
+          "ms": 0.6430840003304183
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/item_types/4",
+          "status": 200,
+          "ms": 0.29737502336502075
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/item_types/4",
+          "status": 200,
+          "ms": 0.44670799979940057
+        }
+      ]
+    },
+    {
+      "class": "ItemTypesControllerTests",
+      "method": "UpdateItemType_UnknownItemType_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0009065419435501099,
+      "setup_s": 0.006115958036389202,
+      "http_ms": 0.6796660018153489,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/item_types/999999",
+          "status": 200,
+          "ms": 0.6796660018153489
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "CreateLocation_EmptyField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.004748584004119039,
+      "setup_s": 0.005975625012069941,
+      "http_ms": 3.661832946818322,
+      "checks_passed": 0,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": "(field='code', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='name', value=' ')",
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/locations",
+          "status": 201,
+          "ms": 1.8739579827524722
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/locations",
+          "status": 201,
+          "ms": 1.7878749640658498
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "CreateLocation_FieldOver255Characters_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.004655583004932851,
+      "setup_s": 0.0064652079599909484,
+      "http_ms": 3.662541974335909,
+      "checks_passed": 0,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": "(field='code')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='name')",
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/locations",
+          "status": 201,
+          "ms": 1.9094999879598618
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/locations",
+          "status": 201,
+          "ms": 1.7530419863760471
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "CreateLocation_IgnoresIdAndTimestampsFromRequest",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.003294957976322621,
+      "setup_s": 0.0056072500301525,
+      "http_ms": 2.220291004050523,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/locations",
+          "status": 201,
+          "ms": 2.220291004050523
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "CreateLocation_InvalidWarehouseId_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.008108084031846374,
+      "setup_s": 0.005398000008426607,
+      "http_ms": 6.966874992940575,
+      "checks_passed": 0,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": "(warehouse_id=0)",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(warehouse_id=-1)",
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/locations",
+          "status": 201,
+          "ms": 1.982124987989664
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/locations",
+          "status": 201,
+          "ms": 4.984750004950911
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "DeleteLocation_RemovesTheLocation",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0049247079296037555,
+      "setup_s": 0.007483042019885033,
+      "http_ms": 4.383124993182719,
+      "checks_passed": 4,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/locations",
+          "status": 201,
+          "ms": 1.8599170143716037
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/locations/401",
+          "status": 200,
+          "ms": 0.5494579672813416
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/locations/401",
+          "status": 200,
+          "ms": 1.4665410271845758
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/locations/401",
+          "status": 200,
+          "ms": 0.5072089843451977
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "DeleteLocation_UnknownLocation_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.002120083023328334,
+      "setup_s": 0.005823333980515599,
+      "http_ms": 1.929582969751209,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/locations/2147483647",
+          "status": 200,
+          "ms": 1.929582969751209
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "DeleteLocation_WithInventory_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0026296249707229435,
+      "setup_s": 0.006038875028025359,
+      "http_ms": 2.4577080621384084,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/locations/1",
+          "status": 200,
+          "ms": 1.8654580344446003
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/locations/1",
+          "status": 200,
+          "ms": 0.5922500276938081
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "GetLocation_ReturnsTheLocation",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0009994999854825437,
+      "setup_s": 0.006534208019729704,
+      "http_ms": 0.9269170113839209,
+      "checks_passed": 5,
+      "checks_total": 5,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/locations/1",
+          "status": 200,
+          "ms": 0.9269170113839209
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "GetLocation_UnknownLocation_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0011366239632479846,
+      "setup_s": 0.00630929198814556,
+      "http_ms": 0.9574590367265046,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/locations/2147483647",
+          "status": 200,
+          "ms": 0.9574590367265046
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "GetLocations_ReturnsSeededLocations",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0017559159896336496,
+      "setup_s": 0.00605416699545458,
+      "http_ms": 1.4182499726302922,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/locations",
+          "status": 200,
+          "ms": 1.4182499726302922
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "UpdateLocation_ChangesTheLocation",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.005642334057483822,
+      "setup_s": 0.005499749968294054,
+      "http_ms": 4.781499912496656,
+      "checks_passed": 6,
+      "checks_total": 7,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:50:20.562757Z != None"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/locations",
+          "status": 201,
+          "ms": 1.7854169709607959
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/locations/401",
+          "status": 200,
+          "ms": 0.7840829784981906
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/locations/401",
+          "status": 200,
+          "ms": 1.6662079724483192
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/locations/401",
+          "status": 200,
+          "ms": 0.5457919905893505
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "UpdateLocation_InvalidField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.005317292991094291,
+      "setup_s": 0.006865416013170034,
+      "http_ms": 4.728498985059559,
+      "checks_passed": 4,
+      "checks_total": 6,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "'Test Location' != ''"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/locations",
+          "status": 201,
+          "ms": 1.9094159943051636
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/locations/401",
+          "status": 200,
+          "ms": 0.5785410176031291
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/locations/401",
+          "status": 200,
+          "ms": 1.531332964077592
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/locations/401",
+          "status": 200,
+          "ms": 0.7092090090736747
+        }
+      ]
+    },
+    {
+      "class": "LocationsControllerTests",
+      "method": "UpdateLocation_UnknownLocation_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.002095834002830088,
+      "setup_s": 0.00575750001007691,
+      "http_ms": 1.8860830459743738,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/locations/2147483647",
+          "status": 200,
+          "ms": 1.8860830459743738
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "CreateOrder_ConcurrentRequests_EachGetTheirOwnReference",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mConnectionResetError\u001b[0m: \u001b[35m[Errno 54] Connection reset by peer\u001b[0m"
+      ],
+      "duration_s": 0.9121841659653,
+      "setup_s": 0.006669667025562376,
+      "http_ms": 8984.506544016767,
+      "checks_passed": 26,
+      "checks_total": 26,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": "ConnectionResetError",
+          "ms": 0.5890000029467046
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": "OSError",
+          "ms": 0.45012502232566476
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": "ConnectionResetError",
+          "ms": 0.6932500400580466
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 48.78033301793039
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 93.88720797142014
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 139.37104202341288
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 185.37725001806393
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 231.28645797260106
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 277.10158401168883
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 252.5199999799952
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": "ConnectionResetError",
+          "ms": 300.8260420174338
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": "ConnectionResetError",
+          "ms": 301.0305410134606
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": "BrokenPipeError",
+          "ms": 300.98812497453764
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4856",
+          "status": 200,
+          "ms": 230.1176249748096
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4858",
+          "status": 200,
+          "ms": 207.26037496933714
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4857",
+          "status": 200,
+          "ms": 184.40866703167558
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4862",
+          "status": 200,
+          "ms": 161.79087501950562
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": "ConnectionResetError",
+          "ms": 401.17216703947634
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4863",
+          "status": 200,
+          "ms": 138.80162499845028
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 461.2563339760527
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 507.487167022191
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 554.0455830050632
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 600.1989580108784
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 646.6349170077592
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4870",
+          "status": 200,
+          "ms": 207.35516696004197
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 714.2810829682276
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4873",
+          "status": 200,
+          "ms": 228.90470799757168
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4867",
+          "status": 200,
+          "ms": 205.21133398870006
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4868",
+          "status": 200,
+          "ms": 182.73499998031184
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4866",
+          "status": 200,
+          "ms": 159.55616702558473
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 853.2813329948112
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4864",
+          "status": 200,
+          "ms": 161.52583400253206
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4865",
+          "status": 200,
+          "ms": 45.58066697791219
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "CreateOrder_DateWithoutTimeZone_IsStoredAsUtc",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.10357462504180148,
+      "setup_s": 0.006769916974008083,
+      "http_ms": 94.23641499597579,
+      "checks_passed": 4,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "'2026-10-30T09:00:00Z' != '2026-10-30T09:00:00'"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 48.193708003964275
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 22.50154095236212
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 23.541166039649397
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "CreateOrder_IgnoresIdReferenceAndTimestampsFromTheRequest",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.050619583984371275,
+      "setup_s": 0.01589941600104794,
+      "http_ms": 50.2017920371145,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 50.2017920371145
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "CreateOrder_InvalidInput_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.8033654579776339,
+      "setup_s": 0.01944379199994728,
+      "http_ms": 582.6157490955666,
+      "checks_passed": 0,
+      "checks_total": 20,
+      "failed_checks": [
+        {
+          "case": "[unknown client]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[unknown client]",
+          "passed": false,
+          "message": "4854 != 4855"
+        },
+        {
+          "case": "[unknown warehouse]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[unknown warehouse]",
+          "passed": false,
+          "message": "4855 != 4856"
+        },
+        {
+          "case": "[unknown ship-to client]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[unknown ship-to client]",
+          "passed": false,
+          "message": "4856 != 4857"
+        },
+        {
+          "case": "[empty status]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[empty status]",
+          "passed": false,
+          "message": "4857 != 4858"
+        },
+        {
+          "case": "[blank PO number]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[blank PO number]",
+          "passed": false,
+          "message": "4858 != 4859"
+        },
+        {
+          "case": "[missing order date]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[missing order date]",
+          "passed": false,
+          "message": "4859 != 4860"
+        },
+        {
+          "case": "[unknown item]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[unknown item]",
+          "passed": false,
+          "message": "4860 != 4861"
+        },
+        {
+          "case": "[zero amount]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[zero amount]",
+          "passed": false,
+          "message": "4861 != 4862"
+        },
+        {
+          "case": "[negative price]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[negative price]",
+          "passed": false,
+          "message": "4862 != 4863"
+        },
+        {
+          "case": "[duplicate item]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[duplicate item]",
+          "passed": false,
+          "message": "4863 != 4864"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 48.73329197289422
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 47.59416601154953
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 51.148791040759534
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 47.46291699120775
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 151.67383302468807
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 48.82779100444168
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 47.10766702191904
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 47.276750032324344
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 47.30766703141853
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 45.48287496436387
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "CreateOrder_RoundsPricesToTwoDecimals",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.10195666697109118,
+      "setup_s": 0.006016750005073845,
+      "http_ms": 93.44458294799551,
+      "checks_passed": 4,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "Lists differ: ['9.90', '1.01', '5.00'] != []"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 47.45808296138421
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 23.171916021965444
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 22.814583964645863
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "CreateOrder_StoresOrderAndItems",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.056166207999922335,
+      "setup_s": 0.005362833966501057,
+      "http_ms": 47.508625022601336,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 47.508625022601336
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "DeleteOrder_RemovesOrderAndItems",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.1520986669929698,
+      "setup_s": 0.0050670410273596644,
+      "http_ms": 123.45245794858783,
+      "checks_passed": 5,
+      "checks_total": 6,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 47.559082973748446
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 23.32949999254197
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 45.63670797506347
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 6.9271670072339475
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "DeleteOrder_UnknownOrder_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.04808820894686505,
+      "setup_s": 0.005615875008516014,
+      "http_ms": 47.82354197232053,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/orders/999999",
+          "status": 200,
+          "ms": 47.82354197232053
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "DeleteOrder_WithShipments_ReturnsConflictAndKeepsTheOrder",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.09601099998690188,
+      "setup_s": 0.005231750023085624,
+      "http_ms": 55.044042004738,
+      "checks_passed": 2,
+      "checks_total": 3,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "409 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/orders/1",
+          "status": 200,
+          "ms": 47.701791976578534
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/1",
+          "status": 200,
+          "ms": 7.342250028159469
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "GetOrderItems_ReturnsPricesWithTwoDecimals",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mKeyError\u001b[0m: \u001b[35m'unit_price'\u001b[0m"
+      ],
+      "duration_s": 0.0256575410021469,
+      "setup_s": 0.005466000002343208,
+      "http_ms": 25.219792034476995,
+      "checks_passed": 1,
+      "checks_total": 1,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/1/items",
+          "status": 200,
+          "ms": 25.219792034476995
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "GetOrder_ReturnsOrderWithItems",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.04546250094426796,
+      "setup_s": 0.005722708010580391,
+      "http_ms": 25.021250010468066,
+      "checks_passed": 6,
+      "checks_total": 6,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/1",
+          "status": 200,
+          "ms": 25.021250010468066
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "GetOrders_ReturnsSeededOrdersWithItems",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 82.36775766697247,
+      "setup_s": 0.005334375018719584,
+      "http_ms": 82343.73675001552,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/orders",
+          "status": 200,
+          "ms": 82343.73675001552
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "GetRoutes_UnknownOrder_ReturnNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.046506250044330955,
+      "setup_s": 0.037226749991532415,
+      "http_ms": 44.185083999764174,
+      "checks_passed": 0,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": "(route='')",
+          "passed": false,
+          "message": "404 != 200"
+        },
+        {
+          "case": "(route='/items')",
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/999999",
+          "status": 200,
+          "ms": 14.502375037409365
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/999999/items",
+          "status": 200,
+          "ms": 29.68270896235481
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "UpdateOrderItems_ConcurrentRequests_KeepInventoryConsistent",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mConnectionResetError\u001b[0m: \u001b[35m[Errno 54] Connection reset by peer\u001b[0m"
+      ],
+      "duration_s": 0.9795501250191592,
+      "setup_s": 0.014505208004266024,
+      "http_ms": 13402.022414898966,
+      "checks_passed": 3,
+      "checks_total": 3,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 49.15366700151935
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 23.585167014971375
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 69.36895800754428
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 99.57316698273644
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "OSError",
+          "ms": 99.80754199204966
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 99.77670799707994
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 100.62879096949473
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "BrokenPipeError",
+          "ms": 100.01595795620233
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "OSError",
+          "ms": 100.19866703078151
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 99.80158298276365
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "BrokenPipeError",
+          "ms": 100.00149998813868
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "OSError",
+          "ms": 100.18849995685741
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 101.15904198028147
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 99.7387919924222
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "BrokenPipeError",
+          "ms": 100.45416600769386
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 100.52870796062052
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 100.88258294854313
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 135.63625002279878
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 202.20370800234377
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "OSError",
+          "ms": 200.86462498875335
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "BrokenPipeError",
+          "ms": 200.05308301188052
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 201.91825000802055
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "OSError",
+          "ms": 200.33858303213492
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 200.72600001003593
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 200.53295802790672
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 200.6837090011686
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 200.4292500205338
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "BrokenPipeError",
+          "ms": 200.10058401385322
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 200.17475000349805
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 202.11845898302272
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 201.04954100679606
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 200.11862501269206
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 270.59762499993667
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "OSError",
+          "ms": 301.5962089993991
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 300.75287498766556
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "OSError",
+          "ms": 301.97316699195653
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 300.86354102240875
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "BrokenPipeError",
+          "ms": 301.7305840039626
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "BrokenPipeError",
+          "ms": 301.992374996189
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "BrokenPipeError",
+          "ms": 301.07791698537767
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "BrokenPipeError",
+          "ms": 301.46358301863074
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "ConnectionResetError",
+          "ms": 301.0505409911275
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 336.7308749584481
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": "BrokenPipeError",
+          "ms": 401.6350000165403
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 406.9955409504473
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 476.49058303795755
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 545.6486659822986
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 617.0317500364035
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 684.9855839973316
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 750.9757080115378
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 817.9996249964461
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 888.618791999761
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "UpdateOrderItems_InvalidItems_ChangeNothing",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.18719383399002254,
+      "setup_s": 0.012536457972601056,
+      "http_ms": 167.2392089967616,
+      "checks_passed": 5,
+      "checks_total": 7,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "Lists differ: [(63, 2)] != []"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 52.857749979011714
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 23.38404196780175
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 67.62104202061892
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 23.37637502932921
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "UpdateOrderItems_ReplacesItemsAndUpdatesInventory",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.20416516601108015,
+      "setup_s": 0.011366166989319026,
+      "http_ms": 161.06608300469816,
+      "checks_passed": 5,
+      "checks_total": 9,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "Lists differ: [(60, 10), (62, 5)] != []"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "394 != 390"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "229 != 232"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "223 != 218"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 47.57470899494365
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 23.193791043013334
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 67.15458299731836
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855/items",
+          "status": 200,
+          "ms": 23.142999969422817
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "UpdateOrderItems_UnknownOrder_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.07145312399370596,
+      "setup_s": 0.01251429197145626,
+      "http_ms": 71.20508298976347,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/999999/items",
+          "status": 200,
+          "ms": 71.20508298976347
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "UpdateOrder_ChangesFieldsButKeepsReferenceCreatedAtAndItems",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.18554212502203882,
+      "setup_s": 0.013700291980057955,
+      "http_ms": 164.21499999705702,
+      "checks_passed": 8,
+      "checks_total": 11,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "'ORD-004855' != 'ORD-CHANGED'"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:51:47.052476Z != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "Lists differ: [53] != []"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 49.53979200217873
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 22.69395801704377
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 68.51729197660461
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 23.463958001229912
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "UpdateOrder_UnknownOrder_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0698673339211382,
+      "setup_s": 0.018530041037593037,
+      "http_ms": 69.61687502916902,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/999999",
+          "status": 200,
+          "ms": 69.61687502916902
+        }
+      ]
+    },
+    {
+      "class": "OrdersControllerTests",
+      "method": "UpdateOrder_UnknownWarehouse_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.15279416600242257,
+      "setup_s": 0.01716612500604242,
+      "http_ms": 144.82308295555413,
+      "checks_passed": 3,
+      "checks_total": 4,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "status": 201,
+          "ms": 51.09333398286253
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 22.95141597278416
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/orders/4855",
+          "status": 200,
+          "ms": 70.77833299990743
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "CreateShipment_ConcurrentRequests_EachGetTheirOwnReference",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mBrokenPipeError\u001b[0m: \u001b[35m[Errno 32] Broken pipe\u001b[0m"
+      ],
+      "duration_s": 0.9188003339222632,
+      "setup_s": 0.016435541037935764,
+      "http_ms": 10666.983328061178,
+      "checks_passed": 24,
+      "checks_total": 24,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 54.123165959026664
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 105.80391599796712
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 155.21649998845533
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 204.749750031624
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 253.51862498791888
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 303.0364590231329
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6134",
+          "status": 200,
+          "ms": 272.7147080004215
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 248.54929198045284
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6136",
+          "status": 200,
+          "ms": 229.5589580317028
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": "BrokenPipeError",
+          "ms": 403.31454103579745
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": "OSError",
+          "ms": 402.9676669742912
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": "BrokenPipeError",
+          "ms": 402.69483299925923
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": "BrokenPipeError",
+          "ms": 402.93266699882224
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": "ConnectionResetError",
+          "ms": 402.8092910302803
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": "BrokenPipeError",
+          "ms": 402.87787502165884
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": "BrokenPipeError",
+          "ms": 403.1470419722609
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": "BrokenPipeError",
+          "ms": 403.06325000710785
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6135",
+          "status": 200,
+          "ms": 204.5524999848567
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6138",
+          "status": 200,
+          "ms": 179.89433300681412
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6137",
+          "status": 200,
+          "ms": 154.98916601063684
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 507.6145409839228
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 557.5265000225045
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 607.839166012127
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 656.4596249954775
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 706.7602080060169
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 760.873791994527
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6145",
+          "status": 200,
+          "ms": 278.12425000593066
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6141",
+          "status": 200,
+          "ms": 252.75179097661749
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6139",
+          "status": 200,
+          "ms": 226.88525001285598
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6144",
+          "status": 200,
+          "ms": 201.6975000151433
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6143",
+          "status": 200,
+          "ms": 174.83974999049678
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6140",
+          "status": 200,
+          "ms": 145.09641600307077
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "CreateShipment_DateWithoutTimeZone_IsStoredAsUtc",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.11005379096604884,
+      "setup_s": 0.01473062502918765,
+      "http_ms": 100.74050002731383,
+      "checks_passed": 4,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "'2026-10-12T10:00:00Z' != '2026-10-12T10:00:00'"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 53.1841249903664
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 23.456124996300787
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 24.100250040646642
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "CreateShipment_IgnoresIdReferenceAndTimestampsFromTheRequest",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.05167483404511586,
+      "setup_s": 0.013862499967217445,
+      "http_ms": 51.23762501170859,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 51.23762501170859
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "CreateShipment_InvalidInput_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.45144904201151803,
+      "setup_s": 0.0174059999990277,
+      "http_ms": 304.25903998548165,
+      "checks_passed": 0,
+      "checks_total": 12,
+      "failed_checks": [
+        {
+          "case": "[unknown order]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[unknown order]",
+          "passed": false,
+          "message": "6132 != 6133"
+        },
+        {
+          "case": "[empty type]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[empty type]",
+          "passed": false,
+          "message": "6133 != 6134"
+        },
+        {
+          "case": "[blank status]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[blank status]",
+          "passed": false,
+          "message": "6134 != 6135"
+        },
+        {
+          "case": "[unknown item]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[unknown item]",
+          "passed": false,
+          "message": "6135 != 6136"
+        },
+        {
+          "case": "[zero amount]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[zero amount]",
+          "passed": false,
+          "message": "6136 != 6137"
+        },
+        {
+          "case": "[duplicate item]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[duplicate item]",
+          "passed": false,
+          "message": "6137 != 6138"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 51.65429197950289
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 50.43016601121053
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 51.40262498753145
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 50.64145801588893
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 49.3564159842208
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 50.77408300712705
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "CreateShipment_StoresShipmentAndItems",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.0607730409828946,
+      "setup_s": 0.014129958988633007,
+      "http_ms": 51.4647500240244,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 51.4647500240244
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "DeleteShipment_RemovesShipmentAndItems",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.16507608303800225,
+      "setup_s": 0.01608179195318371,
+      "http_ms": 134.02058300562203,
+      "checks_passed": 5,
+      "checks_total": 6,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 51.92316701868549
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 23.873500002082437
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 50.41454097954556
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 7.809375005308539
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "DeleteShipment_UnknownShipment_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.05073816695949063,
+      "setup_s": 0.014529750042129308,
+      "http_ms": 50.49979098839685,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/shipments/999999",
+          "status": 200,
+          "ms": 50.49979098839685
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "GetRoutes_UnknownShipment_ReturnNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.11120179103454575,
+      "setup_s": 0.01610445900587365,
+      "http_ms": 110.20200100028887,
+      "checks_passed": 0,
+      "checks_total": 3,
+      "failed_checks": [
+        {
+          "case": "(route='')",
+          "passed": false,
+          "message": "404 != 200"
+        },
+        {
+          "case": "(route='/orders')",
+          "passed": false,
+          "message": "404 != 200"
+        },
+        {
+          "case": "(route='/items')",
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/999999",
+          "status": 200,
+          "ms": 9.492500044871122
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/999999/orders",
+          "status": 200,
+          "ms": 9.496916958596557
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/999999/items",
+          "status": 200,
+          "ms": 91.2125839968212
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "GetShipmentItems_ReturnsTheItems",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.05024312494788319,
+      "setup_s": 0.013886458007618785,
+      "http_ms": 27.482584002427757,
+      "checks_passed": 3,
+      "checks_total": 12,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "2 != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "2 != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "2 != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "2 != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "2 != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "2 != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "2 != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "2 != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "2 != None"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/2/items",
+          "status": 200,
+          "ms": 27.482584002427757
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "GetShipmentOrders_ReturnsTheOrderId",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.009305375977419317,
+      "setup_s": 0.015410541032906622,
+      "http_ms": 9.223249973729253,
+      "checks_passed": 2,
+      "checks_total": 2,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/1/orders",
+          "status": 200,
+          "ms": 9.223249973729253
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "GetShipment_ReturnsShipmentWithItems",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.025603124930057675,
+      "setup_s": 0.016055667016189545,
+      "http_ms": 25.512834021355957,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/1",
+          "status": 200,
+          "ms": 25.512834021355957
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "GetShipments_ReturnsSeededShipmentsWithItems",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 103.65896362502826,
+      "setup_s": 0.01172862498788163,
+      "http_ms": 103634.24720900366,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments",
+          "status": 200,
+          "ms": 103634.24720900366
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "UpdateShipmentItems_ConcurrentRequests_KeepInventoryConsistent",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mConnectionResetError\u001b[0m: \u001b[35m[Errno 54] Connection reset by peer\u001b[0m"
+      ],
+      "duration_s": 1.4325637919828296,
+      "setup_s": 0.022061666008085012,
+      "http_ms": 20588.978792657144,
+      "checks_passed": 3,
+      "checks_total": 3,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 63.45233402680606
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 24.29850003682077
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 71.36370899388567
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "OSError",
+          "ms": 100.83458299050108
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 100.93420802149922
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 100.35137500381097
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 100.73783400002867
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 100.80849996302277
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 100.20995797822252
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 100.26750003453344
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 100.68249999312684
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 100.5253330222331
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 140.74033399811015
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 199.93850000901148
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 200.26808296097443
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 199.7630000114441
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 200.65495796734467
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 199.8942500213161
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "OSError",
+          "ms": 200.5342089687474
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 199.5109999552369
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 200.07104199612513
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 200.50237502437085
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 201.63833297556266
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 209.24729196121916
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 279.1124999639578
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 301.03104101726785
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 302.0153329707682
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 301.30841699428856
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 300.6973330047913
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 301.4965830370784
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "BrokenPipeError",
+          "ms": 301.2957919854671
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "OSError",
+          "ms": 301.42354202689603
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 300.6837079883553
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 347.5735409883782
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 400.2836660365574
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 401.38345799641684
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 415.9295419813134
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 484.99816696858034
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 501.4745839871466
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 554.114667000249
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 621.8501249677502
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 691.120375005994
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": "ConnectionResetError",
+          "ms": 702.0281670265831
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 759.7463749698363
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 827.617667033337
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 898.2313749729656
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 969.8448329581879
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 1040.0052079930902
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 1110.6953749549575
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 1181.084708950948
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 1250.8195419795811
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 1323.883457982447
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "UpdateShipmentItems_InvalidItems_ChangeNothing",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.19588437507627532,
+      "setup_s": 0.005444041977170855,
+      "http_ms": 173.42387494863942,
+      "checks_passed": 5,
+      "checks_total": 7,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "Lists differ: [(23, 2)] != []"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 53.132542001549155
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 24.194999947212636
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 71.72312500188127
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 24.37320799799636
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "UpdateShipmentItems_ReplacesItemsAndUpdatesInventory",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.21392166696023196,
+      "setup_s": 0.005717749998439103,
+      "http_ms": 169.6345000527799,
+      "checks_passed": 5,
+      "checks_total": 9,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "Lists differ: [(20, 10), (22, 5)] != []"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "152 != 148"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "127 != 130"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "101 != 96"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 50.78362498898059
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 24.53845803393051
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 70.39937499212101
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133/items",
+          "status": 200,
+          "ms": 23.9130420377478
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "UpdateShipmentItems_UnknownShipment_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.07449612504569814,
+      "setup_s": 0.005309375002980232,
+      "http_ms": 74.26570798270404,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/999999/items",
+          "status": 200,
+          "ms": 74.26570798270404
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "UpdateShipmentOrders_ChangesTheOrder",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.12413358403136954,
+      "setup_s": 0.009232082986272871,
+      "http_ms": 115.08283310104162,
+      "checks_passed": 6,
+      "checks_total": 6,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 51.492542028427124
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 24.373750027734786
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/orders",
+          "status": 200,
+          "ms": 31.498583033680916
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133/orders",
+          "status": 200,
+          "ms": 7.717958011198789
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "UpdateShipmentOrders_InvalidOrders_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.344023208017461,
+      "setup_s": 0.009075374982785434,
+      "http_ms": 317.77325202710927,
+      "checks_passed": 9,
+      "checks_total": 12,
+      "failed_checks": [
+        {
+          "case": "(order_ids=[])",
+          "passed": false,
+          "message": "400 != 200"
+        },
+        {
+          "case": "(order_ids=[4, 5])",
+          "passed": false,
+          "message": "400 != 200"
+        },
+        {
+          "case": "(order_ids=[999999])",
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 51.048166991677135
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 24.13358399644494
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133/orders",
+          "status": 200,
+          "ms": 31.716625031549484
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 50.49812496872619
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6134",
+          "status": 200,
+          "ms": 24.205417023040354
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6134/orders",
+          "status": 200,
+          "ms": 31.347209005616605
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 49.620250007137656
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6135",
+          "status": 200,
+          "ms": 23.8435419742018
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6135/orders",
+          "status": 200,
+          "ms": 31.360333028715104
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "UpdateShipmentOrders_UnknownShipment_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.03404100000625476,
+      "setup_s": 0.006639875005930662,
+      "http_ms": 33.786707965191454,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/999999/orders",
+          "status": 200,
+          "ms": 33.786707965191454
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "UpdateShipment_ChangesFieldsButKeepsReferenceCreatedAtAndItems",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.19521274999715388,
+      "setup_s": 0.006679333047941327,
+      "http_ms": 172.59349999949336,
+      "checks_passed": 7,
+      "checks_total": 10,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "'SHP-006133' != 'SHP-CHANGED'"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:53:35.831304Z != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "Lists differ: [11] != []"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 50.96774996491149
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 24.046749982517213
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 71.96770800510421
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 25.611292046960443
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "UpdateShipment_UnknownOrder_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.15743704099440947,
+      "setup_s": 0.006354791985359043,
+      "http_ms": 147.45995798148215,
+      "checks_passed": 3,
+      "checks_total": 4,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "status": 201,
+          "ms": 51.7805409617722
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 23.95920897834003
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/6133",
+          "status": 200,
+          "ms": 71.72020804136992
+        }
+      ]
+    },
+    {
+      "class": "ShipmentsControllerTests",
+      "method": "UpdateShipment_UnknownShipment_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.07288524997420609,
+      "setup_s": 0.006603750050999224,
+      "http_ms": 72.62570899911225,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/shipments/999999",
+          "status": 200,
+          "ms": 72.62570899911225
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "CreateSupplier_IgnoresIdAndTimestampsFromTheRequest",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.0015460000140592456,
+      "setup_s": 0.005911291984375566,
+      "http_ms": 0.7784580229781568,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.7784580229781568
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "CreateSupplier_MissingField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.008570415957365185,
+      "setup_s": 0.006012750032823533,
+      "http_ms": 6.022499990649521,
+      "checks_passed": 0,
+      "checks_total": 10,
+      "failed_checks": [
+        {
+          "case": "(field='name', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='city', value='  ')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='address', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='zip_code', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='province', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='country', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='contact_name', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='phone_number', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='code', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='reference', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.7643330027349293
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.5685419891960919
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.5051660118624568
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.5199590232223272
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.5107499891892076
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.48504199367016554
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.5527919856831431
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.6230830331332982
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.538207998033613
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.9546249639242887
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "CreateSupplier_StoresTheSupplier",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.0011242920299991965,
+      "setup_s": 0.006404082989320159,
+      "http_ms": 0.679749995470047,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.679749995470047
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "DeleteSupplier_RemovesTheSupplier",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.002363333012908697,
+      "setup_s": 0.006251208018511534,
+      "http_ms": 1.9461659830994904,
+      "checks_passed": 4,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.6871669902466238
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/suppliers/22",
+          "status": 200,
+          "ms": 0.3103329800069332
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/suppliers/22",
+          "status": 200,
+          "ms": 0.45008299639448524
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/suppliers/22",
+          "status": 200,
+          "ms": 0.4985830164514482
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "DeleteSupplier_UnknownSupplier_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0009605410159565508,
+      "setup_s": 0.005512000003363937,
+      "http_ms": 0.7803330081515014,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/suppliers/999999",
+          "status": 200,
+          "ms": 0.7803330081515014
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "DeleteSupplier_WithItems_ReturnsConflictAndKeepsTheSupplier",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.003063749987632036,
+      "setup_s": 0.0054746250389143825,
+      "http_ms": 1.364583964459598,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "409 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/suppliers/17",
+          "status": 200,
+          "ms": 0.8169999928213656
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/suppliers/17",
+          "status": 200,
+          "ms": 0.5475839716382325
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "GetSupplier_ReturnsTheSupplier",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0017270419630222023,
+      "setup_s": 0.006182250042911619,
+      "http_ms": 1.5437490073964,
+      "checks_passed": 8,
+      "checks_total": 8,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.7366249919869006
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/suppliers/22",
+          "status": 200,
+          "ms": 0.5090829799883068
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/suppliers/22",
+          "status": 200,
+          "ms": 0.29804103542119265
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "GetSupplier_UnknownSupplier_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0009024160099215806,
+      "setup_s": 0.005584333965089172,
+      "http_ms": 0.6990829715505242,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/suppliers/999999",
+          "status": 200,
+          "ms": 0.6990829715505242
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "GetSuppliers_ReturnsSeededSuppliers",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0007182509289123118,
+      "setup_s": 0.006955708027817309,
+      "http_ms": 0.5382919916883111,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/suppliers",
+          "status": 200,
+          "ms": 0.5382919916883111
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "UpdateSupplier_ChangesFieldsButKeepsCreatedAt",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.014281875046435744,
+      "setup_s": 0.005612958979327232,
+      "http_ms": 3.1019169255159795,
+      "checks_passed": 7,
+      "checks_total": 8,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:53:36.333047Z != None"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 1.1392500018700957
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/suppliers/22",
+          "status": 200,
+          "ms": 0.3814579686149955
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/suppliers/22",
+          "status": 200,
+          "ms": 1.1566249886527658
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/suppliers/22",
+          "status": 200,
+          "ms": 0.42458396637812257
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "UpdateSupplier_MissingField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.002410417015198618,
+      "setup_s": 0.005691124999430031,
+      "http_ms": 2.1016259561292827,
+      "checks_passed": 3,
+      "checks_total": 4,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/suppliers",
+          "status": 201,
+          "ms": 0.9217089973390102
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/suppliers/22",
+          "status": 200,
+          "ms": 0.3874579560942948
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/suppliers/22",
+          "status": 200,
+          "ms": 0.7924590026959777
+        }
+      ]
+    },
+    {
+      "class": "SuppliersControllerTests",
+      "method": "UpdateSupplier_UnknownSupplier_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0020680000307038426,
+      "setup_s": 0.010788874991703779,
+      "http_ms": 1.8464160384610295,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/suppliers/999999",
+          "status": 200,
+          "ms": 1.8464160384610295
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "CommitTransfer_AlreadyProcessed_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.027817208028864115,
+      "setup_s": 0.017365916981361806,
+      "http_ms": 27.506417012773454,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/transfers/2/commit",
+          "status": 200,
+          "ms": 27.506417012773454
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "CommitTransfer_MovesInventoryAndMarksTransferProcessed",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.06449700001394376,
+      "setup_s": 0.018052208004519343,
+      "http_ms": 35.55229096673429,
+      "checks_passed": 6,
+      "checks_total": 8,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "446 != 447"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "1 != 0"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/transfers",
+          "status": 201,
+          "ms": 4.97708295006305
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/801",
+          "status": 200,
+          "ms": 2.0446249982342124
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/transfers/801/commit",
+          "status": 200,
+          "ms": 26.53920801822096
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/801",
+          "status": 200,
+          "ms": 1.9913750002160668
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "CommitTransfer_UnknownTransfer_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0016518750344403088,
+      "setup_s": 0.16726404195651412,
+      "http_ms": 1.435832993593067,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 500"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/transfers/2147483647/commit",
+          "status": 500,
+          "ms": 1.435832993593067
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "CreateTransfer_InvalidInput_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.04734745796304196,
+      "setup_s": 0.022142750036437064,
+      "http_ms": 29.643251036759466,
+      "checks_passed": 0,
+      "checks_total": 12,
+      "failed_checks": [
+        {
+          "case": "[no source location]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[no source location]",
+          "passed": false,
+          "message": "800 != 801"
+        },
+        {
+          "case": "[no destination location]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[no destination location]",
+          "passed": false,
+          "message": "801 != 802"
+        },
+        {
+          "case": "[same location]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[same location]",
+          "passed": false,
+          "message": "802 != 803"
+        },
+        {
+          "case": "[zero amount]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[zero amount]",
+          "passed": false,
+          "message": "803 != 804"
+        },
+        {
+          "case": "[duplicate item]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[duplicate item]",
+          "passed": false,
+          "message": "804 != 805"
+        },
+        {
+          "case": "[unknown item]",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "[unknown item]",
+          "passed": false,
+          "message": "805 != 806"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/transfers",
+          "status": 201,
+          "ms": 5.236416996922344
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/transfers",
+          "status": 201,
+          "ms": 4.551124991849065
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/transfers",
+          "status": 201,
+          "ms": 4.923125030472875
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/transfers",
+          "status": 201,
+          "ms": 5.023417004849762
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/transfers",
+          "status": 201,
+          "ms": 5.217208003159612
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/transfers",
+          "status": 201,
+          "ms": 4.691959009505808
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "CreateTransfer_StoresTransferAndItems",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.008767374965827912,
+      "setup_s": 0.019968542037531734,
+      "http_ms": 7.633959001395851,
+      "checks_passed": 6,
+      "checks_total": 9,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "'TRF-000801' != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:53:36.756136Z != 2026-11-06T14:53:36.756143Z"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "Lists differ: [(10, 2)] != []"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/transfers",
+          "status": 201,
+          "ms": 5.346417019609362
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/801",
+          "status": 200,
+          "ms": 2.2875419817864895
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "DeleteTransfer_RemovesTransferAndItems",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.014963000023271888,
+      "setup_s": 0.023020749969873577,
+      "http_ms": 12.364040070679039,
+      "checks_passed": 5,
+      "checks_total": 6,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/transfers",
+          "status": 201,
+          "ms": 5.2661660010926425
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/801",
+          "status": 200,
+          "ms": 2.0432500168681145
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/transfers/801",
+          "status": 200,
+          "ms": 4.190791049040854
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/801",
+          "status": 200,
+          "ms": 0.8638330036774278
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "DeleteTransfer_UnknownTransfer_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.004872749967034906,
+      "setup_s": 0.020411667006555945,
+      "http_ms": 4.673542047385126,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "DELETE",
+          "path": "/api/v1/transfers/2147483647",
+          "status": 200,
+          "ms": 4.673542047385126
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "GetTransferItems_ReturnsItemsForTransfer",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.004335584002546966,
+      "setup_s": 0.024740332970395684,
+      "http_ms": 2.5124999810941517,
+      "checks_passed": 3,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "1 != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "1 != None"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/1/items",
+          "status": 200,
+          "ms": 2.5124999810941517
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "GetTransfer_ReturnsTransferWithItems",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0026157500105910003,
+      "setup_s": 0.0199720420059748,
+      "http_ms": 2.548834017943591,
+      "checks_passed": 8,
+      "checks_total": 8,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/1",
+          "status": 200,
+          "ms": 2.548834017943591
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "GetTransfer_UnknownTransfer_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.005072375992313027,
+      "setup_s": 0.02230170799884945,
+      "http_ms": 4.456500057131052,
+      "checks_passed": 0,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": "(suffix='')",
+          "passed": false,
+          "message": "404 != 200"
+        },
+        {
+          "case": "(suffix='/items')",
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/2147483647",
+          "status": 200,
+          "ms": 1.560000004246831
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/2147483647/items",
+          "status": 200,
+          "ms": 2.896500052884221
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "GetTransfers_ReturnsSeededTransfersWithItems",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.9093533750274219,
+      "setup_s": 0.023621124972123653,
+      "http_ms": 907.9997090157121,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers",
+          "status": 200,
+          "ms": 907.9997090157121
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "UpdateTransfer_ChangesFieldsButKeepsReferenceAndCreatedAt",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.028076000977307558,
+      "setup_s": 0.019795416039414704,
+      "http_ms": 15.192791004665196,
+      "checks_passed": 8,
+      "checks_total": 11,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "'TRF-000801' != 'TRF-CHANGED'"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:53:37.859750Z != None"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "Lists differ: [(11, 3)] != []"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/transfers",
+          "status": 201,
+          "ms": 5.654208012856543
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/801",
+          "status": 200,
+          "ms": 2.1313749602995813
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/transfers/801",
+          "status": 200,
+          "ms": 5.076125031337142
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/transfers/801",
+          "status": 200,
+          "ms": 2.3310830001719296
+        }
+      ]
+    },
+    {
+      "class": "TransfersControllerTests",
+      "method": "UpdateTransfer_UnknownTransfer_ReturnsNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.005234250042121857,
+      "setup_s": 0.03016845800448209,
+      "http_ms": 5.007959029171616,
+      "checks_passed": 0,
+      "checks_total": 1,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/transfers/2147483647",
+          "status": 200,
+          "ms": 5.007959029171616
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "CreateWarehouse_IgnoresIdAndTimestampsFromRequest",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.0014304580399766564,
+      "setup_s": 0.006160708959214389,
+      "http_ms": 0.7345000049099326,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 201,
+          "ms": 0.7345000049099326
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "CreateWarehouse_InvalidField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0031649580923840404,
+      "setup_s": 0.007489708950743079,
+      "http_ms": 2.1495409891940653,
+      "checks_passed": 0,
+      "checks_total": 3,
+      "failed_checks": [
+        {
+          "case": "(field='name', value='')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='city', value='  ')",
+          "passed": false,
+          "message": "400 != 201"
+        },
+        {
+          "case": "(field='contact_email', value='not-an-email')",
+          "passed": false,
+          "message": "400 != 201"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 201,
+          "ms": 0.6783750141039491
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 201,
+          "ms": 0.9593329741619527
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 201,
+          "ms": 0.5118330009281635
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "CreateWarehouse_StoresTheWarehouse",
+      "outcome": "Failed",
+      "errors": [
+        "\u001b[1;35mTypeError\u001b[0m: \u001b[35m'NoneType' object is not subscriptable\u001b[0m"
+      ],
+      "duration_s": 0.0011094589717686176,
+      "setup_s": 0.005561333033256233,
+      "http_ms": 0.6328750168904662,
+      "checks_passed": 1,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "unexpectedly None : POST does not return the created record"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 201,
+          "ms": 0.6328750168904662
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "DeleteWarehouse_RemovesTheWarehouse",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0021087080240249634,
+      "setup_s": 0.005102374998386949,
+      "http_ms": 1.8203320214524865,
+      "checks_passed": 4,
+      "checks_total": 5,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 201,
+          "ms": 0.8490409818477929
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.2981669967994094
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.4345410270616412
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.23858301574364305
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "DeleteWarehouse_WithLocations_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0059827499790117145,
+      "setup_s": 0.006035415979567915,
+      "http_ms": 2.576750994194299,
+      "checks_passed": 5,
+      "checks_total": 6,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 201,
+          "ms": 0.7694590021856129
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.5028750165365636
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.528791977558285
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.3066249773837626
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.46900002053007483
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "GetRoutes_UnknownWarehouse_ReturnNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0018618750618770719,
+      "setup_s": 0.006986374966800213,
+      "http_ms": 1.3421670300886035,
+      "checks_passed": 0,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": "(route='')",
+          "passed": false,
+          "message": "404 != 200"
+        },
+        {
+          "case": "(route='/locations')",
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/2147483647",
+          "status": 200,
+          "ms": 0.6720420205965638
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/2147483647/locations",
+          "status": 200,
+          "ms": 0.6701250094920397
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "GetWarehouseLocations_ReturnsLocationsForThatWarehouse",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.003523374965880066,
+      "setup_s": 0.005738333042245358,
+      "http_ms": 1.6928750555962324,
+      "checks_passed": 7,
+      "checks_total": 7,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 201,
+          "ms": 0.7541250088252127
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.3220000071451068
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/11/locations",
+          "status": 200,
+          "ms": 0.6167500396259129
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "GetWarehouse_ReturnsTheWarehouse",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0007230410119518638,
+      "setup_s": 0.006472625012975186,
+      "http_ms": 0.6465829792432487,
+      "checks_passed": 3,
+      "checks_total": 3,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/1",
+          "status": 200,
+          "ms": 0.6465829792432487
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "GetWarehouses_ReturnsSeededWarehouses",
+      "outcome": "Passed",
+      "errors": [],
+      "duration_s": 0.0006277079810388386,
+      "setup_s": 0.006008249998558313,
+      "http_ms": 0.5395839689299464,
+      "checks_passed": 4,
+      "checks_total": 4,
+      "failed_checks": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses",
+          "status": 200,
+          "ms": 0.5395839689299464
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "UpdateAndDeleteUnknownWarehouse_ReturnNotFound",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0015928749926388264,
+      "setup_s": 0.005250125017482787,
+      "http_ms": 1.2951670214533806,
+      "checks_passed": 0,
+      "checks_total": 2,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "404 != 200"
+        }
+      ],
+      "requests": [
+        {
+          "method": "PUT",
+          "path": "/api/v1/warehouses/2147483647",
+          "status": 200,
+          "ms": 0.7347079808823764
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/v1/warehouses/2147483647",
+          "status": 200,
+          "ms": 0.5604590405710042
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "UpdateWarehouse_ChangesTheWarehouse",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.002153749985154718,
+      "setup_s": 0.0060508750029839575,
+      "http_ms": 1.8295009504072368,
+      "checks_passed": 6,
+      "checks_total": 7,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "False is not true : 2026-11-06T14:53:38.011074Z != None"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 201,
+          "ms": 0.7806670037098229
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.3529589739628136
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.41354098357260227
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.28233398916199803
+        }
+      ]
+    },
+    {
+      "class": "WarehousesControllerTests",
+      "method": "UpdateWarehouse_InvalidField_ReturnsBadRequest",
+      "outcome": "Failed",
+      "errors": [],
+      "duration_s": 0.0026461659581400454,
+      "setup_s": 0.005841000005602837,
+      "http_ms": 2.259541943203658,
+      "checks_passed": 4,
+      "checks_total": 6,
+      "failed_checks": [
+        {
+          "case": null,
+          "passed": false,
+          "message": "400 != 200"
+        },
+        {
+          "case": null,
+          "passed": false,
+          "message": "'Test Warehouse' != ''"
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/warehouses",
+          "status": 201,
+          "ms": 0.6709999870508909
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.5981669528409839
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.6237080087885261
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/warehouses/11",
+          "status": 200,
+          "ms": 0.366666994523257
+        }
+      ]
+    }
+  ]
+}

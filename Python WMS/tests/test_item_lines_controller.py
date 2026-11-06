@@ -1,4 +1,4 @@
-"""v1 counterpart of ItemLinesControllerTests.cs."""
+"""Python version of ItemLinesControllerTests.cs; runs against v1 or v2."""
 
 import time
 import uuid
@@ -20,14 +20,14 @@ class ItemLinesControllerTests(ApiTestCase):
 
     def test_GetItemLines_ReturnsSeededItemLines(self):
         item_lines = self.get_json(self.url)
-        expected = len(self.records(self.file))
+        expected = self.count(self.file)
 
         self.assertIsNotNone(item_lines)
         self.assertEqual(expected, len(item_lines))
         self.assertTrue(item_lines)
 
     def test_GetItemLine_ReturnsTheItemLine(self):
-        created = self.create(new_item_line(), self.file)
+        created = self.create(new_item_line())
         item_line = self.get_json(f"{self.url}/{created['id']}")
 
         self.assertIsNotNone(item_line)
@@ -42,7 +42,7 @@ class ItemLinesControllerTests(ApiTestCase):
 
     def test_CreateItemLine_StoresTheItemLine(self):
         item_line = new_item_line()
-        item_line["id"] = self.next_id(self.file)
+        self.with_id(item_line)
         before = utc_now() - timedelta(seconds=1)
 
         response = self.post(self.url, item_line)
@@ -51,7 +51,7 @@ class ItemLinesControllerTests(ApiTestCase):
         self.assertEqual(f"{self.url}/{created['id']}", response.location_path())
         self.assertGreater(created["id"], 0)
         self.assertGreaterEqual(parse_time(created["created_at"]), before)
-        self.assertEqual(created["created_at"], created["updated_at"])
+        self.assert_same_time(created["created_at"], created["updated_at"])
 
         stored = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual(item_line["name"], stored["name"])
@@ -74,7 +74,7 @@ class ItemLinesControllerTests(ApiTestCase):
         for field, value in [("name", ""), ("name", "  "), ("description", ""), ("description", "  ")]:
             with self.subTest(field=field, value=value):
                 item_line = new_item_line()
-                item_line["id"] = self.next_id(self.file)
+                self.with_id(item_line)
                 item_line[field] = value
 
                 response = self.post(self.url, item_line)
@@ -83,7 +83,7 @@ class ItemLinesControllerTests(ApiTestCase):
 
     def test_CreateItemLine_NameOver255Characters_ReturnsBadRequest(self):
         item_line = new_item_line()
-        item_line["id"] = self.next_id(self.file)
+        self.with_id(item_line)
         item_line["name"] = "x" * 256
 
         response = self.post(self.url, item_line)
@@ -91,7 +91,7 @@ class ItemLinesControllerTests(ApiTestCase):
         self.assertEqual(400, response.status)
 
     def test_UpdateItemLine_ChangesFieldsButKeepsCreatedAt(self):
-        created = self.create(new_item_line(), self.file)
+        created = self.create(new_item_line())
         time.sleep(0.01)
         item_line = new_item_line(name="Updated Test Item Line")
         item_line["description"] = "Updated description"
@@ -102,7 +102,7 @@ class ItemLinesControllerTests(ApiTestCase):
         updated = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("Updated Test Item Line", updated["name"])
         self.assertEqual("Updated description", updated["description"])
-        self.assertEqual(created["created_at"], updated.get("created_at"))
+        self.assert_same_time(created["created_at"], updated.get("created_at"))
         self.assertGreater(parse_time(updated["updated_at"]), parse_time(created["updated_at"]))
 
     def test_UpdateItemLine_UnknownItemLine_ReturnsNotFound(self):
@@ -111,7 +111,7 @@ class ItemLinesControllerTests(ApiTestCase):
         self.assertEqual(404, response.status)
 
     def test_UpdateItemLine_MissingField_ReturnsBadRequest(self):
-        created = self.create(new_item_line(), self.file)
+        created = self.create(new_item_line())
         item_line = new_item_line()
         item_line["name"] = ""
 
@@ -120,7 +120,7 @@ class ItemLinesControllerTests(ApiTestCase):
         self.assertEqual(400, response.status)
 
     def test_DeleteItemLine_RemovesTheItemLine(self):
-        created = self.create(new_item_line(), self.file)
+        created = self.create(new_item_line())
 
         response = self.delete(f"{self.url}/{created['id']}")
 
@@ -128,7 +128,7 @@ class ItemLinesControllerTests(ApiTestCase):
         self.assertEqual(404, self.get(f"{self.url}/{created['id']}").status)
 
     def test_DeleteItemLine_WithItems_ReturnsBadRequestAndKeepsTheItemLine(self):
-        id = self.records("item")[0]["item_line_id"]
+        id = self.rows("item", limit=1)[0]["item_line_id"]
 
         response = self.delete(f"{self.url}/{id}")
 

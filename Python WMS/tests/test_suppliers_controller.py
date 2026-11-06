@@ -1,4 +1,4 @@
-"""v1 counterpart of SuppliersControllerTests.cs."""
+"""Python version of SuppliersControllerTests.cs; runs against v1 or v2."""
 
 import time
 from datetime import timedelta
@@ -27,20 +27,20 @@ class SuppliersControllerTests(ApiTestCase):
 
     def test_GetSuppliers_ReturnsSeededSuppliers(self):
         suppliers = self.get_json(self.url)
-        expected = len(self.records(self.file))
+        expected = self.count(self.file)
 
         self.assertIsNotNone(suppliers)
         self.assertEqual(expected, len(suppliers))
         self.assertTrue(suppliers)
 
     def test_GetSupplier_ReturnsTheSupplier(self):
-        created = self.create(new_supplier(), self.file)
+        created = self.create(new_supplier())
         supplier = self.get_json(f"{self.url}/{created['id']}")
 
         self.assertIsNotNone(supplier)
         self.assertEqual(created["id"], supplier["id"])
         self.assertEqual(created["name"], supplier["name"])
-        self.assertEqual(created["created_at"], supplier["created_at"])
+        self.assert_same_time(created["created_at"], supplier["created_at"])
 
     def test_GetSupplier_UnknownSupplier_ReturnsNotFound(self):
         response = self.get(f"{self.url}/999999")
@@ -49,7 +49,7 @@ class SuppliersControllerTests(ApiTestCase):
 
     def test_CreateSupplier_StoresTheSupplier(self):
         supplier = new_supplier()
-        supplier["id"] = self.next_id(self.file)
+        self.with_id(supplier)
         before = utc_now() - timedelta(seconds=1)
 
         response = self.post(self.url, supplier)
@@ -58,7 +58,7 @@ class SuppliersControllerTests(ApiTestCase):
         self.assertEqual(f"{self.url}/{created['id']}", response.location_path())
         self.assertGreater(created["id"], 0)
         self.assertGreaterEqual(parse_time(created["created_at"]), before)
-        self.assertEqual(created["created_at"], created["updated_at"])
+        self.assert_same_time(created["created_at"], created["updated_at"])
 
         stored = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("Jumbo Test", stored["name"])
@@ -82,7 +82,7 @@ class SuppliersControllerTests(ApiTestCase):
         for field, value in cases:
             with self.subTest(field=field, value=value):
                 supplier = new_supplier()
-                supplier["id"] = self.next_id(self.file)
+                self.with_id(supplier)
                 supplier[field] = value
 
                 response = self.post(self.url, supplier)
@@ -90,7 +90,7 @@ class SuppliersControllerTests(ApiTestCase):
                 self.assertEqual(400, response.status)
 
     def test_UpdateSupplier_ChangesFieldsButKeepsCreatedAt(self):
-        created = self.create(new_supplier(), self.file)
+        created = self.create(new_supplier())
         time.sleep(0.01)
 
         response = self.put(f"{self.url}/{created['id']}", new_supplier(name="Jumbo Changed"))
@@ -98,7 +98,7 @@ class SuppliersControllerTests(ApiTestCase):
         self.assert_no_content(response)
         updated = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("Jumbo Changed", updated["name"])
-        self.assertEqual(created["created_at"], updated.get("created_at"))
+        self.assert_same_time(created["created_at"], updated.get("created_at"))
         self.assertGreater(parse_time(updated["updated_at"]), parse_time(created["updated_at"]))
 
     def test_UpdateSupplier_UnknownSupplier_ReturnsNotFound(self):
@@ -107,14 +107,14 @@ class SuppliersControllerTests(ApiTestCase):
         self.assertEqual(404, response.status)
 
     def test_UpdateSupplier_MissingField_ReturnsBadRequest(self):
-        created = self.create(new_supplier(), self.file)
+        created = self.create(new_supplier())
 
         response = self.put(f"{self.url}/{created['id']}", new_supplier(name=""))
 
         self.assertEqual(400, response.status)
 
     def test_DeleteSupplier_RemovesTheSupplier(self):
-        created = self.create(new_supplier(), self.file)
+        created = self.create(new_supplier())
 
         response = self.delete(f"{self.url}/{created['id']}")
 
@@ -122,7 +122,7 @@ class SuppliersControllerTests(ApiTestCase):
         self.assertEqual(404, self.get(f"{self.url}/{created['id']}").status)
 
     def test_DeleteSupplier_WithItems_ReturnsConflictAndKeepsTheSupplier(self):
-        id = self.records("item")[0]["supplier_id"]
+        id = self.rows("item", limit=1)[0]["supplier_id"]
 
         response = self.delete(f"{self.url}/{id}")
 

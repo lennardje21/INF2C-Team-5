@@ -1,4 +1,4 @@
-"""v1 counterpart of ItemTypesControllerTests.cs."""
+"""Python version of ItemTypesControllerTests.cs; runs against v1 or v2."""
 
 import time
 import uuid
@@ -20,14 +20,14 @@ class ItemTypesControllerTests(ApiTestCase):
 
     def test_GetItemTypes_ReturnsSeededItemTypes(self):
         item_types = self.get_json(self.url)
-        expected = len(self.records(self.file))
+        expected = self.count(self.file)
 
         self.assertIsNotNone(item_types)
         self.assertEqual(expected, len(item_types))
         self.assertTrue(item_types)
 
     def test_GetItemType_ReturnsTheItemType(self):
-        created = self.create(new_item_type(), self.file)
+        created = self.create(new_item_type())
         item_type = self.get_json(f"{self.url}/{created['id']}")
 
         self.assertIsNotNone(item_type)
@@ -42,7 +42,7 @@ class ItemTypesControllerTests(ApiTestCase):
 
     def test_CreateItemType_StoresTheItemType(self):
         item_type = new_item_type()
-        item_type["id"] = self.next_id(self.file)
+        self.with_id(item_type)
         before = utc_now() - timedelta(seconds=1)
 
         response = self.post(self.url, item_type)
@@ -51,7 +51,7 @@ class ItemTypesControllerTests(ApiTestCase):
         self.assertEqual(f"{self.url}/{created['id']}", response.location_path())
         self.assertGreater(created["id"], 0)
         self.assertGreaterEqual(parse_time(created["created_at"]), before)
-        self.assertEqual(created["created_at"], created["updated_at"])
+        self.assert_same_time(created["created_at"], created["updated_at"])
 
         stored = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual(item_type["name"], stored["name"])
@@ -74,7 +74,7 @@ class ItemTypesControllerTests(ApiTestCase):
         for field, value in [("name", ""), ("name", "  "), ("description", ""), ("description", "  ")]:
             with self.subTest(field=field, value=value):
                 item_type = new_item_type()
-                item_type["id"] = self.next_id(self.file)
+                self.with_id(item_type)
                 item_type[field] = value
 
                 response = self.post(self.url, item_type)
@@ -83,7 +83,7 @@ class ItemTypesControllerTests(ApiTestCase):
 
     def test_CreateItemType_NameOver255Characters_ReturnsBadRequest(self):
         item_type = new_item_type()
-        item_type["id"] = self.next_id(self.file)
+        self.with_id(item_type)
         item_type["name"] = "x" * 256
 
         response = self.post(self.url, item_type)
@@ -91,7 +91,7 @@ class ItemTypesControllerTests(ApiTestCase):
         self.assertEqual(400, response.status)
 
     def test_UpdateItemType_ChangesFieldsButKeepsCreatedAt(self):
-        created = self.create(new_item_type(), self.file)
+        created = self.create(new_item_type())
         time.sleep(0.01)
         item_type = new_item_type(name="Updated Test Item Type")
         item_type["description"] = "Updated description"
@@ -102,7 +102,7 @@ class ItemTypesControllerTests(ApiTestCase):
         updated = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("Updated Test Item Type", updated["name"])
         self.assertEqual("Updated description", updated["description"])
-        self.assertEqual(created["created_at"], updated.get("created_at"))
+        self.assert_same_time(created["created_at"], updated.get("created_at"))
         self.assertGreater(parse_time(updated["updated_at"]), parse_time(created["updated_at"]))
 
     def test_UpdateItemType_UnknownItemType_ReturnsNotFound(self):
@@ -111,7 +111,7 @@ class ItemTypesControllerTests(ApiTestCase):
         self.assertEqual(404, response.status)
 
     def test_UpdateItemType_MissingField_ReturnsBadRequest(self):
-        created = self.create(new_item_type(), self.file)
+        created = self.create(new_item_type())
         item_type = new_item_type()
         item_type["name"] = ""
 
@@ -120,7 +120,7 @@ class ItemTypesControllerTests(ApiTestCase):
         self.assertEqual(400, response.status)
 
     def test_DeleteItemType_RemovesTheItemType(self):
-        created = self.create(new_item_type(), self.file)
+        created = self.create(new_item_type())
 
         response = self.delete(f"{self.url}/{created['id']}")
 
@@ -128,7 +128,7 @@ class ItemTypesControllerTests(ApiTestCase):
         self.assertEqual(404, self.get(f"{self.url}/{created['id']}").status)
 
     def test_DeleteItemType_WithItems_ReturnsBadRequestAndKeepsTheItemType(self):
-        id = self.records("item")[0]["item_type_id"]
+        id = self.rows("item", limit=1)[0]["item_type_id"]
 
         response = self.delete(f"{self.url}/{id}")
 

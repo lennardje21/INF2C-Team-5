@@ -1,4 +1,4 @@
-"""v1 counterpart of WarehousesControllerTests.cs."""
+"""Python version of WarehousesControllerTests.cs; runs against v1 or v2."""
 
 import uuid
 
@@ -26,20 +26,10 @@ class WarehousesControllerTests(ApiTestCase):
 
     def add_location(self, warehouse_id, name):
         """Adds a location directly to the data, as the C# test inserts into MySQL."""
-        locations = self.records("location")
-        locations.append({
-            "id": self.next_id("location"),
-            "warehouse_id": warehouse_id,
-            "code": f"LOC-{uuid.uuid4().hex}",
-            "name": name,
-            "created_at": "2026-01-01T00:00:00Z",
-            "updated_at": "2026-01-01T00:00:00Z",
-        })
-        self.write_records("location", locations)
+        self.insert("location", {"warehouse_id": warehouse_id, "code": f"LOC-{uuid.uuid4().hex}", "name": name})
 
     def remove_locations(self, warehouse_id):
-        self.write_records(
-            "location", [x for x in self.records("location") if x["warehouse_id"] != warehouse_id])
+        self.delete_rows("location", warehouse_id=warehouse_id)
 
     def test_GetWarehouses_ReturnsSeededWarehouses(self):
         warehouses = self.get_json(self.url)
@@ -63,7 +53,7 @@ class WarehousesControllerTests(ApiTestCase):
 
     def test_CreateWarehouse_StoresTheWarehouse(self):
         warehouse = new_warehouse()
-        warehouse["id"] = self.next_id(self.file)
+        self.with_id(warehouse)
 
         response = self.post(self.url, warehouse)
 
@@ -88,7 +78,7 @@ class WarehousesControllerTests(ApiTestCase):
         for field, value in [("name", ""), ("city", "  "), ("contact_email", "not-an-email")]:
             with self.subTest(field=field, value=value):
                 warehouse = new_warehouse()
-                warehouse["id"] = self.next_id(self.file)
+                self.with_id(warehouse)
                 warehouse[field] = value
 
                 response = self.post(self.url, warehouse)
@@ -96,17 +86,17 @@ class WarehousesControllerTests(ApiTestCase):
                 self.assertEqual(400, response.status)
 
     def test_UpdateWarehouse_ChangesTheWarehouse(self):
-        created = self.create(new_warehouse(), self.file)
+        created = self.create(new_warehouse())
 
         response = self.put(f"{self.url}/{created['id']}", new_warehouse(name="Changed Warehouse"))
 
         self.assert_no_content(response)
         updated = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("Changed Warehouse", updated["name"])
-        self.assertEqual(created["created_at"], updated.get("created_at"))
+        self.assert_same_time(created["created_at"], updated.get("created_at"))
 
     def test_UpdateWarehouse_InvalidField_ReturnsBadRequest(self):
-        created = self.create(new_warehouse(), self.file)
+        created = self.create(new_warehouse())
         warehouse = new_warehouse()
         warehouse["name"] = ""
 
@@ -116,7 +106,7 @@ class WarehousesControllerTests(ApiTestCase):
         self.assertEqual(created["name"], self.get_json(f"{self.url}/{created['id']}")["name"])
 
     def test_GetWarehouseLocations_ReturnsLocationsForThatWarehouse(self):
-        warehouse = self.create(new_warehouse(), self.file)
+        warehouse = self.create(new_warehouse())
         self.add_location(warehouse["id"], "Test Location")
 
         locations = self.get_json(f"{self.url}/{warehouse['id']}/locations")
@@ -126,7 +116,7 @@ class WarehousesControllerTests(ApiTestCase):
         self.assertEqual("Test Location", locations[0]["name"])
 
     def test_DeleteWarehouse_RemovesTheWarehouse(self):
-        warehouse = self.create(new_warehouse(), self.file)
+        warehouse = self.create(new_warehouse())
 
         response = self.delete(f"{self.url}/{warehouse['id']}")
 
@@ -134,7 +124,7 @@ class WarehousesControllerTests(ApiTestCase):
         self.assertEqual(404, self.get(f"{self.url}/{warehouse['id']}").status)
 
     def test_DeleteWarehouse_WithLocations_ReturnsBadRequest(self):
-        warehouse = self.create(new_warehouse(), self.file)
+        warehouse = self.create(new_warehouse())
         self.add_location(warehouse["id"], "Referenced Location")
 
         response = self.delete(f"{self.url}/{warehouse['id']}")

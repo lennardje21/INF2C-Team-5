@@ -1,4 +1,4 @@
-"""v1 counterpart of ItemGroupsControllerTests.cs."""
+"""Python version of ItemGroupsControllerTests.cs; runs against v1 or v2."""
 
 import time
 import uuid
@@ -20,14 +20,14 @@ class ItemGroupsControllerTests(ApiTestCase):
 
     def test_GetItemGroups_ReturnsSeededItemGroups(self):
         item_groups = self.get_json(self.url)
-        expected = len(self.records(self.file))
+        expected = self.count(self.file)
 
         self.assertIsNotNone(item_groups)
         self.assertEqual(expected, len(item_groups))
         self.assertTrue(item_groups)
 
     def test_GetItemGroup_ReturnsTheItemGroup(self):
-        created = self.create(new_item_group(), self.file)
+        created = self.create(new_item_group())
         item_group = self.get_json(f"{self.url}/{created['id']}")
 
         self.assertIsNotNone(item_group)
@@ -42,7 +42,7 @@ class ItemGroupsControllerTests(ApiTestCase):
 
     def test_CreateItemGroup_StoresTheItemGroup(self):
         item_group = new_item_group()
-        item_group["id"] = self.next_id(self.file)
+        self.with_id(item_group)
         before = utc_now() - timedelta(seconds=1)
 
         response = self.post(self.url, item_group)
@@ -51,7 +51,7 @@ class ItemGroupsControllerTests(ApiTestCase):
         self.assertEqual(f"{self.url}/{created['id']}", response.location_path())
         self.assertGreater(created["id"], 0)
         self.assertGreaterEqual(parse_time(created["created_at"]), before)
-        self.assertEqual(created["created_at"], created["updated_at"])
+        self.assert_same_time(created["created_at"], created["updated_at"])
 
         stored = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual(item_group["name"], stored["name"])
@@ -74,7 +74,7 @@ class ItemGroupsControllerTests(ApiTestCase):
         for field, value in [("name", ""), ("name", "  "), ("description", ""), ("description", "  ")]:
             with self.subTest(field=field, value=value):
                 item_group = new_item_group()
-                item_group["id"] = self.next_id(self.file)
+                self.with_id(item_group)
                 item_group[field] = value
 
                 response = self.post(self.url, item_group)
@@ -83,7 +83,7 @@ class ItemGroupsControllerTests(ApiTestCase):
 
     def test_CreateItemGroup_NameOver255Characters_ReturnsBadRequest(self):
         item_group = new_item_group()
-        item_group["id"] = self.next_id(self.file)
+        self.with_id(item_group)
         item_group["name"] = "x" * 256
 
         response = self.post(self.url, item_group)
@@ -91,7 +91,7 @@ class ItemGroupsControllerTests(ApiTestCase):
         self.assertEqual(400, response.status)
 
     def test_UpdateItemGroup_ChangesFieldsButKeepsCreatedAt(self):
-        created = self.create(new_item_group(), self.file)
+        created = self.create(new_item_group())
         time.sleep(0.01)
         item_group = new_item_group(name="Updated Test Item Group")
         item_group["description"] = "Updated description"
@@ -102,7 +102,7 @@ class ItemGroupsControllerTests(ApiTestCase):
         updated = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("Updated Test Item Group", updated["name"])
         self.assertEqual("Updated description", updated["description"])
-        self.assertEqual(created["created_at"], updated.get("created_at"))
+        self.assert_same_time(created["created_at"], updated.get("created_at"))
         self.assertGreater(parse_time(updated["updated_at"]), parse_time(created["updated_at"]))
 
     def test_UpdateItemGroup_UnknownItemGroup_ReturnsNotFound(self):
@@ -111,7 +111,7 @@ class ItemGroupsControllerTests(ApiTestCase):
         self.assertEqual(404, response.status)
 
     def test_UpdateItemGroup_MissingField_ReturnsBadRequest(self):
-        created = self.create(new_item_group(), self.file)
+        created = self.create(new_item_group())
         item_group = new_item_group()
         item_group["name"] = ""
 
@@ -120,7 +120,7 @@ class ItemGroupsControllerTests(ApiTestCase):
         self.assertEqual(400, response.status)
 
     def test_DeleteItemGroup_RemovesTheItemGroup(self):
-        created = self.create(new_item_group(), self.file)
+        created = self.create(new_item_group())
 
         response = self.delete(f"{self.url}/{created['id']}")
 
@@ -128,7 +128,7 @@ class ItemGroupsControllerTests(ApiTestCase):
         self.assertEqual(404, self.get(f"{self.url}/{created['id']}").status)
 
     def test_DeleteItemGroup_WithItems_ReturnsBadRequestAndKeepsTheItemGroup(self):
-        id = self.records("item")[0]["item_group_id"]
+        id = self.rows("item", limit=1)[0]["item_group_id"]
 
         response = self.delete(f"{self.url}/{id}")
 

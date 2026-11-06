@@ -1,4 +1,4 @@
-"""v1 counterpart of AuthenticationTests.cs."""
+"""Python version of AuthenticationTests.cs; runs against v1 or v2."""
 
 from support import ApiTestCase
 
@@ -15,7 +15,7 @@ class AuthenticationTests(ApiTestCase):
         self.assertEqual(401, response.status)
 
     def test_ReadOnlyApiKey_CanReadButCannotCreate(self):
-        key = next(u["api_key"] for u in self.records("user") if u["app"] == "analytics_dashboard")
+        key = self.rows("user", app="analytics_dashboard")[0]["api_key"]
 
         read = self.get("/api/v1/warehouses", api_key=key)
         self.assertEqual(200, read.status)

@@ -1,4 +1,4 @@
-"""v1 counterpart of LocationsControllerTests.cs."""
+"""Python version of LocationsControllerTests.cs; runs against v1 or v2."""
 
 import uuid
 
@@ -41,7 +41,7 @@ class LocationsControllerTests(ApiTestCase):
         for field, value in [("code", ""), ("name", " ")]:
             with self.subTest(field=field, value=value):
                 location = new_location()
-                location["id"] = self.next_id(self.file)
+                self.with_id(location)
                 location[field] = value
 
                 response = self.post(self.url, location)
@@ -52,7 +52,7 @@ class LocationsControllerTests(ApiTestCase):
         for warehouse_id in [0, -1]:
             with self.subTest(warehouse_id=warehouse_id):
                 location = new_location()
-                location["id"] = self.next_id(self.file)
+                self.with_id(location)
                 location["warehouse_id"] = warehouse_id
 
                 response = self.post(self.url, location)
@@ -63,7 +63,7 @@ class LocationsControllerTests(ApiTestCase):
         for field in ["code", "name"]:
             with self.subTest(field=field):
                 location = new_location()
-                location["id"] = self.next_id(self.file)
+                self.with_id(location)
                 location[field] = "x" * 256
 
                 response = self.post(self.url, location)
@@ -81,20 +81,20 @@ class LocationsControllerTests(ApiTestCase):
         self.assertNotEqual(1, created["id"])
         self.assertEqual(1, created["warehouse_id"])
         self.assertGreaterEqual(parse_time(created["created_at"]).year, 2026)
-        self.assertEqual(created["created_at"], created["updated_at"])
+        self.assert_same_time(created["created_at"], created["updated_at"])
 
     def test_UpdateLocation_ChangesTheLocation(self):
-        created = self.create(new_location(), self.file)
+        created = self.create(new_location())
 
         response = self.put(f"{self.url}/{created['id']}", new_location(name="Updated Location"))
 
         self.assert_no_content(response)
         updated = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("Updated Location", updated["name"])
-        self.assertEqual(created["created_at"], updated.get("created_at"))
+        self.assert_same_time(created["created_at"], updated.get("created_at"))
 
     def test_UpdateLocation_InvalidField_ReturnsBadRequest(self):
-        created = self.create(new_location(), self.file)
+        created = self.create(new_location())
         location = new_location()
         location["name"] = ""
 
@@ -109,7 +109,7 @@ class LocationsControllerTests(ApiTestCase):
         self.assertEqual(404, response.status)
 
     def test_DeleteLocation_RemovesTheLocation(self):
-        created = self.create(new_location(), self.file)
+        created = self.create(new_location())
 
         response = self.delete(f"{self.url}/{created['id']}")
 

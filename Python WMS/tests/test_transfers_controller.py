@@ -1,13 +1,9 @@
-"""v1 counterpart of TransfersControllerTests.cs."""
+"""Python version of TransfersControllerTests.cs; runs against v1 or v2."""
 
 import time
 from datetime import timedelta
 
 from support import ApiTestCase, parse_time, utc_now
-
-# Importing support puts the api folder on sys.path.
-from models.transfers import Transfers  # noqa: E402
-from providers import data_provider  # noqa: E402
 
 
 def item(item_id, amount):
@@ -38,17 +34,14 @@ class TransfersControllerTests(ApiTestCase):
     file = "transfer"
 
     def inventory_quantity(self, item_id, location_id):
-        return next(
-            r["quantity_on_hand"] for r in self.records("inventory")
-            if r["item_id"] == item_id and r["location_id"] == location_id)
+        return self.rows("inventory", item_id=item_id, location_id=location_id)[0]["quantity_on_hand"]
 
     def inventory_quantity_or_zero(self, item_id, location_id):
-        return next(
-            (r["quantity_on_hand"] for r in self.records("inventory")
-             if r["item_id"] == item_id and r["location_id"] == location_id), 0)
+        rows = self.rows("inventory", item_id=item_id, location_id=location_id)
+        return rows[0]["quantity_on_hand"] if rows else 0
 
     def transfer_item_count(self, transfer_id):
-        return sum(1 for i in self.records("transfer_item") if i["transfer_id"] == transfer_id)
+        return self.count("transfer_item", transfer_id=transfer_id)
 
     def test_GetTransfers_ReturnsSeededTransfersWithItems(self):
         transfers = self.get_json(self.url)
@@ -86,28 +79,28 @@ class TransfersControllerTests(ApiTestCase):
     def test_CreateTransfer_StoresTransferAndItems(self):
         before = utc_now() - timedelta(seconds=1)
 
-        created = self.create(new_transfer(items=[item(10, 2)]), self.file)
+        created = self.create(new_transfer(items=[item(10, 2)]))
 
         self.assertGreater(created["id"], 800)
         self.assertEqual(f"TRF-{created['id']:06d}", created.get("reference"))
         self.assertEqual("Scheduled", created["transfer_status"])
         self.assertGreaterEqual(parse_time(created["created_at"]), before)
-        self.assertEqual(created["created_at"], created["updated_at"])
+        self.assert_same_time(created["created_at"], created["updated_at"])
         self.assertEqual([(10, 2)], [(i["item_id"], i["amount"]) for i in created["items"]])
 
     def test_CreateTransfer_InvalidInput_ReturnsBadRequest(self):
         for name, transfer in invalid_transfers():
             with self.subTest(name):
-                transfer["id"] = self.next_id(self.file)
-                count = len(self.records(self.file))
+                self.with_id(transfer)
+                count = self.count(self.file)
 
                 response = self.post(self.url, transfer)
 
                 self.assertEqual(400, response.status)
-                self.assertEqual(count, len(self.records(self.file)))
+                self.assertEqual(count, self.count(self.file))
 
     def test_UpdateTransfer_ChangesFieldsButKeepsReferenceAndCreatedAt(self):
-        created = self.create(new_transfer(items=[item(10, 2)]), self.file)
+        created = self.create(new_transfer(items=[item(10, 2)]))
         time.sleep(0.01)
 
         changes = new_transfer(from_location_id=3, to_location_id=4, items=[item(11, 3)])
@@ -121,7 +114,7 @@ class TransfersControllerTests(ApiTestCase):
         self.assertEqual(f"TRF-{created['id']:06d}", updated["reference"])
         self.assertEqual("In Transit", updated["transfer_status"])
         self.assertEqual((3, 4), (updated["from_location_id"], updated["to_location_id"]))
-        self.assertEqual(created["created_at"], updated.get("created_at"))
+        self.assert_same_time(created["created_at"], updated.get("created_at"))
         self.assertGreater(parse_time(updated["updated_at"]), parse_time(created["updated_at"]))
         self.assertEqual([(11, 3)], [(i["item_id"], i["amount"]) for i in updated["items"]])
 
@@ -132,10 +125,10 @@ class TransfersControllerTests(ApiTestCase):
 
     def test_CommitTransfer_MovesInventoryAndMarksTransferProcessed(self):
         source = max(
-            (r for r in self.records("inventory") if r["item_id"] == 10 and r["quantity_on_hand"] > 0),
+            (r for r in self.rows("inventory", item_id=10) if r["quantity_on_hand"] > 0),
             key=lambda r: r["quantity_on_hand"])["location_id"]
-        destination = next(x["id"] for x in self.records("location") if x["id"] != source)
-        created = self.create(new_transfer(source, destination, [item(10, 1)]), self.file)
+        destination = next(x["id"] for x in self.rows("location") if x["id"] != source)
+        created = self.create(new_transfer(source, destination, [item(10, 1)]))
         source_before = self.inventory_quantity(10, source)
         destination_before = self.inventory_quantity_or_zero(10, destination)
 
@@ -158,7 +151,7 @@ class TransfersControllerTests(ApiTestCase):
         self.assertEqual(404, response.status)
 
     def test_DeleteTransfer_RemovesTransferAndItems(self):
-        created = self.create(new_transfer(items=[item(12, 1)]), self.file)
+        created = self.create(new_transfer(items=[item(12, 1)]))
 
         response = self.delete(f"{self.url}/{created['id']}")
 
@@ -170,22 +163,3 @@ class TransfersControllerTests(ApiTestCase):
         response = self.delete(f"{self.url}/2147483647")
 
         self.assertEqual(404, response.status)
-
-    # The C# versions call TransfersService directly; v1 has no service layer, so these
-    # call the Transfers model, in debug mode so that no transfer data is read.
-
-    def test_CreateAsync_InvalidTransfer_ThrowsBeforeDatabaseAccess(self):
-        transfer = {"id": 1, "from_location_id": 1, "to_location_id": 1, "items": [item(10, 1)]}
-
-        with self.assertRaises(ValueError) as raised:
-            Transfers(data_provider.ROOT_PATH, is_debug=True).add_transfer(transfer)
-
-        self.assertIn("different", str(raised.exception))
-
-    def test_CreateAsync_InvalidItemAmount_ThrowsBeforeDatabaseAccess(self):
-        transfer = {"id": 1, "from_location_id": 1, "to_location_id": 2, "items": [item(10, 0)]}
-
-        with self.assertRaises(ValueError) as raised:
-            Transfers(data_provider.ROOT_PATH, is_debug=True).add_transfer(transfer)
-
-        self.assertIn("greater than 0", str(raised.exception))

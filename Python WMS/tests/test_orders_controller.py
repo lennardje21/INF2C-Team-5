@@ -1,10 +1,10 @@
-"""v1 counterpart of OrdersControllerTests.cs."""
+"""Python version of OrdersControllerTests.cs; runs against v1 or v2."""
 
 import random
 import time
 from datetime import datetime, timedelta, timezone
 
-from support import ApiTestCase, parse_time, raw_numbers, run_concurrently, utc_now
+from support import ApiTestCase, parse_time, run_concurrently, utc_now
 
 
 def new_order(client_id=1, warehouse_id=1, order_status="Pending",
@@ -60,12 +60,12 @@ class OrdersControllerTests(ApiTestCase):
         return self.inventory_field(item_id, "quantity_allocated")
 
     def order_item_count(self, order_id):
-        return sum(1 for i in self.records("order_item") if i["order_id"] == order_id)
+        return self.count("order_item", order_id=order_id)
 
     def raw_prices(self, url):
         response = self.get(url)
         self.assertEqual(200, response.status)
-        return [i["unit_price"] for i in raw_numbers(response.body)]
+        return [i["unit_price"] for i in self.json(response, keep_numbers=True)]
 
     def test_GetOrders_ReturnsSeededOrdersWithItems(self):
         orders = self.get_json(self.url)
@@ -100,7 +100,7 @@ class OrdersControllerTests(ApiTestCase):
 
     def test_CreateOrder_StoresOrderAndItems(self):
         order = new_order(items=[item(50, 2, 9.99)])
-        order["id"] = self.next_id(self.file)
+        self.with_id(order)
         before = utc_now() - timedelta(seconds=1)
 
         response = self.post(self.url, order)
@@ -110,7 +110,7 @@ class OrdersControllerTests(ApiTestCase):
         self.assertGreater(created["id"], 4854)
         self.assertEqual(reference_for(created["id"]), created.get("reference"))
         self.assertGreaterEqual(parse_time(created["created_at"]), before)
-        self.assertEqual(created["created_at"], created["updated_at"])
+        self.assert_same_time(created["created_at"], created["updated_at"])
 
         stored = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual(reference_for(created["id"]), stored.get("reference"))
@@ -120,7 +120,7 @@ class OrdersControllerTests(ApiTestCase):
         self.assertEqual((50, 2, 9.99), (stored_item["item_id"], stored_item["amount"], stored_item.get("unit_price")))
 
     def test_CreateOrder_RoundsPricesToTwoDecimals(self):
-        created = self.create(new_order(items=[item(50, 1, 9.9), item(51, 1, 1.005), item(52, 1, 5)]), self.file)
+        created = self.create(new_order(items=[item(50, 1, 9.9), item(51, 1, 1.005), item(52, 1, 5)]))
 
         prices = self.raw_prices(f"{self.url}/{created['id']}/items")
 
@@ -139,20 +139,22 @@ class OrdersControllerTests(ApiTestCase):
         self.assertGreaterEqual(parse_time(created["created_at"]).year, 2026)
 
     def test_CreateOrder_DateWithoutTimeZone_IsStoredAsUtc(self):
-        created = self.create(new_order(request_date="2026-10-30T09:00:00"), self.file)
+        created = self.create(new_order(request_date="2026-10-30T09:00:00"))
 
         stored = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("2026-10-30T09:00:00Z", stored["request_date"])
 
     def test_CreateOrder_ConcurrentRequests_EachGetTheirOwnReference(self):
         # A v1 client picks the ids itself, so each request gets its own.
-        first_id = self.next_id(self.file)
+        first_id = self.api.next_id(self.file) if self.api.client_sets_ids else None
 
         def create(n):
             order = new_order()
-            order["id"] = first_id + n
-            self.assertEqual(201, self.post(self.url, order).status)
-            return self.get_json(f"{self.url}/{order['id']}")
+            if first_id:
+                order["id"] = first_id + n
+            response = self.post(self.url, order)
+            self.assertEqual(201, response.status)
+            return self.get_json(f"{self.url}/{self.created_id(order, response)}")
 
         created = run_concurrently(create, range(20))
 
@@ -163,16 +165,16 @@ class OrdersControllerTests(ApiTestCase):
     def test_CreateOrder_InvalidInput_ReturnsBadRequest(self):
         for name, order in invalid_orders():
             with self.subTest(name):
-                order["id"] = self.next_id(self.file)
-                count = len(self.records(self.file))
+                self.with_id(order)
+                count = self.count(self.file)
 
                 response = self.post(self.url, order)
 
                 self.assertEqual(400, response.status)
-                self.assertEqual(count, len(self.records(self.file)))
+                self.assertEqual(count, self.count(self.file))
 
     def test_UpdateOrder_ChangesFieldsButKeepsReferenceCreatedAtAndItems(self):
-        created = self.create(new_order(items=[item(53, 4)]), self.file)
+        created = self.create(new_order(items=[item(53, 4)]))
         time.sleep(0.01)
         changes = new_order(order_status="Shipped")
         changes["reference"] = "ORD-CHANGED"
@@ -185,7 +187,7 @@ class OrdersControllerTests(ApiTestCase):
         self.assertEqual("Shipped", updated["order_status"])
         self.assertEqual("Achterom leveren", updated["shipping_notes"])
         self.assertEqual(reference_for(created["id"]), updated["reference"])
-        self.assertEqual(created["created_at"], updated.get("created_at"))
+        self.assert_same_time(created["created_at"], updated.get("created_at"))
         self.assertGreater(parse_time(updated["updated_at"]), parse_time(created["updated_at"]))
         self.assertEqual([53], [i["item_id"] for i in updated["items"]])
 
@@ -195,14 +197,14 @@ class OrdersControllerTests(ApiTestCase):
         self.assertEqual(404, response.status)
 
     def test_UpdateOrder_UnknownWarehouse_ReturnsBadRequest(self):
-        created = self.create(new_order(), self.file)
+        created = self.create(new_order())
 
         response = self.put(f"{self.url}/{created['id']}", new_order(warehouse_id=999999))
 
         self.assertEqual(400, response.status)
 
     def test_UpdateOrderItems_ReplacesItemsAndUpdatesInventory(self):
-        created = self.create(new_order(items=[item(60, 6), item(61, 3)]), self.file)
+        created = self.create(new_order(items=[item(60, 6), item(61, 3)]))
         q60, q61, q62 = (self.quantity_allocated(60), self.quantity_allocated(61), self.quantity_allocated(62))
 
         # 60 goes up by 4, 61 is removed and 62 is added.
@@ -216,7 +218,7 @@ class OrdersControllerTests(ApiTestCase):
         self.assertEqual(q62 + 5, self.quantity_allocated(62))
 
     def test_UpdateOrderItems_InvalidItems_ChangeNothing(self):
-        created = self.create(new_order(items=[item(63, 2)]), self.file)
+        created = self.create(new_order(items=[item(63, 2)]))
         q63 = self.quantity_allocated(63)
 
         # The first item is valid, so this also checks that the change is rolled back.
@@ -234,7 +236,7 @@ class OrdersControllerTests(ApiTestCase):
 
     def test_UpdateOrderItems_ConcurrentRequests_KeepInventoryConsistent(self):
         # Starting at 1 means no request can push quantity_allocated below 0.
-        created = self.create(new_order(items=[item(70, 1)]), self.file)
+        created = self.create(new_order(items=[item(70, 1)]))
         before = self.quantity_allocated(70)
 
         rng = random.Random(42)
@@ -247,7 +249,7 @@ class OrdersControllerTests(ApiTestCase):
         self.assertEqual(before + items[0]["amount"] - 1, self.quantity_allocated(70))
 
     def test_DeleteOrder_RemovesOrderAndItems(self):
-        created = self.create(new_order(items=[item(54, 1)]), self.file)
+        created = self.create(new_order(items=[item(54, 1)]))
 
         response = self.delete(f"{self.url}/{created['id']}")
 

@@ -1,4 +1,4 @@
-"""v1 counterpart of ShipmentsControllerTests.cs."""
+"""Python version of ShipmentsControllerTests.cs; runs against v1 or v2."""
 
 import random
 import time
@@ -48,7 +48,7 @@ class ShipmentsControllerTests(ApiTestCase):
         return self.inventory_field(item_id, "quantity_ordered")
 
     def shipment_item_count(self, shipment_id):
-        return sum(1 for i in self.records("shipment_item") if i["shipment_id"] == shipment_id)
+        return self.count("shipment_item", shipment_id=shipment_id)
 
     def test_GetShipments_ReturnsSeededShipmentsWithItems(self):
         shipments = self.get_json(self.url)
@@ -85,7 +85,7 @@ class ShipmentsControllerTests(ApiTestCase):
 
     def test_CreateShipment_StoresShipmentAndItems(self):
         shipment = new_shipment(items=[item(10, 2)])
-        shipment["id"] = self.next_id(self.file)
+        self.with_id(shipment)
         before = utc_now() - timedelta(seconds=1)
 
         response = self.post(self.url, shipment)
@@ -95,7 +95,7 @@ class ShipmentsControllerTests(ApiTestCase):
         self.assertGreater(created["id"], 6132)
         self.assertEqual(reference_for(created["id"]), created.get("reference"))
         self.assertGreaterEqual(parse_time(created["created_at"]), before)
-        self.assertEqual(created["created_at"], created["updated_at"])
+        self.assert_same_time(created["created_at"], created["updated_at"])
 
         stored = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual(reference_for(created["id"]), stored.get("reference"))
@@ -115,13 +115,15 @@ class ShipmentsControllerTests(ApiTestCase):
 
     def test_CreateShipment_ConcurrentRequests_EachGetTheirOwnReference(self):
         # A v1 client picks the ids itself, so each request gets its own.
-        first_id = self.next_id(self.file)
+        first_id = self.api.next_id(self.file) if self.api.client_sets_ids else None
 
         def create(n):
             shipment = new_shipment()
-            shipment["id"] = first_id + n
-            self.assertEqual(201, self.post(self.url, shipment).status)
-            return self.get_json(f"{self.url}/{shipment['id']}")
+            if first_id:
+                shipment["id"] = first_id + n
+            response = self.post(self.url, shipment)
+            self.assertEqual(201, response.status)
+            return self.get_json(f"{self.url}/{self.created_id(shipment, response)}")
 
         created = run_concurrently(create, range(20))
 
@@ -130,7 +132,7 @@ class ShipmentsControllerTests(ApiTestCase):
             self.assertEqual(reference_for(s["id"]), s.get("reference"))
 
     def test_CreateShipment_DateWithoutTimeZone_IsStoredAsUtc(self):
-        created = self.create(new_shipment(shipment_date="2026-10-12T10:00:00"), self.file)
+        created = self.create(new_shipment(shipment_date="2026-10-12T10:00:00"))
 
         stored = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("2026-10-12T10:00:00Z", stored["shipment_date"])
@@ -138,16 +140,16 @@ class ShipmentsControllerTests(ApiTestCase):
     def test_CreateShipment_InvalidInput_ReturnsBadRequest(self):
         for name, shipment in invalid_shipments():
             with self.subTest(name):
-                shipment["id"] = self.next_id(self.file)
-                count = len(self.records(self.file))
+                self.with_id(shipment)
+                count = self.count(self.file)
 
                 response = self.post(self.url, shipment)
 
                 self.assertEqual(400, response.status)
-                self.assertEqual(count, len(self.records(self.file)))
+                self.assertEqual(count, self.count(self.file))
 
     def test_UpdateShipment_ChangesFieldsButKeepsReferenceCreatedAtAndItems(self):
-        created = self.create(new_shipment(items=[item(11, 4)]), self.file)
+        created = self.create(new_shipment(items=[item(11, 4)]))
         time.sleep(0.01)
         changes = new_shipment(shipment_status="Transit")
         changes["reference"] = "SHP-CHANGED"
@@ -158,7 +160,7 @@ class ShipmentsControllerTests(ApiTestCase):
         updated = self.get_json(f"{self.url}/{created['id']}")
         self.assertEqual("Transit", updated["shipment_status"])
         self.assertEqual(reference_for(created["id"]), updated["reference"])
-        self.assertEqual(created["created_at"], updated.get("created_at"))
+        self.assert_same_time(created["created_at"], updated.get("created_at"))
         self.assertGreater(parse_time(updated["updated_at"]), parse_time(created["updated_at"]))
         self.assertEqual([11], [i["item_id"] for i in updated["items"]])
 
@@ -168,14 +170,14 @@ class ShipmentsControllerTests(ApiTestCase):
         self.assertEqual(404, response.status)
 
     def test_UpdateShipment_UnknownOrder_ReturnsBadRequest(self):
-        created = self.create(new_shipment(), self.file)
+        created = self.create(new_shipment())
 
         response = self.put(f"{self.url}/{created['id']}", new_shipment(order_id=999999))
 
         self.assertEqual(400, response.status)
 
     def test_UpdateShipmentOrders_ChangesTheOrder(self):
-        created = self.create(new_shipment(order_id=3), self.file)
+        created = self.create(new_shipment(order_id=3))
 
         response = self.put(f"{self.url}/{created['id']}/orders", [4])
 
@@ -185,7 +187,7 @@ class ShipmentsControllerTests(ApiTestCase):
     def test_UpdateShipmentOrders_InvalidOrders_ReturnsBadRequest(self):
         for order_ids in [[], [4, 5], [999999]]:
             with self.subTest(order_ids=order_ids):
-                created = self.create(new_shipment(), self.file)
+                created = self.create(new_shipment())
 
                 response = self.put(f"{self.url}/{created['id']}/orders", order_ids)
 
@@ -197,7 +199,7 @@ class ShipmentsControllerTests(ApiTestCase):
         self.assertEqual(404, response.status)
 
     def test_UpdateShipmentItems_ReplacesItemsAndUpdatesInventory(self):
-        created = self.create(new_shipment(items=[item(20, 6), item(21, 3)]), self.file)
+        created = self.create(new_shipment(items=[item(20, 6), item(21, 3)]))
         q20, q21, q22 = (self.quantity_ordered(20), self.quantity_ordered(21), self.quantity_ordered(22))
 
         # 20 goes up by 4, 21 is removed and 22 is added.
@@ -211,7 +213,7 @@ class ShipmentsControllerTests(ApiTestCase):
         self.assertEqual(q22 + 5, self.quantity_ordered(22))
 
     def test_UpdateShipmentItems_InvalidItems_ChangeNothing(self):
-        created = self.create(new_shipment(items=[item(23, 2)]), self.file)
+        created = self.create(new_shipment(items=[item(23, 2)]))
         q23 = self.quantity_ordered(23)
 
         # The first item is valid, so this also checks that the change is rolled back.
@@ -229,7 +231,7 @@ class ShipmentsControllerTests(ApiTestCase):
 
     def test_UpdateShipmentItems_ConcurrentRequests_KeepInventoryConsistent(self):
         # Starting at 1 means no request can push quantity_ordered below 0.
-        created = self.create(new_shipment(items=[item(30, 1)]), self.file)
+        created = self.create(new_shipment(items=[item(30, 1)]))
         before = self.quantity_ordered(30)
 
         rng = random.Random(42)
@@ -242,7 +244,7 @@ class ShipmentsControllerTests(ApiTestCase):
         self.assertEqual(before + items[0]["amount"] - 1, self.quantity_ordered(30))
 
     def test_DeleteShipment_RemovesShipmentAndItems(self):
-        created = self.create(new_shipment(items=[item(12, 1)]), self.file)
+        created = self.create(new_shipment(items=[item(12, 1)]))
 
         response = self.delete(f"{self.url}/{created['id']}")
 
