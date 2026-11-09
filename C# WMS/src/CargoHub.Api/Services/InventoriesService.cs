@@ -4,19 +4,18 @@ using MySqlConnector;
 
 namespace CargoHub.Api.Services;
 
-/// <summary>
-/// Business logic for inventories. An inventory has no id: it is identified by
-/// the combination of ItemId and LocationId.
-/// </summary>
+
+// Logic for inventories.
+
 public sealed class InventoriesService(
     MySqlConnectionFactory factory,
     MySqlRepository<Inventory> inventories)
 {
-    /// <summary>Returns all inventories.</summary>
+    // Returns all inventories.
     public Task<IReadOnlyList<Inventory>> GetAllAsync(CancellationToken cancellationToken = default) =>
         inventories.GetAsync(cancellationToken: cancellationToken);
 
-    /// <summary>Returns one inventory, or null if not found.</summary>
+    // Returns one inventory, or null if not found.
     public async Task<Inventory?> GetByKeyAsync(int itemId, int locationId,
         CancellationToken cancellationToken = default)
     {
@@ -24,10 +23,9 @@ public sealed class InventoriesService(
         return await FindAsync(connection, itemId, locationId, cancellationToken);
     }
 
-    /// <summary>
-    /// Creates an inventory; the timestamps are set here. Throws ArgumentException if the
-    /// item or location does not exist, and InvalidOperationException if it already exists.
-    /// </summary>
+    
+    // Creates an inventory;  Throws ArgumentException if the item or location does not exist, and InvalidOperationException if it already exists.
+    
     public async Task<Inventory> CreateAsync(Inventory inventory, CancellationToken cancellationToken = default)
     {
         Validate(inventory);
@@ -55,10 +53,10 @@ public sealed class InventoriesService(
         return inventory;
     }
 
-    /// <summary>
-    /// Updates the quantities of an inventory; the keys and creation time stay the same.
-    /// Returns false if not found.
-    /// </summary>
+    
+    // Updates the quantities of an inventory
+   
+    
     public async Task<bool> UpdateAsync(int itemId, int locationId, Inventory inventory,
         CancellationToken cancellationToken = default)
     {
@@ -69,7 +67,7 @@ public sealed class InventoriesService(
         if (existing is null)
             return false;
 
-        // The keys come from the URL, not from the body.
+        // The keys come from the URL
         inventory.ItemId = itemId;
         inventory.LocationId = locationId;
         inventory.CreatedAt = existing.CreatedAt;
@@ -88,7 +86,7 @@ public sealed class InventoriesService(
         return true;
     }
 
-    /// <summary>Deletes an inventory. Returns false if not found.</summary>
+    // Deletes an inventory. Returns false if not found.
     public async Task<bool> DeleteAsync(int itemId, int locationId, CancellationToken cancellationToken = default)
     {
         await using var connection = await factory.OpenAsync(cancellationToken);
@@ -106,14 +104,14 @@ public sealed class InventoriesService(
         return true;
     }
 
-    /// <summary>Loads one inventory on the given connection.</summary>
+    // Loads one inventory on the given connection.
     private async Task<Inventory?> FindAsync(MySqlConnection connection, int itemId, int locationId,
         CancellationToken cancellationToken) =>
         (await inventories.GetAsync(connection, null,
             new Dictionary<string, object?> { ["item_id"] = itemId, ["location_id"] = locationId },
             cancellationToken)).SingleOrDefault();
 
-    /// <summary>Checks that the quantities are not negative.</summary>
+    // Checks that the quantities are not negative.
     private static void Validate(Inventory inventory)
     {
         var negative = new (string Name, int Value)[]
