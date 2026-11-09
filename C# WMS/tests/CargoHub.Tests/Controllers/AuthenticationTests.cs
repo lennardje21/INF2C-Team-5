@@ -11,7 +11,7 @@ public sealed class AuthenticationTests(ApiFixture fixture)
     public async Task MissingApiKey_ReturnsUnauthorized()
     {
         using var client = fixture.CreateUnauthenticatedClient();
-        using var response = await client.GetAsync("/api/v1/warehouses");
+        using var response = await client.GetAsync("/api/v2/warehouses");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -20,7 +20,7 @@ public sealed class AuthenticationTests(ApiFixture fixture)
     {
         using var client = fixture.CreateUnauthenticatedClient();
         client.DefaultRequestHeaders.Add(ApiKeyMiddleware.HeaderName, "invalid-test-key");
-        using var response = await client.GetAsync("/api/v1/warehouses");
+        using var response = await client.GetAsync("/api/v2/warehouses");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -32,9 +32,9 @@ public sealed class AuthenticationTests(ApiFixture fixture)
             "SELECT `api_key` FROM `user` WHERE `app` = @app", ("@app", "analytics_dashboard"));
         client.DefaultRequestHeaders.Add(ApiKeyMiddleware.HeaderName, key);
 
-        using var read = await client.GetAsync("/api/v1/warehouses");
+        using var read = await client.GetAsync("/api/v2/warehouses");
         Assert.Equal(HttpStatusCode.OK, read.StatusCode);
-        using var create = await client.PostAsync("/api/v1/warehouses", null);
+        using var create = await client.PostAsync("/api/v2/warehouses", null);
         Assert.Equal(HttpStatusCode.Forbidden, create.StatusCode);
     }
 }

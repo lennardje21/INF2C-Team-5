@@ -6,7 +6,7 @@ namespace CargoHub.Api.Controllers;
 
 // BaseController for stock transfers.
 [ApiController]
-[Route("api/v1/transfers")]
+[Route("api/v2/transfers")]
 public class TransfersController(TransfersService transfersService) : ControllerBase
 {
     // Get all transfers, including their items.

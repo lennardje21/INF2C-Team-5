@@ -6,7 +6,7 @@ namespace CargoHub.Api.Controllers;
 
 /// <summary>HTTP endpoints for shipments; the logic is in ShipmentsService.</summary>
 [ApiController]
-[Route("api/v1/shipments")]
+[Route("api/v2/shipments")]
 public class ShipmentsController(ShipmentsService shipmentsService) : ControllerBase
 {
     /// <summary>Returns all shipments with their items.</summary>

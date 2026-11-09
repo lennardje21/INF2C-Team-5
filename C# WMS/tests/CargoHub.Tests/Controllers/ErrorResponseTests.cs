@@ -12,11 +12,10 @@ public sealed class ErrorResponseTests(ApiFixture fixture)
 {
     [Theory]
     [InlineData("/api")]
-    [InlineData("/api/v1")]
-    [InlineData("/api/v2/suppliers")]
-    [InlineData("/api/v1/unknown")]
-    [InlineData("/api/v1/suppliers/not-an-id")]
-    [InlineData("/api/v1/suppliers/1/unknown")]
+    [InlineData("/api/v2")]
+    [InlineData("/api/v2/unknown")]
+    [InlineData("/api/v2/suppliers/not-an-id")]
+    [InlineData("/api/v2/suppliers/1/unknown")]
     [InlineData("/unknown")]
     public async Task InvalidPath_WithoutApiKey_ReturnsDescriptiveNotFound(string path)
     {
@@ -29,7 +28,7 @@ public sealed class ErrorResponseTests(ApiFixture fixture)
     [Fact]
     public async Task InvalidPath_WithApiKey_ReturnsNotFoundInsteadOfForbidden()
     {
-        const string path = "/api/v1/unknown";
+        const string path = "/api/v2/unknown";
         using var response = await fixture.Client.GetAsync(path);
         await AssertProblemAsync(response, HttpStatusCode.NotFound, path);
     }
@@ -38,9 +37,9 @@ public sealed class ErrorResponseTests(ApiFixture fixture)
     public async Task UnsupportedMethod_ReturnsMethodNotAllowedWithAllowHeader()
     {
         using var client = fixture.CreateUnauthenticatedClient();
-        using var request = new HttpRequestMessage(HttpMethod.Patch, "/api/v1/suppliers");
+        using var request = new HttpRequestMessage(HttpMethod.Patch, "/api/v2/suppliers");
         using var response = await client.SendAsync(request);
-        await AssertProblemAsync(response, HttpStatusCode.MethodNotAllowed, "/api/v1/suppliers");
+        await AssertProblemAsync(response, HttpStatusCode.MethodNotAllowed, "/api/v2/suppliers");
         Assert.Contains("GET", response.Content.Headers.Allow);
     }
 
@@ -56,7 +55,7 @@ public sealed class ErrorResponseTests(ApiFixture fixture)
     [Fact]
     public async Task MissingResource_ExplainsWhichRequestFailed()
     {
-        const string path = "/api/v1/suppliers/999999";
+        const string path = "/api/v2/suppliers/999999";
         using var response = await fixture.Client.GetAsync(path);
         var problem = await AssertProblemAsync(response, HttpStatusCode.NotFound, path);
         Assert.Contains("identifiers", problem.Detail);
@@ -65,8 +64,8 @@ public sealed class ErrorResponseTests(ApiFixture fixture)
     [Fact]
     public async Task MissingFields_PreservesTheServiceValidationMessage()
     {
-        using var response = await fixture.Client.PostAsJsonAsync("/api/v1/suppliers", new { });
-        var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest, "/api/v1/suppliers");
+        using var response = await fixture.Client.PostAsJsonAsync("/api/v2/suppliers", new { });
+        var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest, "/api/v2/suppliers");
         Assert.Contains("Name", problem.Detail);
     }
 
@@ -74,8 +73,8 @@ public sealed class ErrorResponseTests(ApiFixture fixture)
     public async Task InvalidJson_ReturnsValidationDetails()
     {
         using var content = new StringContent("{", Encoding.UTF8, "application/json");
-        using var response = await fixture.Client.PostAsync("/api/v1/suppliers", content);
-        var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest, "/api/v1/suppliers");
+        using var response = await fixture.Client.PostAsync("/api/v2/suppliers", content);
+        var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest, "/api/v2/suppliers");
         var errors = Assert.IsType<JsonElement>(problem.Extensions["errors"]);
         Assert.NotEmpty(errors.EnumerateObject());
     }
@@ -84,7 +83,7 @@ public sealed class ErrorResponseTests(ApiFixture fixture)
     public async Task RelatedResourceConflict_PreservesTheBusinessExplanation()
     {
         var id = await fixture.QueryIntAsync("SELECT supplier_id FROM item LIMIT 1");
-        var path = $"/api/v1/suppliers/{id}";
+        var path = $"/api/v2/suppliers/{id}";
         using var response = await fixture.Client.DeleteAsync(path);
         var problem = await AssertProblemAsync(response, HttpStatusCode.Conflict, path);
         Assert.Contains("still has items", problem.Detail);
@@ -94,8 +93,8 @@ public sealed class ErrorResponseTests(ApiFixture fixture)
     public async Task MissingApiKey_ReturnsActionableAuthenticationError()
     {
         using var client = fixture.CreateUnauthenticatedClient();
-        using var response = await client.GetAsync("/api/v1/suppliers");
-        var problem = await AssertProblemAsync(response, HttpStatusCode.Unauthorized, "/api/v1/suppliers");
+        using var response = await client.GetAsync("/api/v2/suppliers");
+        var problem = await AssertProblemAsync(response, HttpStatusCode.Unauthorized, "/api/v2/suppliers");
         Assert.Contains("API_KEY", problem.Detail);
     }
 

@@ -1,6 +1,6 @@
 # Deployment
 
-The API runs on the project server at `http://145.24.237.19:8000/api/v1/...`.
+The API runs on the project server at `http://145.24.237.19:8000/api/v2/...`.
 
 ## How it works
 

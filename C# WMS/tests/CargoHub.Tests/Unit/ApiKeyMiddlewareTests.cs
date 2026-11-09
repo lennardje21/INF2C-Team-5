@@ -14,7 +14,7 @@ public sealed class ApiKeyMiddlewareTests
 {
     [Theory]
     [InlineData("/api/v2/unknown", 404)]
-    [InlineData("/api/v1/suppliers", 405)]
+    [InlineData("/api/v2/suppliers", 405)]
     public async Task RoutingError_ReachesRoutingInsteadOfReturningUnauthorized(string path, int status)
     {
         var context = new DefaultHttpContext();
@@ -43,7 +43,7 @@ public sealed class ApiKeyMiddlewareTests
     {
         using var services = new ServiceCollection().AddOptions().BuildServiceProvider();
         var context = new DefaultHttpContext { RequestServices = services };
-        context.Request.Path = "/api/v1/suppliers";
+        context.Request.Path = "/api/v2/suppliers";
         context.SetEndpoint(new Endpoint(_ => Task.CompletedTask,
             new EndpointMetadataCollection(new ControllerActionDescriptor()), "Suppliers"));
         await using var body = new MemoryStream();
@@ -63,7 +63,7 @@ public sealed class ApiKeyMiddlewareTests
         body.Position = 0;
         using var json = await JsonDocument.ParseAsync(body);
         Assert.Contains("API_KEY", json.RootElement.GetProperty("detail").GetString());
-        Assert.Equal("/api/v1/suppliers", json.RootElement.GetProperty("instance").GetString());
+        Assert.Equal("/api/v2/suppliers", json.RootElement.GetProperty("instance").GetString());
     }
 
     // An empty configuration makes any accidental database access fail.
