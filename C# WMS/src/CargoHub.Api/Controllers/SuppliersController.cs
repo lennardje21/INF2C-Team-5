@@ -42,7 +42,7 @@ public class SuppliersController(SuppliersService suppliersService) : Controller
         }
         catch (ArgumentException e)
         {
-            return BadRequest(e.Message);
+            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
         }
     }
 
@@ -56,7 +56,7 @@ public class SuppliersController(SuppliersService suppliersService) : Controller
         }
         catch (ArgumentException e)
         {
-            return BadRequest(e.Message);
+            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
         }
     }
 
@@ -70,7 +70,7 @@ public class SuppliersController(SuppliersService suppliersService) : Controller
         }
         catch (InvalidOperationException e)
         {
-            return Conflict(e.Message);
+            return Problem(statusCode: StatusCodes.Status409Conflict, detail: e.Message);
         }
     }
 }
