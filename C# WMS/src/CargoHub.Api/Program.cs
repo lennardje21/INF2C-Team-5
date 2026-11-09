@@ -24,11 +24,14 @@ builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
 builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi("v2", options =>
-{
-    options.AddDocumentTransformer<CargoHub.Api.Authentication.ApiKeyDocumentTransformer>();
-    options.AddSchemaTransformer<CargoHub.Api.OpenApi.ServerSetFieldsSchemaTransformer>();
-});
+builder.Services.AddOpenApi(
+    "v2",
+    options =>
+    {
+        options.AddDocumentTransformer<CargoHub.Api.Authentication.ApiKeyDocumentTransformer>();
+        options.AddSchemaTransformer<CargoHub.Api.OpenApi.ServerSetFieldsSchemaTransformer>();
+    }
+);
 
 var app = builder.Build();
 
@@ -41,6 +44,7 @@ app.MapScalarApiReference(
     {
         options
             .WithTitle("CargoHub API")
+            .AddDocument("v2")
             .AddPreferredSecuritySchemes(CargoHub.Api.Authentication.ApiKeyMiddleware.HeaderName);
         options.HideModels = true;
     }
