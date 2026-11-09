@@ -3,11 +3,20 @@
 # (see .env.example).
 name: cargohub
 
+# Docker keeps container logs forever by default, until the disk is full and MySQL and
+# the API go down with it. This keeps at most 5 compressed files of 10 MB per container.
+x-logging: &logging
+  driver: local
+  options:
+    max-size: 10m
+    max-file: "5"
+
 # Shared by api-a and api-b. Two copies means one can restart (deploy or crash)
 # while the other keeps answering requests.
 x-api: &api
   image: ghcr.io/lennardje21/inf2c-team-5:${IMAGE_TAG:-latest}
   restart: unless-stopped
+  logging: *logging
   depends_on:
     mysql:
       condition: service_healthy
@@ -15,17 +24,20 @@ x-api: &api
     ConnectionStrings__CargoHub: Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User ID=${MYSQL_USER};Password=${MYSQL_PASSWORD}
   # No published port: requests come in through nginx.
   # The runtime image has no curl, so bash sends the request itself.
+  # Two failed checks 5s apart mark the container unhealthy, after which watchdog.sh
+  # restarts it. A single slow check is not enough.
   healthcheck:
     test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && head -1 <&3 | grep -q ' 200 '"]
-    interval: 10s
-    timeout: 5s
-    retries: 3
+    interval: 5s
+    timeout: 3s
+    retries: 2
     start_period: 30s
 
 services:
   mysql:
     image: mysql:8.4
     restart: unless-stopped
+    logging: *logging
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
@@ -48,6 +60,7 @@ services:
   nginx:
     image: nginx:1.28
     restart: unless-stopped
+    logging: *logging
     # A directory, not a single file: git replaces the file on deploy, and a file mount
     # would keep showing the old one.
     volumes:

@@ -61,11 +61,12 @@ Already done on the current server. Run everything on the server.
    sudo -u cargohub nano .env
    ```
    Do this before the first start: MySQL only reads the passwords when it creates the database.
-4. Install the timer and start the first deployment (the data import takes a few minutes):
+4. Install the timers (deploy, nightly backup, watchdog) and start the first deployment
+   (the data import takes a few minutes):
    ```sh
-   sudo cp cargohub-deploy.service cargohub-deploy.timer /etc/systemd/system/
+   sudo cp cargohub-*.service cargohub-*.timer /etc/systemd/system/
    sudo systemctl daemon-reload
-   sudo systemctl enable --now cargohub-deploy.timer
+   sudo systemctl enable --now cargohub-deploy.timer cargohub-backup.timer cargohub-watchdog.timer
    sudo systemctl start cargohub-deploy
    ```
 5. Replace the public API keys (see below).
@@ -83,6 +84,10 @@ Run these from `/srv/cargohub/C# WMS/deploy`:
 | `sudo systemctl start cargohub-deploy` | Deploy now |
 | `journalctl -u cargohub-deploy -n 50` | Output of recent deployments |
 
+Docker keeps at most 50 MB of logs per container (5 files of 10 MB, compressed) and
+removes the oldest lines after that, so the logs only go back a limited time. Set in
+`x-logging` in the compose file.
+
 ## Monitoring
 
 `http://145.24.237.19:8000/health` returns `200 Healthy`, or `503 Unhealthy` when the API
@@ -95,7 +100,54 @@ It has to run outside the server: a check on the server itself cannot report tha
 server is down.
 
 Docker restarts a container that crashes (`restart: unless-stopped`), but not one that
-is only `unhealthy`; restart that one by hand with the command above.
+hangs. For that, a timer runs [`watchdog.sh`](<../C# WMS/deploy/watchdog.sh>) every 15
+seconds, which restarts every container that is `unhealthy`, one at a time. An API
+container counts as unhealthy after two failed checks 5 seconds apart, so a hung
+container is restarted within about half a minute. When MySQL does not respond, the API
+containers fail their checks too, so then it only restarts MySQL. It skips its turn while
+a deployment runs. See what it did with `journalctl -u cargohub-watchdog`.
+
+## Backups
+
+Every night at 03:00 a timer runs [`backup.sh`](<../C# WMS/deploy/backup.sh>), which dumps
+the database to `/var/lib/cargohub/backups/cargohub-<date>_<time>.sql.gz` and keeps the
+newest 7. The API keeps working during the backup.
+
+| Command | What it does |
+|---------|--------------|
+| `sudo systemctl start cargohub-backup` | Make a backup now (do this before risky changes) |
+| `sudo ls -lh /var/lib/cargohub/backups` | List the backups |
+| `journalctl -u cargohub-backup -n 20` | Output of recent backups |
+
+The backups are on the same disk as the database, so they don't survive losing the server.
+Copy one to your own computer now and then. On the server, put the newest one in your
+home directory:
+
+```sh
+latest=$(sudo sh -c 'ls -1t /var/lib/cargohub/backups/*.sql.gz | head -1')
+sudo install -m 600 -o "$USER" "$latest" ~/cargohub-backup.sql.gz
+```
+
+Then on your own computer download it, and remove the copy from the server:
+
+```sh
+scp cargohub:cargohub-backup.sql.gz . && ssh cargohub rm cargohub-backup.sql.gz
+```
+
+### Restoring
+
+This replaces every table in the database with the version from the backup; changes made
+after that backup are lost. Make a fresh backup first if the current data might still be
+needed. From `/srv/cargohub/C# WMS/deploy`:
+
+```sh
+sudo gunzip -c /var/lib/cargohub/backups/<file>.sql.gz \
+  | sudo -u cargohub docker compose -f docker-compose.prod.yml exec -T mysql \
+    sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -u root'
+```
+
+The API picks up the restored data right away. API keys come back as they were at the time
+of the backup.
 
 ## API keys
 

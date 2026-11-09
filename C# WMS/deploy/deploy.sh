@@ -6,6 +6,10 @@ set -euo pipefail
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 compose=(docker compose --file "$repo_dir/C# WMS/deploy/docker-compose.prod.yml")
 
+# Keeps watchdog.sh from restarting containers while this script replaces them.
+exec 9< "$repo_dir/C# WMS/deploy"
+flock 9
+
 # The server checkout is only used for deploying, so local changes are discarded.
 # Untracked files such as deploy/.env are kept.
 git -C "$repo_dir" fetch --quiet origin main
