@@ -6,7 +6,7 @@ namespace CargoHub.Api.Controllers;
 
 /// <summary>HTTP endpoints for clients; the logic is in ClientsService.</summary>
 [ApiController]
-[Route("api/v1/clients")]
+[Route("api/v2/clients")]
 public class ClientsController(ClientsService clientsService) : ControllerBase
 {
     /// <summary>Returns all clients.</summary>

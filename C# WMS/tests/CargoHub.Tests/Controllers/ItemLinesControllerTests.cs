@@ -8,7 +8,7 @@ namespace CargoHub.Tests.Controllers;
 [Collection("Api")]
 public sealed class ItemLinesControllerTests(ApiFixture fixture)
 {
-    private const string Url = "/api/v1/item_lines";
+    private const string Url = "/api/v2/item_lines";
     private readonly HttpClient _client = fixture.Client;
 
     private static Dictionary<string, object> NewItemLine(string? name = null) => new()

@@ -8,7 +8,7 @@ namespace CargoHub.Api.Controllers;
 // HTTP endpoints for inventories
 
 [ApiController]
-[Route("api/v1/inventories")]
+[Route("api/v2/inventories")]
 public class InventoriesController(InventoriesService inventoriesService) : ControllerBase
 {
     // Returns all inventories.

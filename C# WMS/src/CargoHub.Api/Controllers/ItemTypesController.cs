@@ -6,7 +6,7 @@ namespace CargoHub.Api.Controllers;
 
 /// HTTP endpoints for item types; the logic is in ItemTypesService.
 [ApiController]
-[Route("api/v1/item_types")]
+[Route("api/v2/item_types")]
 public class ItemTypesController(ItemTypesService itemTypesService) : ControllerBase
 {
     /// Returns all item types.

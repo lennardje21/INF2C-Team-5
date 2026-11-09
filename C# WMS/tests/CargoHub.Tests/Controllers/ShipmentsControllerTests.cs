@@ -9,7 +9,7 @@ namespace CargoHub.Tests.Controllers;
 [Collection("Api")]
 public sealed class ShipmentsControllerTests(ApiFixture fixture)
 {
-    private const string Url = "/api/v1/shipments";
+    private const string Url = "/api/v2/shipments";
     private readonly HttpClient _client = fixture.Client;
 
     // Tests that change data use their own shipments and items, so they do not

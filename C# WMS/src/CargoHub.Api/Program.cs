@@ -24,7 +24,7 @@ builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
 builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi(options =>
+builder.Services.AddOpenApi("v2", options =>
 {
     options.AddDocumentTransformer<CargoHub.Api.Authentication.ApiKeyDocumentTransformer>();
     options.AddSchemaTransformer<CargoHub.Api.OpenApi.ServerSetFieldsSchemaTransformer>();
@@ -32,7 +32,7 @@ builder.Services.AddOpenApi(options =>
 
 var app = builder.Build();
 
-// Endpoint overview: /openapi/v1.json for tools, /docs for people.
+// Endpoint overview: /openapi/v2.json for tools, /docs for people.
 // Both are outside /api, so they need no API key; calling an endpoint still does.
 app.MapOpenApi();
 app.MapScalarApiReference(

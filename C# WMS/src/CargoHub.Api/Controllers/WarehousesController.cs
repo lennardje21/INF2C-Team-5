@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace CargoHub.Api.Controllers;
 
 [ApiController]
-[Route("api/v1/warehouses")]
+[Route("api/v2/warehouses")]
 public class WarehousesController(WarehousesService warehousesService) : ControllerBase
 {
-	// GET: api/v1/warehouses
+	// GET: api/v2/warehouses
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Warehouse>>> GetWarehouses(
         CancellationToken cancellationToken)
@@ -16,7 +16,7 @@ public class WarehousesController(WarehousesService warehousesService) : Control
         return Ok(await warehousesService.GetAllAsync(cancellationToken));
     }
 
-	// GET: api/v1/warehouses/{id}
+	// GET: api/v2/warehouses/{id}
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Warehouse>> GetWarehouse(
         int id, CancellationToken cancellationToken)
@@ -31,7 +31,7 @@ public class WarehousesController(WarehousesService warehousesService) : Control
         return Ok(warehouse);
     }
 
-	// GET: api/v1/warehouses/{id}/locations
+	// GET: api/v2/warehouses/{id}/locations
     [HttpGet("{id:int}/locations")]
     public async Task<ActionResult<IEnumerable<Location>>> GetWarehouseLocations(
         int id, CancellationToken cancellationToken)
@@ -46,7 +46,7 @@ public class WarehousesController(WarehousesService warehousesService) : Control
         return Ok(locations);
     }
 
-	// POST: api/v1/warehouses
+	// POST: api/v2/warehouses
     [HttpPost]
     public async Task<ActionResult<Warehouse>> CreateWarehouse(
         Warehouse warehouse, CancellationToken cancellationToken)
@@ -63,7 +63,7 @@ public class WarehousesController(WarehousesService warehousesService) : Control
         }
     }
 
-	// PUT: api/v1/warehouses/{id}
+	// PUT: api/v2/warehouses/{id}
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateWarehouse(
         int id, Warehouse warehouse, CancellationToken cancellationToken)
@@ -80,7 +80,7 @@ public class WarehousesController(WarehousesService warehousesService) : Control
         }
     }
 
-	// DELETE: api/v1/warehouses/{id}
+	// DELETE: api/v2/warehouses/{id}
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteWarehouse(
         int id, CancellationToken cancellationToken)

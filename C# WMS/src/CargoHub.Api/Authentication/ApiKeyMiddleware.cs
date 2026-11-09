@@ -43,11 +43,11 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddlew
         await next(context);
     }
 
-	// api/v1/{resource}/... -> resource
+	// api/v2/{resource}/... -> resource
     private static string? GetResource(PathString path)
     {
         var segments = path.Value!.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        return segments.Length >= 3 && segments[1] == "v1" ? segments[2] : null;
+        return segments.Length >= 3 && segments[1] == "v2" ? segments[2] : null;
     }
 
 	// Unknown methods map to null so they are always denied

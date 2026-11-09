@@ -6,7 +6,7 @@ namespace CargoHub.Api.Controllers;
 
 /// HTTP endpoints for item groups; the logic is in ItemGroupsService.
 [ApiController]
-[Route("api/v1/item_groups")]
+[Route("api/v2/item_groups")]
 public class ItemGroupsController(ItemGroupsService itemGroupsService) : ControllerBase
 {
     /// Returns all item groups.

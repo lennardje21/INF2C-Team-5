@@ -1,7 +1,7 @@
 # CargoHub – INF2C Team 5
 
 CargoHub is a warehouse management API. We are migrating it from Python with JSON
-files to C# (ASP.NET Core) with MySQL. The C# API keeps the same `/api/v1/...` routes.
+files to C# (ASP.NET Core) with MySQL. The C# API exposes `/api/v2/...` routes.
 
 ## Repository structure
 
@@ -47,7 +47,7 @@ data; `docker compose down -v` also deletes it. More about the database is in
 Every request needs an `API_KEY` header. Locally you can use the keys from the seed data.
 
 ```sh
-curl -H "API_KEY: your-key" http://localhost:3000/api/v1/warehouses/1
+curl -H "API_KEY: your-key" http://localhost:3000/api/v2/warehouses/1
 ```
 
 A missing or unknown key returns `401`; a key without permission for that action
@@ -59,7 +59,7 @@ bar cannot send this header.
 All endpoints are listed at [`http://localhost:3000/docs`](http://localhost:3000/docs),
 with their parameters and responses. Click **Authentication**, enter your API key, and
 use **Test Request** to call an endpoint from the browser. The raw OpenAPI document
-is at `/openapi/v1.json`. Neither page needs a key.
+is at `/openapi/v2.json`. Neither page needs a key.
 
 ## CI/CD
 
@@ -72,7 +72,7 @@ image to `ghcr.io/lennardje21/inf2c-team-5`.
 The API runs on our project server:
 
 ```
-http://145.24.237.19:8000/api/v1/...
+http://145.24.237.19:8000/api/v2/...
 ```
 
 The endpoint overview is at [`http://145.24.237.19:8000/docs`](http://145.24.237.19:8000/docs).
