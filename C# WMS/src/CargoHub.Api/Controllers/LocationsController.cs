@@ -6,7 +6,7 @@ namespace CargoHub.Api.Controllers;
 
 // HTTP endpoints for locations; the logic is in LocationsService.
 [ApiController]
-[Route("api/v1/locations")]
+[Route("api/v2/locations")]
 public class LocationsController(LocationsService locationsService) : ControllerBase
 {
     // Returns all locations.

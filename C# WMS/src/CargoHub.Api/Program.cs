@@ -26,11 +26,14 @@ builder.Services.AddProblemDetails(options =>
     options.CustomizeProblemDetails = CargoHub.Api.Errors.ApiProblemDetails.Customize);
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi(options =>
-{
-    options.AddDocumentTransformer<CargoHub.Api.Authentication.ApiKeyDocumentTransformer>();
-    options.AddSchemaTransformer<CargoHub.Api.OpenApi.ServerSetFieldsSchemaTransformer>();
-});
+builder.Services.AddOpenApi(
+    "v2",
+    options =>
+    {
+        options.AddDocumentTransformer<CargoHub.Api.Authentication.ApiKeyDocumentTransformer>();
+        options.AddSchemaTransformer<CargoHub.Api.OpenApi.ServerSetFieldsSchemaTransformer>();
+    }
+);
 
 var app = builder.Build();
 
@@ -41,7 +44,7 @@ app.UseStatusCodePages(context =>
     CargoHub.Api.Errors.ApiProblemDetails.WriteAsync(context.HttpContext, context.HttpContext.Response.StatusCode));
 app.UseRouting();
 
-// Endpoint overview: /openapi/v1.json for tools, /docs for people.
+// Endpoint overview: /openapi/v2.json for tools, /docs for people.
 // Both are outside /api, so they need no API key; calling an endpoint still does.
 app.MapOpenApi();
 app.MapScalarApiReference(
@@ -50,6 +53,7 @@ app.MapScalarApiReference(
     {
         options
             .WithTitle("CargoHub API")
+            .AddDocument("v2")
             .AddPreferredSecuritySchemes(CargoHub.Api.Authentication.ApiKeyMiddleware.HeaderName);
         options.HideModels = true;
     }

@@ -11,7 +11,7 @@ namespace CargoHub.Tests.Controllers;
 [Collection("Api")]
 public sealed class TransfersControllerTests(ApiFixture fixture)
 {
-    private const string Url = "/api/v1/transfers";
+    private const string Url = "/api/v2/transfers";
     private readonly HttpClient _client = fixture.Client;
 
     private static object Item(int itemId, int amount) => new { itemId, amount };

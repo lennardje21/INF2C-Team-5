@@ -26,7 +26,7 @@ public sealed class ApiProblemDetailsTests
 
         Assert.Contains(expectedHint, context.ProblemDetails.Detail);
         Assert.Equal(status, context.ProblemDetails.Status);
-        Assert.Equal("/api/v1/suppliers/42", context.ProblemDetails.Instance);
+        Assert.Equal("/api/v2/suppliers/42", context.ProblemDetails.Instance);
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public sealed class ApiProblemDetailsTests
 
         ApiProblemDetails.Customize(context);
 
-        Assert.Contains("/api/v1/suppliers/42", context.ProblemDetails.Detail);
+        Assert.Contains("/api/v2/suppliers/42", context.ProblemDetails.Detail);
         Assert.Contains("identifiers", context.ProblemDetails.Detail);
         Assert.DoesNotContain("No endpoint", context.ProblemDetails.Detail);
     }
@@ -141,7 +141,7 @@ public sealed class ApiProblemDetailsTests
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Method = "GET";
-        httpContext.Request.Path = "/api/v1/suppliers/42";
+        httpContext.Request.Path = "/api/v2/suppliers/42";
         return new ProblemDetailsContext
         {
             HttpContext = httpContext,
