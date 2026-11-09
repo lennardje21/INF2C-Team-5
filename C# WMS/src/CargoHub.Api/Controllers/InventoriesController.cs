@@ -4,22 +4,21 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
 
-/// <summary>
-/// HTTP endpoints for inventories; the logic is in InventoriesService.
-/// An inventory is identified by item id + location id, so both are in the URL.
-/// </summary>
+
+// HTTP endpoints for inventories
+
 [ApiController]
 [Route("api/v1/inventories")]
 public class InventoriesController(InventoriesService inventoriesService) : ControllerBase
 {
-    /// <summary>Returns all inventories.</summary>
+    // Returns all inventories.
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Inventory>>> GetInventories(CancellationToken cancellationToken)
     {
         return Ok(await inventoriesService.GetAllAsync(cancellationToken));
     }
 
-    /// <summary>Returns the inventory of one item at one location.</summary>
+    // Returns the inventory of one item at one location.
     [HttpGet("{itemId:int}/{locationId:int}")]
     public async Task<ActionResult<Inventory>> GetInventory(int itemId, int locationId,
         CancellationToken cancellationToken)
@@ -34,7 +33,7 @@ public class InventoriesController(InventoriesService inventoriesService) : Cont
         return Ok(inventory);
     }
 
-    /// <summary>Creates an inventory; returns 409 if it already exists.</summary>
+    // Creates an inventory; returns 409 if it already exists.
     [HttpPost]
     public async Task<ActionResult<Inventory>> CreateInventory(Inventory inventory,
         CancellationToken cancellationToken)
@@ -56,7 +55,7 @@ public class InventoriesController(InventoriesService inventoriesService) : Cont
         }
     }
 
-    /// <summary>Updates the quantities of an inventory.</summary>
+    // Updates the quantities of an inventory.
     [HttpPut("{itemId:int}/{locationId:int}")]
     public async Task<IActionResult> UpdateInventory(int itemId, int locationId, Inventory inventory,
         CancellationToken cancellationToken)
@@ -72,7 +71,7 @@ public class InventoriesController(InventoriesService inventoriesService) : Cont
         }
     }
 
-    /// <summary>Deletes an inventory.</summary>
+    // Deletes an inventory.
     [HttpDelete("{itemId:int}/{locationId:int}")]
     public async Task<IActionResult> DeleteInventory(int itemId, int locationId,
         CancellationToken cancellationToken)
