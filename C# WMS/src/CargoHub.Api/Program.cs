@@ -18,12 +18,16 @@ builder.Services.AddScoped<CargoHub.Api.Services.InventoriesService>();
 builder.Services.AddScoped<CargoHub.Api.Services.OrdersService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
+builder
+    .Services.AddHealthChecks()
+    .AddCheck<CargoHub.Api.Data.MySqlHealthCheck>("mysql", timeout: TimeSpan.FromSeconds(2));
 
 // Add services to the container.
 
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails(options =>
-    options.CustomizeProblemDetails = CargoHub.Api.Errors.ApiProblemDetails.Customize);
+    options.CustomizeProblemDetails = CargoHub.Api.Errors.ApiProblemDetails.Customize
+);
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi(
@@ -38,10 +42,20 @@ builder.Services.AddOpenApi(
 var app = builder.Build();
 
 // Return JSON errors for unhandled exceptions and otherwise empty error responses.
-app.UseExceptionHandler(errorApp => errorApp.Run(context =>
-    CargoHub.Api.Errors.ApiProblemDetails.WriteAsync(context, StatusCodes.Status500InternalServerError)));
+app.UseExceptionHandler(errorApp =>
+    errorApp.Run(context =>
+        CargoHub.Api.Errors.ApiProblemDetails.WriteAsync(
+            context,
+            StatusCodes.Status500InternalServerError
+        )
+    )
+);
 app.UseStatusCodePages(context =>
-    CargoHub.Api.Errors.ApiProblemDetails.WriteAsync(context.HttpContext, context.HttpContext.Response.StatusCode));
+    CargoHub.Api.Errors.ApiProblemDetails.WriteAsync(
+        context.HttpContext,
+        context.HttpContext.Response.StatusCode
+    )
+);
 app.UseRouting();
 
 // Endpoint overview: /openapi/v2.json for tools, /docs for people.
@@ -66,6 +80,10 @@ app.UseMiddleware<CargoHub.Api.Authentication.ApiKeyMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// For uptime monitors and the Docker healthcheck: 200 "Healthy", or 503 "Unhealthy" when
+// MySQL is down. Outside /api, so it needs no API key.
+app.MapHealthChecks("/health");
 
 app.Run();
 

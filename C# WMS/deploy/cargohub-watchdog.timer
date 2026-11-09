@@ -1,0 +1,11 @@
+[Unit]
+Description=Check the CargoHub containers every 15 seconds
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15s
+# Without this, systemd may run the check up to a minute late.
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
