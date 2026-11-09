@@ -54,20 +54,6 @@ A missing or unknown key returns `401`; a key without permission for that action
 returns `403`. Use Postman, curl or the endpoint overview below: a browser address
 bar cannot send this header.
 
-## Error responses
-
-Errors use `application/problem+json` with `status`, `title`, `detail`, `instance`
-(the request path) and `traceId`. Validation errors also include an `errors`
-object with the affected fields. Existing validation and conflict messages are
-preserved in `detail`.
-
-Unknown paths return `404` with a description of the unmatched route, even without
-an API key. Unsupported HTTP methods return `405` with an `Allow` header. Valid
-API routes still enforce API-key authentication and permissions.
-
-Unexpected errors return `500` with a safe message and a `traceId` for finding the
-exception in the server logs. Internal exception messages are not returned.
-
 ## Endpoint overview
 
 All endpoints are listed at [`http://localhost:3000/docs`](http://localhost:3000/docs),

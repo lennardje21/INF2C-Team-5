@@ -70,7 +70,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 
@@ -84,7 +84,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 
@@ -98,7 +98,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 
@@ -112,7 +112,7 @@ public class ShipmentsController(ShipmentsService shipmentsService) : Controller
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 

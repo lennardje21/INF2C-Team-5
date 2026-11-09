@@ -45,7 +45,7 @@ public class LocationsController(LocationsService locationsService) : Controller
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 
@@ -62,7 +62,7 @@ public class LocationsController(LocationsService locationsService) : Controller
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 
@@ -79,7 +79,7 @@ public class LocationsController(LocationsService locationsService) : Controller
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 }

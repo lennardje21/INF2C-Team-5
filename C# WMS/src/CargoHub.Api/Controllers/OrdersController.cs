@@ -56,7 +56,7 @@ public class OrdersController(OrdersService ordersService) : ControllerBase
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 
@@ -70,7 +70,7 @@ public class OrdersController(OrdersService ordersService) : ControllerBase
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 
@@ -84,7 +84,7 @@ public class OrdersController(OrdersService ordersService) : ControllerBase
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 
@@ -98,7 +98,7 @@ public class OrdersController(OrdersService ordersService) : ControllerBase
         }
         catch (InvalidOperationException e)
         {
-            return Problem(statusCode: StatusCodes.Status409Conflict, detail: e.Message);
+            return Conflict(e.Message);
         }
     }
 }

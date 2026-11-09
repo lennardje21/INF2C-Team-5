@@ -22,8 +22,6 @@ builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddProblemDetails(options =>
-    options.CustomizeProblemDetails = CargoHub.Api.Errors.ApiProblemDetails.Customize);
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi(options =>
@@ -33,13 +31,6 @@ builder.Services.AddOpenApi(options =>
 });
 
 var app = builder.Build();
-
-// Return JSON errors for unhandled exceptions and otherwise empty error responses.
-app.UseExceptionHandler(errorApp => errorApp.Run(context =>
-    CargoHub.Api.Errors.ApiProblemDetails.WriteAsync(context, StatusCodes.Status500InternalServerError)));
-app.UseStatusCodePages(context =>
-    CargoHub.Api.Errors.ApiProblemDetails.WriteAsync(context.HttpContext, context.HttpContext.Response.StatusCode));
-app.UseRouting();
 
 // Endpoint overview: /openapi/v1.json for tools, /docs for people.
 // Both are outside /api, so they need no API key; calling an endpoint still does.
@@ -64,6 +55,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-// Expose the API entry point to WebApplicationFactory in integration tests.
-public partial class Program { }

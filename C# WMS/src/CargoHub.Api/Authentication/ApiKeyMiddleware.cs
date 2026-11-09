@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc.Controllers;
-
 namespace CargoHub.Api.Authentication;
 
 /// <summary>
@@ -12,10 +10,7 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddlew
 
     public async Task InvokeAsync(HttpContext context, ApiUsersService apiUsersService)
     {
-        // Routing errors (404/405) must reach the routing response instead of
-        // being mistaken for an authentication or permission failure.
-        if (!context.Request.Path.StartsWithSegments("/api") ||
-            context.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>() is null)
+        if (!context.Request.Path.StartsWithSegments("/api"))
         {
             await next(context);
             return;
@@ -28,8 +23,8 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddlew
 
         if (user is null)
         {
-            await Errors.ApiProblemDetails.WriteAsync(context, StatusCodes.Status401Unauthorized,
-                "Missing or invalid API key.");
+            await Results.Problem(statusCode: StatusCodes.Status401Unauthorized,
+                title: "Missing or invalid API key.").ExecuteAsync(context);
             return;
         }
 
@@ -39,8 +34,8 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddlew
         {
             logger.LogWarning("{App} denied {Method} {Path}",
                 user.App, context.Request.Method, context.Request.Path);
-            await Errors.ApiProblemDetails.WriteAsync(context, StatusCodes.Status403Forbidden,
-                "This API key has no access to this endpoint.");
+            await Results.Problem(statusCode: StatusCodes.Status403Forbidden,
+                title: "This API key has no access to this endpoint.").ExecuteAsync(context);
             return;
         }
 

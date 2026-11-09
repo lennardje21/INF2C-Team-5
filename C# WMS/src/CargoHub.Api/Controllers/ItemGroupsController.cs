@@ -36,7 +36,7 @@ public class ItemGroupsController(ItemGroupsService itemGroupsService) : Control
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 
@@ -53,7 +53,7 @@ public class ItemGroupsController(ItemGroupsService itemGroupsService) : Control
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 
@@ -69,7 +69,7 @@ public class ItemGroupsController(ItemGroupsService itemGroupsService) : Control
         }
         catch (ArgumentException e)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: e.Message);
+            return BadRequest(e.Message);
         }
     }
 }
