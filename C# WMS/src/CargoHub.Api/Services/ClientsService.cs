@@ -11,6 +11,8 @@ public sealed class ClientsService(
     MySqlRepository<Order> orders,
     MySqlRepository<OrderItem> orderItems)
 {
+    private const int MaxTextLength = 255;
+
     /// <summary>Returns all clients.</summary>
     public Task<IReadOnlyList<Client>> GetAllAsync(CancellationToken cancellationToken = default) =>
         clients.GetAsync(cancellationToken: cancellationToken);
