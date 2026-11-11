@@ -6,15 +6,15 @@ using Microsoft.Extensions.Configuration;
 namespace CargoHub.Tests.Unit;
 
 /// <summary>
-/// Tests the validation in ShipmentsService, which runs before the database is used.
-/// The service has no connection string, so input that passes validation fails with
-/// InvalidOperationException when it opens a connection, and invalid input fails with
-/// ArgumentException before that.
+/// Tests the validation in ShipmentsService without a database: valid input fails with
+/// InvalidOperationException when it tries to connect, invalid input with ArgumentException.
+/// Database behaviour is covered by ShipmentsControllerTests.
 /// </summary>
 public sealed class ShipmentsServiceTests
 {
     private readonly ShipmentsService _service = CreateService();
 
+    /// <summary>Builds the service without a connection string, so database access throws.</summary>
     private static ShipmentsService CreateService()
     {
         var factory = new MySqlConnectionFactory(new ConfigurationBuilder().Build());
@@ -23,6 +23,7 @@ public sealed class ShipmentsServiceTests
             new MySqlRepository<ShipmentItem>(factory));
     }
 
+    /// <summary>A shipment that passes every check.</summary>
     private static Shipment ValidShipment(params ShipmentItem[] items) => new()
     {
         OrderId = 3,
@@ -37,33 +38,38 @@ public sealed class ShipmentsServiceTests
 
     private static ShipmentItem Item(int itemId, int amount) => new() { ItemId = itemId, Amount = amount };
 
+    /// <summary>Builds the given number of valid items with different item ids.</summary>
     private static List<ShipmentItem> Items(int count) =>
         Enumerable.Range(1, count).Select(i => Item(i, 1)).ToList();
 
-    /// <summary>Asserts that the input passed validation and the service tried to open the database.</summary>
+    /// <summary>Asserts the input passed validation and reached the database.</summary>
     private static async Task AssertReachesDatabaseAsync(Func<Task> action)
     {
         var e = await Assert.ThrowsAsync<InvalidOperationException>(action);
         Assert.Contains("ConnectionStrings__CargoHub", e.Message);
     }
 
+    /// <summary>Asserts the input was rejected and returns the error message.</summary>
     private static async Task<string> AssertInvalidAsync(Func<Task> action) =>
         (await Assert.ThrowsAsync<ArgumentException>(action)).Message;
 
-    // Create: valid input
+    // ---- Create: valid input ----
 
+    // A complete shipment with an item passes validation.
     [Fact]
     public async Task CreateAsync_ValidShipment_PassesValidation()
     {
         await AssertReachesDatabaseAsync(() => _service.CreateAsync(ValidShipment(Item(10, 2))));
     }
 
+    // Items are optional when creating a shipment.
     [Fact]
     public async Task CreateAsync_WithoutItems_PassesValidation()
     {
         await AssertReachesDatabaseAsync(() => _service.CreateAsync(ValidShipment()));
     }
 
+    // Whitespace around text fields is removed before saving.
     [Fact]
     public async Task CreateAsync_TrimsTextFields()
     {
@@ -82,6 +88,7 @@ public sealed class ShipmentsServiceTests
                 shipment.ShippingMethod, shipment.PaymentType));
     }
 
+    // The server sets the id and timestamps; values from the request are ignored.
     [Fact]
     public async Task CreateAsync_IgnoresIdAndTimestampsFromTheRequest()
     {
@@ -98,6 +105,7 @@ public sealed class ShipmentsServiceTests
         Assert.Equal(shipment.CreatedAt, shipment.UpdatedAt);
     }
 
+    // A date without a time zone keeps its clock time and is marked as UTC.
     [Fact]
     public async Task CreateAsync_DateWithoutTimeZone_IsTreatedAsUtc()
     {
@@ -110,6 +118,7 @@ public sealed class ShipmentsServiceTests
         Assert.Equal(new DateTime(2026, 10, 12, 10, 0, 0, DateTimeKind.Utc), shipment.ShipmentDate);
     }
 
+    // A local date is converted to UTC; works in any time zone.
     [Fact]
     public async Task CreateAsync_LocalDate_IsConvertedToUtc()
     {
@@ -123,8 +132,9 @@ public sealed class ShipmentsServiceTests
         Assert.Equal(local.ToUniversalTime(), shipment.ShipmentDate);
     }
 
-    // Create: required fields
+    // ---- Create: required fields ----
 
+    // Null, empty or blank text fields are rejected, naming the field.
     [Theory]
     [InlineData(nameof(Shipment.ShipmentType))]
     [InlineData(nameof(Shipment.ShipmentStatus))]
@@ -144,6 +154,7 @@ public sealed class ShipmentsServiceTests
         }
     }
 
+    // A default (unset) date counts as missing.
     [Fact]
     public async Task CreateAsync_MissingShipmentDate_IsRejected()
     {
@@ -155,6 +166,7 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("Missing required fields: ShipmentDate.", message);
     }
 
+    // All missing fields are listed in one message.
     [Fact]
     public async Task CreateAsync_SeveralMissingFields_ListsAllOfThem()
     {
@@ -164,8 +176,9 @@ public sealed class ShipmentsServiceTests
             "ShippingMethod, PaymentType, ShipmentDate.", message);
     }
 
-    // Create: field length
+    // ---- Create: field length (database columns hold 255 characters) ----
 
+    // Exactly 255 characters is allowed.
     [Fact]
     public async Task CreateAsync_TextOf255Characters_PassesValidation()
     {
@@ -175,6 +188,7 @@ public sealed class ShipmentsServiceTests
         await AssertReachesDatabaseAsync(() => _service.CreateAsync(shipment));
     }
 
+    // 256 characters is rejected, naming the field.
     [Fact]
     public async Task CreateAsync_TextLongerThan255Characters_IsRejected()
     {
@@ -186,6 +200,7 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("Fields must not exceed 255 characters: CarrierName.", message);
     }
 
+    // Surrounding spaces don't count towards the limit, since they are trimmed first.
     [Fact]
     public async Task CreateAsync_LengthIsCheckedAfterTrimming()
     {
@@ -195,8 +210,9 @@ public sealed class ShipmentsServiceTests
         await AssertReachesDatabaseAsync(() => _service.CreateAsync(shipment));
     }
 
-    // Create: allowed values
+    // ---- Create: allowed values ----
 
+    // Every allowed type, status, shipping method and payment type is accepted.
     [Theory]
     [InlineData("Incoming", "Scheduled", "Standard", "Automated")]
     [InlineData("Outgoing", "Transit", "Express", "Manual")]
@@ -213,6 +229,7 @@ public sealed class ShipmentsServiceTests
         await AssertReachesDatabaseAsync(() => _service.CreateAsync(shipment));
     }
 
+    // Unknown values and wrong casing are rejected; the message lists the allowed values.
     [Theory]
     [InlineData(nameof(Shipment.ShipmentType), "Sideways", "Incoming, Outgoing")]
     [InlineData(nameof(Shipment.ShipmentType), "outgoing", "Incoming, Outgoing")]
@@ -230,8 +247,9 @@ public sealed class ShipmentsServiceTests
         Assert.Equal($"{field} must be one of: {allowed}.", message);
     }
 
-    // Create: order id and date
+    // ---- Create: order id and date ----
 
+    // An order id of 0 or less is rejected; whether the order exists is checked by the database.
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -245,6 +263,7 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("OrderId must be greater than 0.", message);
     }
 
+    // The first and last moments of the allowed range (2000 to 2099) are accepted.
     [Theory]
     [InlineData("2000-01-01T00:00:00")]
     [InlineData("2099-12-31T23:59:59")]
@@ -256,6 +275,7 @@ public sealed class ShipmentsServiceTests
         await AssertReachesDatabaseAsync(() => _service.CreateAsync(shipment));
     }
 
+    // One second outside the range on either side is rejected.
     [Theory]
     [InlineData("1999-12-31T23:59:59")]
     [InlineData("2100-01-01T00:00:00")]
@@ -269,8 +289,9 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("ShipmentDate must be between 2000 and 2099.", message);
     }
 
-    // Create: items
+    // ---- Create: items ----
 
+    // Exactly 100 items is allowed.
     [Fact]
     public async Task CreateAsync_100Items_PassesValidation()
     {
@@ -280,6 +301,7 @@ public sealed class ShipmentsServiceTests
         await AssertReachesDatabaseAsync(() => _service.CreateAsync(shipment));
     }
 
+    // More than 100 items is rejected.
     [Fact]
     public async Task CreateAsync_MoreThan100Items_IsRejected()
     {
@@ -291,6 +313,7 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("A shipment can have at most 100 items.", message);
     }
 
+    // A null entry in the item list gives a clear error instead of a crash.
     [Fact]
     public async Task CreateAsync_NullItem_IsRejected()
     {
@@ -302,6 +325,7 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("Items must not contain null.", message);
     }
 
+    // An item id of 0 or less is rejected.
     [Theory]
     [InlineData(0)]
     [InlineData(-5)]
@@ -312,6 +336,7 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("Every item needs an itemId greater than 0.", message);
     }
 
+    // The lowest (1) and highest (1,000,000) amounts are accepted.
     [Theory]
     [InlineData(1)]
     [InlineData(1_000_000)]
@@ -320,6 +345,7 @@ public sealed class ShipmentsServiceTests
         await AssertReachesDatabaseAsync(() => _service.CreateAsync(ValidShipment(Item(10, amount))));
     }
 
+    // Amounts below 1 or above 1,000,000 are rejected.
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -331,6 +357,7 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("Every item needs an amount between 1 and 1000000.", message);
     }
 
+    // The same item twice is rejected, even when the duplicates aren't next to each other.
     [Fact]
     public async Task CreateAsync_DuplicateItem_IsRejected()
     {
@@ -340,6 +367,7 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("An item can only appear once in a shipment.", message);
     }
 
+    // The shipment's fields are checked before its items.
     [Fact]
     public async Task CreateAsync_InvalidShipmentAndItems_ReportsTheShipmentFirst()
     {
@@ -351,14 +379,16 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("OrderId must be greater than 0.", message);
     }
 
-    // Update
+    // ---- Update (same field checks as create) ----
 
+    // A complete shipment passes validation.
     [Fact]
     public async Task UpdateAsync_ValidShipment_PassesValidation()
     {
         await AssertReachesDatabaseAsync(() => _service.UpdateAsync(1, ValidShipment()));
     }
 
+    // An invalid field is rejected; the individual rules are tested under create.
     [Fact]
     public async Task UpdateAsync_InvalidShipment_IsRejected()
     {
@@ -370,21 +400,23 @@ public sealed class ShipmentsServiceTests
         Assert.StartsWith("ShipmentStatus must be one of", message);
     }
 
+    // Items are ignored here; they are changed through UpdateItemsAsync.
     [Fact]
     public async Task UpdateAsync_DoesNotValidateItems()
     {
-        // Items are changed through UpdateItemsAsync, so UpdateAsync ignores them.
         await AssertReachesDatabaseAsync(() => _service.UpdateAsync(1, ValidShipment(Item(0, 0))));
     }
 
-    // Update orders
+    // ---- Update orders (a shipment belongs to exactly one order) ----
 
+    // A list with one order id passes validation.
     [Fact]
     public async Task UpdateOrdersAsync_OneOrder_PassesValidation()
     {
         await AssertReachesDatabaseAsync(() => _service.UpdateOrdersAsync(1, [4]));
     }
 
+    // An empty list or more than one order id is rejected.
     [Theory]
     [InlineData(new int[0])]
     [InlineData(new[] { 4, 5 })]
@@ -395,20 +427,23 @@ public sealed class ShipmentsServiceTests
         Assert.Equal("A shipment must belong to exactly one order.", message);
     }
 
-    // Update items
+    // ---- Update items (same item checks as create) ----
 
+    // A valid list of items passes validation.
     [Fact]
     public async Task UpdateItemsAsync_ValidItems_PassValidation()
     {
         await AssertReachesDatabaseAsync(() => _service.UpdateItemsAsync(1, [Item(20, 10), Item(22, 5)]));
     }
 
+    // An empty list is allowed and removes all items.
     [Fact]
     public async Task UpdateItemsAsync_EmptyList_PassesValidation()
     {
         await AssertReachesDatabaseAsync(() => _service.UpdateItemsAsync(1, []));
     }
 
+    // One invalid list per item rule, with the message it should give.
     public static TheoryData<ShipmentItem[], string> InvalidItems => new()
     {
         { [Item(20, 1), null!], "Items must not contain null." },
@@ -419,6 +454,7 @@ public sealed class ShipmentsServiceTests
         { [Item(20, 1), Item(20, 2)], "An item can only appear once in a shipment." }
     };
 
+    // Each invalid list is rejected before the database is touched.
     [Theory]
     [MemberData(nameof(InvalidItems))]
     public async Task UpdateItemsAsync_InvalidItems_AreRejected(ShipmentItem[] items, string expected)
