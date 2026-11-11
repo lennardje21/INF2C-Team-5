@@ -121,10 +121,20 @@ public sealed class ClientsService(
         (await clients.GetAsync(connection, null,
             new Dictionary<string, object?> { ["id"] = id }, cancellationToken)).SingleOrDefault();
 
-    /// <summary>Checks that the required fields are filled in.</summary>
+    // Trims the text fields, then checks that the required fields are filled in and fit in the database.
     private static void Validate(Client client)
     {
-        var missing = new (string Name, string Value)[]
+        client.Name = client.Name?.Trim() ?? string.Empty;
+        client.Address = client.Address?.Trim() ?? string.Empty;
+        client.City = client.City?.Trim() ?? string.Empty;
+        client.ZipCode = client.ZipCode?.Trim() ?? string.Empty;
+        client.Province = client.Province?.Trim() ?? string.Empty;
+        client.Country = client.Country?.Trim() ?? string.Empty;
+        client.ContactName = client.ContactName?.Trim() ?? string.Empty;
+        client.ContactPhone = client.ContactPhone?.Trim() ?? string.Empty;
+        client.ContactEmail = client.ContactEmail?.Trim() ?? string.Empty;
+
+        var fields = new (string Name, string Value)[]
         {
             (nameof(Client.Name), client.Name),
             (nameof(Client.Address), client.Address),
@@ -135,8 +145,14 @@ public sealed class ClientsService(
             (nameof(Client.ContactName), client.ContactName),
             (nameof(Client.ContactPhone), client.ContactPhone),
             (nameof(Client.ContactEmail), client.ContactEmail)
-        }.Where(f => string.IsNullOrWhiteSpace(f.Value)).Select(f => f.Name).ToList();
+        };
+        var missing = fields.Where(f => string.IsNullOrWhiteSpace(f.Value)).Select(f => f.Name).ToList();
         if (missing.Count > 0)
             throw new ArgumentException($"Missing required fields: {string.Join(", ", missing)}.");
+
+        var tooLong = fields.Where(f => f.Value.Length > MaxTextLength).Select(f => f.Name).ToList();
+        if (tooLong.Count > 0)
+            throw new ArgumentException(
+                $"Fields must not exceed {MaxTextLength} characters: {string.Join(", ", tooLong)}.");
     }
 }
