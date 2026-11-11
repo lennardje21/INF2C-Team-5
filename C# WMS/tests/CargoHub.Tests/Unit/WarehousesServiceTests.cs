@@ -14,7 +14,7 @@ public sealed class WarehousesServiceTests
 {
     private readonly WarehousesService _service = CreateService();
 
-    /// <summary>Builds the service without a connection string, so database access throws.</summary>
+    // Builds the service without a connection string, so database access throws.
     private static WarehousesService CreateService()
     {
         var factory = new MySqlConnectionFactory(new ConfigurationBuilder().Build());
@@ -24,7 +24,7 @@ public sealed class WarehousesServiceTests
             new MySqlRepository<Location>(factory));
     }
 
-    /// <summary>A warehouse that passes every validation check.</summary>
+    // A warehouse that passes every validation check.
     private static Warehouse ValidWarehouse() => new()
     {
         Code = "WH-001",
@@ -39,14 +39,14 @@ public sealed class WarehousesServiceTests
         ContactEmail = "contact@example.com"
     };
 
-    /// <summary>Asserts the input passed validation and reached the database.</summary>
+    // Asserts the input passed validation and reached the database.
     private static async Task AssertReachesDatabaseAsync(Func<Task> action)
     {
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(action);
         Assert.Contains("ConnectionStrings__CargoHub", exception.Message);
     }
 
-    /// <summary>Asserts the input was rejected and returns the error message.</summary>
+    // Asserts the input was rejected and returns the error message.
     private static async Task<string> AssertInvalidAsync(Func<Task> action) =>
         (await Assert.ThrowsAsync<ArgumentException>(action)).Message;
 
@@ -56,6 +56,7 @@ public sealed class WarehousesServiceTests
         await AssertReachesDatabaseAsync(() => _service.CreateAsync(ValidWarehouse()));
     }
 
+    // Asserts that when a required field is missing, the error message lists it.
     [Theory]
     [InlineData(nameof(Warehouse.Code))]
     [InlineData(nameof(Warehouse.Name))]
@@ -80,6 +81,7 @@ public sealed class WarehousesServiceTests
         }
     }
 
+    // Asserts that when multiple required fields are missing, all of them are listed in the error message.
     [Fact]
     public async Task CreateAsync_SeveralMissingFields_ListsAllOfThem()
     {
