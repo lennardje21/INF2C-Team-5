@@ -20,7 +20,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
 builder
     .Services.AddHealthChecks()
-    .AddCheck<CargoHub.Api.Data.MySqlHealthCheck>("mysql", timeout: TimeSpan.FromSeconds(2));
+    .AddCheck<CargoHub.Api.Data.MySqlHealthCheck>("mysql", timeout: TimeSpan.FromSeconds(4));
 
 // Add services to the container.
 

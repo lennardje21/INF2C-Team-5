@@ -31,13 +31,15 @@ Not updated automatically:
    ssh-keygen -t ed25519
    ssh-copy-id your-username@145.24.237.19
    ```
-4. Add this to `~/.ssh/config`, then connect with `ssh cargohub` or with the VS Code
-   **Remote - SSH** extension:
+4. Add this to `~/.ssh/config`, then connect with `ssh cargohub`:
    ```
    Host cargohub
        HostName 145.24.237.19
        User your-username
    ```
+   Prefer a terminal over the VS Code **Remote - SSH** extension. The server has only
+   1.6 GB of memory, and Remote - SSH runs a VS Code server there that uses around 400 MB,
+   which pushes MySQL into swap. If you do use it, close the connection when you are done.
 
 ## Server setup (one time)
 
