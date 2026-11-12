@@ -1,5 +1,6 @@
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
+using CargoHub.Api.Validation;
 using MySqlConnector;
 
 namespace CargoHub.Api.Services;
@@ -119,10 +120,20 @@ public sealed class ClientsService(
         (await clients.GetAsync(connection, null,
             new Dictionary<string, object?> { ["id"] = id }, cancellationToken)).SingleOrDefault();
 
-    /// <summary>Checks that the required fields are filled in.</summary>
+    // Trims the text fields, then checks that they are filled in, fit in the database and have a valid format.
     private static void Validate(Client client)
     {
-        var missing = new (string Name, string Value)[]
+        client.Name = FieldRules.Trim(client.Name);
+        client.Address = FieldRules.Trim(client.Address);
+        client.City = FieldRules.Trim(client.City);
+        client.ZipCode = FieldRules.Trim(client.ZipCode);
+        client.Province = FieldRules.Trim(client.Province);
+        client.Country = FieldRules.Trim(client.Country);
+        client.ContactName = FieldRules.Trim(client.ContactName);
+        client.ContactPhone = FieldRules.Trim(client.ContactPhone);
+        client.ContactEmail = FieldRules.Trim(client.ContactEmail);
+
+        var fields = new (string Name, string Value)[]
         {
             (nameof(Client.Name), client.Name),
             (nameof(Client.Address), client.Address),
@@ -133,8 +144,41 @@ public sealed class ClientsService(
             (nameof(Client.ContactName), client.ContactName),
             (nameof(Client.ContactPhone), client.ContactPhone),
             (nameof(Client.ContactEmail), client.ContactEmail)
-        }.Where(f => string.IsNullOrWhiteSpace(f.Value)).Select(f => f.Name).ToList();
-        if (missing.Count > 0)
-            throw new ArgumentException($"Missing required fields: {string.Join(", ", missing)}.");
+        };
+
+        FieldRules.CheckRequired(fields);
+        FieldRules.CheckMaxLength(fields);
+        FieldRules.CheckNoControlCharacters(fields);
+
+        var errors = new List<string>();
+
+        if (!client.Name.Any(char.IsLetterOrDigit))
+            errors.Add("Name must contain at least one letter or digit.");
+
+        if (!client.Address.Any(char.IsLetter))
+            errors.Add("Address must contain a street name.");
+
+        foreach (var (name, value) in new[]
+                 {
+                     (nameof(Client.City), client.City),
+                     (nameof(Client.Province), client.Province),
+                     (nameof(Client.Country), client.Country),
+                     (nameof(Client.ContactName), client.ContactName)
+                 })
+        {
+            if (!FieldRules.IsPlaceOrPersonName(value))
+                errors.Add($"{name} {FieldRules.NameError}");
+        }
+
+        if (!FieldRules.IsValidZipCode(client.ZipCode, client.Country))
+            errors.Add($"ZipCode {FieldRules.ZipCodeErrorFor(client.Country)}");
+
+        if (!FieldRules.IsValidPhone(client.ContactPhone))
+            errors.Add($"ContactPhone {FieldRules.PhoneError}");
+
+        if (!FieldRules.IsValidEmail(client.ContactEmail))
+            errors.Add($"ContactEmail {FieldRules.EmailError}");
+
+        FieldRules.ThrowIfAny(errors);
     }
 }
