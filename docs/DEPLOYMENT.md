@@ -1,12 +1,12 @@
 # Deployment
 
-The API runs on the project server at `http://145.24.237.19:8000/api/v2/...`.
+The API runs on the project server at `http://145.24.237.19/api/v2/...`.
 
 ## How it works
 
 The server runs [`C# WMS/deploy/docker-compose.prod.yml`](<../C# WMS/deploy/docker-compose.prod.yml>):
 MySQL (not reachable from outside), two containers of the API image that CI publishes
-from `main` (`api-a` and `api-b`), and nginx on port 8000 in front of them
+from `main` (`api-a` and `api-b`), and nginx on port 80 in front of them
 ([`nginx/default.conf`](<../C# WMS/deploy/nginx/default.conf>)). When one API container
 is down, nginx sends every request to the other one.
 
@@ -31,13 +31,15 @@ Not updated automatically:
    ssh-keygen -t ed25519
    ssh-copy-id your-username@145.24.237.19
    ```
-4. Add this to `~/.ssh/config`, then connect with `ssh cargohub` or with the VS Code
-   **Remote - SSH** extension:
+4. Add this to `~/.ssh/config`, then connect with `ssh cargohub`:
    ```
    Host cargohub
        HostName 145.24.237.19
        User your-username
    ```
+   Prefer a terminal over the VS Code **Remote - SSH** extension. The server has only
+   1.6 GB of memory, and Remote - SSH runs a VS Code server there that uses around 400 MB,
+   which pushes MySQL into swap. If you do use it, close the connection when you are done.
 
 ## Server setup (one time)
 
@@ -90,7 +92,7 @@ removes the oldest lines after that, so the logs only go back a limited time. Se
 
 ## Monitoring
 
-`http://145.24.237.19:8000/health` returns `200 Healthy`, or `503 Unhealthy` when the API
+`http://145.24.237.19/health` returns `200 Healthy`, or `503 Unhealthy` when the API
 cannot reach MySQL. It needs no API key. Docker uses it as the healthcheck of both API
 containers, so `ps` shows `(healthy)` or `(unhealthy)` next to the uptime.
 

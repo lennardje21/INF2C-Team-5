@@ -86,10 +86,10 @@ image to `ghcr.io/lennardje21/inf2c-team-5`.
 The API runs on our project server:
 
 ```
-http://145.24.237.19:8000/api/v2/...
+http://145.24.237.19/api/v2/...
 ```
 
-The endpoint overview is at [`http://145.24.237.19:8000/docs`](http://145.24.237.19:8000/docs).
+The endpoint overview is at [`http://145.24.237.19/docs`](http://145.24.237.19/docs).
 
 The server checks for a new image every 5 minutes, so a merged pull request is live
 a few minutes after the pipeline passes. Server access, setup and maintenance are
