@@ -138,6 +138,58 @@ public sealed class ClientsControllerTests(ApiFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("contactEmail", "jan.de-vries@bedrijf.nl")]
+    [InlineData("contactPhone", "+31 (0)10 123 4567")]
+    [InlineData("contactPhone", "(010) 5183473")]
+    [InlineData("zipCode", "3011 AD")]
+    [InlineData("city", "'s-Hertogenbosch")]
+    [InlineData("city", "Nieuw- en Sint Joosland")]
+    public async Task CreateClient_ValidFormat_ReturnsCreated(string field, string value)
+    {
+        var client = NewClient();
+        client[field] = value;
+
+        await CreateAsync(client);
+    }
+
+    [Theory]
+    [InlineData("contactEmail", "not-an-email")]
+    [InlineData("contactEmail", "test@example")]
+    [InlineData("contactEmail", "test@@example.com")]
+    [InlineData("contactEmail", "te..st@example.com")]
+    [InlineData("contactPhone", "12345")]
+    [InlineData("contactPhone", "1234567890123456")]
+    [InlineData("contactPhone", "010-12345ab")]
+    [InlineData("contactPhone", "(010 1234567")]
+    [InlineData("zipCode", "0123 AB")]
+    [InlineData("zipCode", "3011")]
+    [InlineData("city", "Rotterdam1")]
+    [InlineData("contactName", "<script>")]
+    [InlineData("name", "Jumbo\nTest")]
+    [InlineData("address", "12345")]
+    public async Task CreateClient_InvalidFormat_ReturnsBadRequest(string field, string value)
+    {
+        var client = NewClient();
+        client[field] = value;
+
+        var response = await _client.PostAsJsonAsync(Url, client);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateClient_InvalidEmail_ReturnsBadRequest()
+    {
+        var created = await CreateAsync(NewClient());
+        var client = NewClient();
+        client["contactEmail"] = "test@@example.com";
+
+        var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}", client);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task UpdateClient_ChangesFieldsButKeepsCreatedAt()
     {
