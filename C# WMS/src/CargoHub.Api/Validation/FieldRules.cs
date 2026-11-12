@@ -38,18 +38,18 @@ public static partial class FieldRules
     }
 
     // Throws if any field is longer than the database column allows.
-    public static void CheckMaxLength(params (string Name, string? Value)[] fields)
+    public static void CheckMaxLength(params (string Name, string Value)[] fields)
     {
-        var tooLong = fields.Where(f => f.Value?.Length > MaxTextLength).Select(f => f.Name).ToList();
+        var tooLong = fields.Where(f => f.Value.Length > MaxTextLength).Select(f => f.Name).ToList();
         if (tooLong.Count > 0)
             throw new ArgumentException(
                 $"Fields must not exceed {MaxTextLength} characters: {string.Join(", ", tooLong)}.");
     }
 
     // Throws if any field contains line breaks, tabs or other control characters.
-    public static void CheckNoControlCharacters(params (string Name, string? Value)[] fields)
+    public static void CheckNoControlCharacters(params (string Name, string Value)[] fields)
     {
-        var invalid = fields.Where(f => f.Value?.Any(char.IsControl) == true).Select(f => f.Name).ToList();
+        var invalid = fields.Where(f => f.Value.Any(char.IsControl)).Select(f => f.Name).ToList();
         if (invalid.Count > 0)
             throw new ArgumentException(
                 $"Fields must not contain control characters such as line breaks or tabs: {string.Join(", ", invalid)}.");
