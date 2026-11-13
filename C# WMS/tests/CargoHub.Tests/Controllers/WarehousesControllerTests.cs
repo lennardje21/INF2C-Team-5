@@ -93,9 +93,40 @@ public sealed class WarehousesControllerTests(ApiFixture fixture)
     }
 
     [Theory]
+    [InlineData("code", "WH-001")]
+    [InlineData("code", "  VGH-AMB  ")]
+    [InlineData("contactEmail", "jan.de-vries@bedrijf.nl")]
+    [InlineData("contactPhone", "+31 (0)10 123 4567")]
+    [InlineData("contactPhone", "(032) 1819600")]
+    [InlineData("zipCode", "3011 AD")]
+    [InlineData("city", "'s-Hertogenbosch")]
+    [InlineData("contactName", "Pim Dorsman-Bruggeman")]
+    public async Task CreateWarehouse_ValidFormat_ReturnsCreated(string field, string value)
+    {
+        var warehouse = NewWarehouse();
+        warehouse[field] = value;
+
+        await CreateAsync(warehouse);
+    }
+
+    [Theory]
     [InlineData("name", "")]
     [InlineData("city", "  ")]
     [InlineData("contactEmail", "not-an-email")]
+    [InlineData("contactEmail", "test@example")]
+    [InlineData("contactEmail", "te..st@example.com")]
+    [InlineData("contactPhone", "12345")]
+    [InlineData("contactPhone", "010-12345ab")]
+    [InlineData("zipCode", "0123 AB")]
+    [InlineData("zipCode", "3011")]
+    [InlineData("city", "Rotterdam1")]
+    [InlineData("contactName", "<script>")]
+    [InlineData("name", "Jumbo\nTest")]
+    [InlineData("address", "12345")]
+    [InlineData("code", "VGH AMB")]
+    [InlineData("code", "VGH--AMB")]
+    [InlineData("code", "-VGH")]
+    [InlineData("code", "VGH_AMB")]
     public async Task CreateWarehouse_InvalidField_ReturnsBadRequest(string field, string value)
     {
         var warehouse = NewWarehouse();
