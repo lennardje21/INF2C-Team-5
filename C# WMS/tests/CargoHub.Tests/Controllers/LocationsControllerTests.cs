@@ -95,6 +95,83 @@ public sealed class LocationsControllerTests(ApiFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // The field is changed in a valid location, so only that field can cause the 400.
+    [Theory]
+    [InlineData("code", "LOC 001")]
+    [InlineData("code", "LOC--001")]
+    [InlineData("code", "-LOC-001")]
+    [InlineData("code", "LOC_001")]
+    [InlineData("code", "<script>")]
+    [InlineData("code", "LOC-\n001")]
+    [InlineData("name", "-Zone A")]
+    [InlineData("name", "Zone <b>A</b>")]
+    [InlineData("name", "Zone A; DROP TABLE location")]
+    [InlineData("name", "Zone\tA")]
+    public async Task CreateLocation_InvalidFormat_ReturnsBadRequest(string field, string value)
+    {
+        var location = NewLocation();
+        location[field] = value;
+
+        var response = await _client.PostAsJsonAsync(Url, location);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("code", "VGH-AMB-B12-R6-B7")]
+    [InlineData("code", "loc001")]
+    [InlineData("name", "Zone B Aisle 12 Rack 6 Bin 7")]
+    [InlineData("name", "Koelcel 2 (Zuid)")]
+    [InlineData("name", "3e verdieping - Hal A/B")]
+    public async Task CreateLocation_ValidFormat_ReturnsCreated(string field, string value)
+    {
+        var location = NewLocation();
+        location[field] = value;
+
+        var response = await _client.PostAsJsonAsync(Url, location);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateLocation_TrimsTheTextFields()
+    {
+        var location = NewLocation(name: "  Receiving Area  ");
+        var code = $"TRIM-{Guid.NewGuid():N}";
+        location["code"] = $"  {code}  ";
+
+        var created = await CreateAsync(location);
+
+        var stored = await _client.GetFromJsonAsync<Location>($"{Url}/{created.Id}");
+        Assert.Equal((code, "Receiving Area"), (stored!.Code, stored.Name));
+    }
+
+    [Fact]
+    public async Task CreateLocation_UnknownWarehouse_ReturnsBadRequestWithMessage()
+    {
+        var location = NewLocation();
+        location["warehouseId"] = 999999;
+
+        var response = await _client.PostAsJsonAsync(Url, location);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("The warehouse does not exist.", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task UpdateLocation_UnknownWarehouse_ReturnsBadRequestAndChangesNothing()
+    {
+        var created = await CreateAsync(NewLocation());
+        var location = NewLocation(name: "Moved Location");
+        location["warehouseId"] = 999999;
+
+        var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}", location);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var stored = await _client.GetFromJsonAsync<Location>($"{Url}/{created.Id}");
+        Assert.Equal((1, created.Name), (stored!.WarehouseId, stored.Name));
+    }
+
     [Fact]
     public async Task CreateLocation_IgnoresIdAndTimestampsFromRequest()
     {

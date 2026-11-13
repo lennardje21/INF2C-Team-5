@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Validation;
@@ -36,8 +37,15 @@ public sealed class LocationsService(
 
         await using var connection = await factory.OpenAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await locations.InsertAsync(location, connection, transaction, cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        try
+        {
+            await locations.InsertAsync(location, connection, transaction, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (MySqlException e) when (e.ErrorCode == MySqlErrorCode.NoReferencedRow2)
+        {
+            throw new ArgumentException(UnknownWarehouse, e);
+        }
 
         return location;
     }
@@ -62,8 +70,15 @@ public sealed class LocationsService(
         location.CreatedAt = existing.CreatedAt;
         location.UpdatedAt = DateTime.UtcNow;
 
-        await locations.UpdateAsync(location, connection, transaction, cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        try
+        {
+            await locations.UpdateAsync(location, connection, transaction, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (MySqlException e) when (e.ErrorCode == MySqlErrorCode.NoReferencedRow2)
+        {
+            throw new ArgumentException(UnknownWarehouse, e);
+        }
 
         return true;
     }
@@ -126,6 +141,8 @@ public sealed class LocationsService(
             new Dictionary<string, object?> { ["id"] = id },
             cancellationToken)).SingleOrDefault();
 
+    // Trims the text fields, then checks the warehouse id, that the fields are filled in and fit in the database,
+    // and that the code and name have a valid format.
     private static void Validate(Location location)
     {
         if (location.WarehouseId <= 0)
@@ -145,5 +162,25 @@ public sealed class LocationsService(
         FieldRules.CheckRequired(fields);
         FieldRules.CheckMaxLength(fields);
         FieldRules.CheckNoControlCharacters(fields);
+
+        var errors = new List<string>();
+
+        if (!LocationCode.IsMatch(location.Code))
+            errors.Add("Code may only contain letters and digits, optionally in groups separated by single hyphens, " +
+                       "such as 'VGH-AMB-B12-R6-B7'.");
+
+        if (!LocationName.IsMatch(location.Name))
+            errors.Add("Name must start with a letter or digit and may only contain letters, digits, spaces and " +
+                       "the characters - . / ' & ( ), such as 'Zone B Aisle 12 Rack 6 Bin 7'.");
+
+        FieldRules.ThrowIfAny(errors);
     }
+
+    private const string UnknownWarehouse = "The warehouse does not exist.";
+
+    // Letters and digits, optionally in groups separated by single hyphens, e.g. "VGH-AMB-B12-R6-B7" or "LOC-001".
+    private static readonly Regex LocationCode = new(@"^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$", RegexOptions.Compiled);
+
+    // Starts with a letter or digit, e.g. "Zone B Aisle 12 Rack 6 Bin 7", "Receiving Area" or "Koelcel 2 (Zuid)".
+    private static readonly Regex LocationName = new(@"^[\p{L}\p{N}][\p{L}\p{M}\p{N} .'’/&()\-]*$", RegexOptions.Compiled);
 }
