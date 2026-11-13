@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+using System.Text;
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Validation;
@@ -12,13 +12,23 @@ public sealed class OrdersService(
     MySqlRepository<Order> orders,
     MySqlRepository<OrderItem> orderItems)
 {
-    // Limits for the input checks; the seed data stays well within them.
-    private static readonly string[] OrderStatuses = ["Pending", "Packed", "Shipped", "Delivered"];
+    // The statuses that occur in the CargoHub data (order.json and the seed). This is the same approach as
+    // ShipmentStatuses in ShipmentsService; add a status here when the business introduces a new one.
+    private static readonly string[] OrderStatuses = ["Pending", "Shipped"];
     private static readonly DateTime MinOrderDate = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     private static readonly DateTime MaxOrderDate = new(2100, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    // Same limits as ShipmentsService, so an order always fits in a shipment.
+    // The data has at most 10 items per order and amounts up to 200, so these leave plenty of room.
     private const int MaxItems = 100;
     private const int MaxAmount = 1_000_000;
-    private const decimal MaxUnitPrice = 1_000_000m;
+
+    // The largest price the unit_price column (DECIMAL(18,4)) can store after RoundPrice rounds it to 2 decimals;
+    // anything above it would make MySQL fail with a 500 instead of a clear 400.
+    private const decimal MaxUnitPrice = 99_999_999_999_999.99m;
+
+    // shipping_notes is a TEXT column, which holds at most 65,535 bytes (UTF-8).
+    private const int MaxShippingNotesBytes = 65_535;
 
     /// <summary>Returns all orders with their items.</summary>
     public async Task<IReadOnlyList<Order>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -251,7 +261,7 @@ public sealed class OrdersService(
     /// <summary>Builds the reference, e.g. ORD-004855.</summary>
     private static string ReferenceFor(int id) => $"ORD-{id:D6}";
 
-    // Trims the text fields, then checks that they are filled in, fit in the database and have a valid format,
+    // Trims the text fields, then checks that they are filled in and fit in the database, that the status is known,
     // that the ids are positive and that the dates are realistic.
     private static void ValidateOrder(Order order)
     {
@@ -272,25 +282,32 @@ public sealed class OrdersService(
         if (missing.Count > 0)
             throw new ArgumentException($"Missing required fields: {string.Join(", ", missing)}.");
 
-        var fields = new List<(string Name, string Value)>
+        // The PO number comes from the customer, so its format is not checked; it only has to fit in the column.
+        var fields = new (string Name, string Value)[]
         {
             (nameof(Order.CustomerPoNumber), order.CustomerPoNumber),
             (nameof(Order.OrderStatus), order.OrderStatus)
         };
-        if (order.ShippingNotes is not null)
-            fields.Add((nameof(Order.ShippingNotes), order.ShippingNotes));
-
-        FieldRules.CheckMaxLength([.. fields]);
-        FieldRules.CheckNoControlCharacters([.. fields]);
+        FieldRules.CheckMaxLength(fields);
+        FieldRules.CheckNoControlCharacters(fields);
 
         var errors = new List<string>();
 
-        if (!CustomerPoNumber.IsMatch(order.CustomerPoNumber))
-            errors.Add("CustomerPoNumber may only contain letters and digits, optionally separated by " +
-                       "single hyphens, slashes, periods or spaces, such as 'PO-662159'.");
+        // Multiline shipping instructions are allowed: line breaks and tabs are fine, other control characters are not.
+        if (order.ShippingNotes is not null)
+        {
+            if (Encoding.UTF8.GetByteCount(order.ShippingNotes) > MaxShippingNotesBytes)
+                errors.Add($"ShippingNotes must not exceed {MaxShippingNotesBytes} bytes.");
+            if (order.ShippingNotes.Any(c => char.IsControl(c) && c is not ('\n' or '\r' or '\t')))
+                errors.Add("ShippingNotes may contain line breaks and tabs, but no other control characters.");
+        }
 
-        if (!OrderStatuses.Contains(order.OrderStatus))
+        // The status is matched without regard to capitals and stored in the standard spelling, e.g. "pending" -> "Pending".
+        var status = OrderStatuses.FirstOrDefault(s => s.Equals(order.OrderStatus, StringComparison.OrdinalIgnoreCase));
+        if (status is null)
             errors.Add($"OrderStatus must be one of: {string.Join(", ", OrderStatuses)}.");
+        else
+            order.OrderStatus = status;
 
         foreach (var (name, id) in new[]
                  {
@@ -343,10 +360,6 @@ public sealed class OrdersService(
 
         FieldRules.ThrowIfAny(errors);
     }
-
-    // Letters and digits, optionally in groups separated by a single hyphen, slash, period or space,
-    // e.g. "PO-662159", "PO 2026/0042" or "4500012345".
-    private static readonly Regex CustomerPoNumber = new(@"^[A-Za-z0-9]+(?:[-/. ][A-Za-z0-9]+)*$", RegexOptions.Compiled);
 
     /// <summary>Treats dates without a time zone as UTC.</summary>
     private static DateTime AsUtc(DateTime date) => date.Kind switch
