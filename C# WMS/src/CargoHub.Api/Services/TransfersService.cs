@@ -89,6 +89,11 @@ public sealed class TransfersService(
         if (existing is null)
             return false;
 
+        if (string.IsNullOrWhiteSpace(transfer.TransferStatus))
+            transfer.TransferStatus = existing.TransferStatus;
+        else
+            RequireOneOf(nameof(Transfer.TransferStatus), transfer.TransferStatus, TransferStatuses);
+
         transfer.Id = id;
         transfer.Reference = existing.Reference;
         transfer.CreatedAt = existing.CreatedAt;

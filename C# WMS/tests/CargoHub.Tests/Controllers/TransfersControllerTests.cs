@@ -144,6 +144,27 @@ public sealed class TransfersControllerTests(ApiFixture fixture)
     }
 
     [Fact]
+    public async Task UpdateTransfer_MissingOrBlankStatus_PreservesExistingStatus()
+    {
+        var created = await CreateAsync(NewTransfer(items: Item(10, 2)));
+
+        var missingStatus = NewTransfer(fromLocationId: 3, toLocationId: 4, items: Item(11, 3));
+        var missingResponse = await _client.PutAsJsonAsync($"{Url}/{created.Id}", missingStatus);
+
+        Assert.Equal(HttpStatusCode.NoContent, missingResponse.StatusCode);
+        var afterMissing = await _client.GetFromJsonAsync<Transfer>($"{Url}/{created.Id}");
+        Assert.Equal("Scheduled", afterMissing!.TransferStatus);
+
+        var blankStatus = NewTransfer(fromLocationId: 5, toLocationId: 6, items: Item(12, 4));
+        blankStatus["transferStatus"] = "   ";
+        var blankResponse = await _client.PutAsJsonAsync($"{Url}/{created.Id}", blankStatus);
+
+        Assert.Equal(HttpStatusCode.NoContent, blankResponse.StatusCode);
+        var afterBlank = await _client.GetFromJsonAsync<Transfer>($"{Url}/{created.Id}");
+        Assert.Equal("Scheduled", afterBlank!.TransferStatus);
+    }
+
+    [Fact]
     public async Task UpdateTransfer_UnknownTransfer_ReturnsNotFound()
     {
         var response = await _client.PutAsJsonAsync($"{Url}/2147483647", NewTransfer());
