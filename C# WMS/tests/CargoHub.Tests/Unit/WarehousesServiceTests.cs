@@ -1,6 +1,7 @@
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.Extensions.Configuration;
 
 namespace CargoHub.Tests.Unit;
@@ -121,7 +122,7 @@ public sealed class WarehousesServiceTests
 
         var message = await AssertInvalidAsync(() => _service.CreateAsync(warehouse));
 
-        Assert.Equal("ContactEmail must be a valid email address.", message);
+        Assert.Equal($"ContactEmail {FieldRules.EmailError}", message);
     }
 
     [Fact]
@@ -154,6 +155,6 @@ public sealed class WarehousesServiceTests
 
         var message = await AssertInvalidAsync(() => _service.UpdateAsync(1, warehouse));
 
-        Assert.Equal("ContactEmail must be a valid email address.", message);
+        Assert.Equal($"ContactEmail {FieldRules.EmailError}", message);
     }
 }
