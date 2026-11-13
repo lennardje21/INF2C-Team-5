@@ -1,5 +1,7 @@
+using System.Text.RegularExpressions;
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
+using CargoHub.Api.Validation;
 using MySqlConnector;
 
 namespace CargoHub.Api.Services;
@@ -10,6 +12,14 @@ public sealed class OrdersService(
     MySqlRepository<Order> orders,
     MySqlRepository<OrderItem> orderItems)
 {
+    // Limits for the input checks; the seed data stays well within them.
+    private static readonly string[] OrderStatuses = ["Pending", "Packed", "Shipped", "Delivered"];
+    private static readonly DateTime MinOrderDate = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime MaxOrderDate = new(2100, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private const int MaxItems = 100;
+    private const int MaxAmount = 1_000_000;
+    private const decimal MaxUnitPrice = 1_000_000m;
+
     /// <summary>Returns all orders with their items.</summary>
     public async Task<IReadOnlyList<Order>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -241,9 +251,15 @@ public sealed class OrdersService(
     /// <summary>Builds the reference, e.g. ORD-004855.</summary>
     private static string ReferenceFor(int id) => $"ORD-{id:D6}";
 
-    /// <summary>Checks that the required fields are filled in.</summary>
+    // Trims the text fields, then checks that they are filled in, fit in the database and have a valid format,
+    // that the ids are positive and that the dates are realistic.
     private static void ValidateOrder(Order order)
     {
+        order.CustomerPoNumber = FieldRules.Trim(order.CustomerPoNumber);
+        order.OrderStatus = FieldRules.Trim(order.OrderStatus);
+        // Empty notes are stored as null, the same as orders without notes.
+        order.ShippingNotes = string.IsNullOrWhiteSpace(order.ShippingNotes) ? null : order.ShippingNotes.Trim();
+
         var missing = new (string Name, string Value)[]
         {
             (nameof(Order.CustomerPoNumber), order.CustomerPoNumber),
@@ -255,18 +271,78 @@ public sealed class OrdersService(
             missing.Add(nameof(Order.RequestDate));
         if (missing.Count > 0)
             throw new ArgumentException($"Missing required fields: {string.Join(", ", missing)}.");
+
+        var fields = new List<(string Name, string Value)>
+        {
+            (nameof(Order.CustomerPoNumber), order.CustomerPoNumber),
+            (nameof(Order.OrderStatus), order.OrderStatus)
+        };
+        if (order.ShippingNotes is not null)
+            fields.Add((nameof(Order.ShippingNotes), order.ShippingNotes));
+
+        FieldRules.CheckMaxLength([.. fields]);
+        FieldRules.CheckNoControlCharacters([.. fields]);
+
+        var errors = new List<string>();
+
+        if (!CustomerPoNumber.IsMatch(order.CustomerPoNumber))
+            errors.Add("CustomerPoNumber may only contain letters and digits, optionally separated by " +
+                       "single hyphens, slashes, periods or spaces, such as 'PO-662159'.");
+
+        if (!OrderStatuses.Contains(order.OrderStatus))
+            errors.Add($"OrderStatus must be one of: {string.Join(", ", OrderStatuses)}.");
+
+        foreach (var (name, id) in new[]
+                 {
+                     (nameof(Order.ClientId), order.ClientId),
+                     (nameof(Order.WarehouseId), order.WarehouseId),
+                     (nameof(Order.ShipToClientId), order.ShipToClientId),
+                     (nameof(Order.BillToClientId), order.BillToClientId)
+                 })
+        {
+            if (id <= 0)
+                errors.Add($"{name} must be greater than 0.");
+        }
+
+        var orderDate = AsUtc(order.OrderDate);
+        var requestDate = AsUtc(order.RequestDate);
+        if (orderDate < MinOrderDate || orderDate >= MaxOrderDate)
+            errors.Add($"OrderDate must be between {MinOrderDate.Year} and {MaxOrderDate.Year - 1}.");
+        if (requestDate < MinOrderDate || requestDate >= MaxOrderDate)
+            errors.Add($"RequestDate must be between {MinOrderDate.Year} and {MaxOrderDate.Year - 1}.");
+        if (requestDate < orderDate)
+            errors.Add("RequestDate cannot be before OrderDate.");
+
+        FieldRules.ThrowIfAny(errors);
     }
 
-    /// <summary>Checks that amounts are positive, prices are not negative and no item appears twice.</summary>
-    private static void ValidateItems(IReadOnlyCollection<OrderItem> items)
+    // Checks the number of items, every item id, amount and price, and that no item appears twice.
+    private static void ValidateItems(IReadOnlyCollection<OrderItem>? items)
     {
-        if (items.Any(i => i.Amount <= 0))
-            throw new ArgumentException("Every item needs an amount greater than 0.");
-        if (items.Any(i => i.UnitPrice < 0))
-            throw new ArgumentException("Unit prices cannot be negative.");
+        if (items is null)
+            throw new ArgumentException("Items must be a list, use [] for an order without items.");
+        if (items.Any(i => i is null))
+            throw new ArgumentException("Items must not contain null.");
+        if (items.Count > MaxItems)
+            throw new ArgumentException($"An order can have at most {MaxItems} items.");
+
+        var errors = new List<string>();
+
+        if (items.Any(i => i.ItemId <= 0))
+            errors.Add("Every item needs an itemId greater than 0.");
+        if (items.Any(i => i.Amount <= 0 || i.Amount > MaxAmount))
+            errors.Add($"Every item needs an amount between 1 and {MaxAmount}.");
+        if (items.Any(i => i.UnitPrice < 0 || i.UnitPrice > MaxUnitPrice))
+            errors.Add($"Every item needs a unit price between 0 and {MaxUnitPrice}.");
         if (items.GroupBy(i => i.ItemId).Any(g => g.Count() > 1))
-            throw new ArgumentException("An item can only appear once in an order.");
+            errors.Add("An item can only appear once in an order.");
+
+        FieldRules.ThrowIfAny(errors);
     }
+
+    // Letters and digits, optionally in groups separated by a single hyphen, slash, period or space,
+    // e.g. "PO-662159", "PO 2026/0042" or "4500012345".
+    private static readonly Regex CustomerPoNumber = new(@"^[A-Za-z0-9]+(?:[-/. ][A-Za-z0-9]+)*$", RegexOptions.Compiled);
 
     /// <summary>Treats dates without a time zone as UTC.</summary>
     private static DateTime AsUtc(DateTime date) => date.Kind switch
