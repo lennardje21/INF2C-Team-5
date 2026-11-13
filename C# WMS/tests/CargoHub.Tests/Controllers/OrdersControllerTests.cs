@@ -192,7 +192,7 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
                 nullItems,
                 NewOrder(items: Item(0, 1)),
                 NewOrder(items: Item(50, 1_000_001)),
-                NewOrder(items: Item(50, 1, 1_000_001m)),
+                NewOrder(items: Item(50, 1, 100_000_000_000_000m)),
                 NewOrder(items: Enumerable.Range(1, 101).Select(i => Item(i, 1)).ToArray())
             };
         }
@@ -212,13 +212,10 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
 
     // The field is changed in a valid order, so only that field can cause the 400.
     [Theory]
-    [InlineData("customerPoNumber", "PO-662159!")]
-    [InlineData("customerPoNumber", "<script>")]
-    [InlineData("customerPoNumber", "PO--662159")]
     [InlineData("customerPoNumber", "PO-\n662159")]
     [InlineData("orderStatus", "Unknown")]
-    [InlineData("orderStatus", "pending")]
-    [InlineData("shippingNotes", "Retourpallets\tmeenemen")]
+    [InlineData("orderStatus", "Delivered")]
+    [InlineData("shippingNotes", "Bel aan\u0007")]
     [InlineData("orderDate", "1999-12-31T09:00:00Z")]
     [InlineData("requestDate", "2026-10-25T09:00:00Z")]
     [InlineData("requestDate", "2100-01-01T00:00:00Z")]
@@ -235,7 +232,6 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
     [Theory]
     [InlineData("customerPoNumber")]
     [InlineData("orderStatus")]
-    [InlineData("shippingNotes")]
     public async Task CreateOrder_TextLongerThan255Characters_ReturnsBadRequest(string field)
     {
         var order = NewOrder();
@@ -265,7 +261,8 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
     [Theory]
     [InlineData("customerPoNumber", "PO 2026/0042")]
     [InlineData("customerPoNumber", "4500012345")]
-    [InlineData("orderStatus", "Delivered")]
+    [InlineData("customerPoNumber", "PO#2026-0042 (Rev. B)")]
+    [InlineData("orderStatus", "Shipped")]
     [InlineData("requestDate", "2026-10-26T09:00:00Z")]
     public async Task CreateOrder_ValidFormat_ReturnsCreated(string field, string value)
     {
@@ -289,6 +286,71 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
         var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
         Assert.Equal(("PO-TRIM", "Pending"), (stored!.CustomerPoNumber, stored.OrderStatus));
         Assert.Null(stored.ShippingNotes);
+    }
+
+    [Fact]
+    public async Task CreateOrder_StatusIgnoresCapitals_StoresStandardSpelling()
+    {
+        var created = await CreateAsync(NewOrder(orderStatus: "pending"));
+
+        var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
+        Assert.Equal("Pending", stored!.OrderStatus);
+    }
+
+    [Fact]
+    public async Task CreateOrder_MultilineShippingNotes_AreStoredAsGiven()
+    {
+        const string notes = "Achterom leveren.\nBel aan bij nr. 12\r\n\tNiet stapelen";
+        var order = NewOrder();
+        order["shippingNotes"] = notes;
+
+        var created = await CreateAsync(order);
+
+        var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
+        Assert.Equal(notes, stored!.ShippingNotes);
+    }
+
+    // shipping_notes is a TEXT column: 65,535 bytes fit, one more does not.
+    [Theory]
+    [InlineData(65_535, HttpStatusCode.Created)]
+    [InlineData(65_536, HttpStatusCode.BadRequest)]
+    public async Task CreateOrder_ShippingNotesSize_Boundary(int length, HttpStatusCode expected)
+    {
+        var order = NewOrder();
+        order["shippingNotes"] = new string('A', length);
+
+        var response = await _client.PostAsJsonAsync(Url, order);
+
+        Assert.Equal(expected, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateOrder_NullItemInList_ReturnsBadRequestWithMessage()
+    {
+        var order = NewOrder();
+        order["items"] = new object?[] { Item(50, 1), null };
+
+        var response = await _client.PostAsJsonAsync(Url, order);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("Items must not contain null.", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task CreateOrder_Exactly100Items_ReturnsCreated()
+    {
+        var created = await CreateAsync(NewOrder(items: Enumerable.Range(1, 100).Select(i => Item(i, 1)).ToArray()));
+
+        var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
+        Assert.Equal(100, stored!.Items.Count);
+    }
+
+    [Fact]
+    public async Task CreateOrder_HighestAmountAndPrice_ReturnsCreated()
+    {
+        var response = await _client.PostAsJsonAsync(Url, NewOrder(items: Item(50, 1_000_000, 99_999_999_999_999.99m)));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact]
