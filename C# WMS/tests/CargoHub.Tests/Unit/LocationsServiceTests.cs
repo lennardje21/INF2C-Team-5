@@ -12,6 +12,12 @@ namespace CargoHub.Tests.Unit;
 /// </summary>
 public sealed class LocationsServiceTests
 {
+    private static readonly string[] RequiredFields =
+    [
+        nameof(Location.Code),
+        nameof(Location.Name)
+    ];
+
     private readonly LocationsService _service = CreateService();
 
     // Builds the service without a connection string, so database access throws.
@@ -28,6 +34,13 @@ public sealed class LocationsServiceTests
         Code = "LOC-001",
         Name = "Receiving Area"
     };
+
+    private static Location LocationWith(string field, string? value)
+    {
+        var location = ValidLocation();
+        typeof(Location).GetProperty(field)!.SetValue(location, value);
+        return location;
+    }
 
     // Asserts the input passed validation and reached the database.
     private static async Task AssertReachesDatabaseAsync(Func<Task> action)
@@ -56,24 +69,22 @@ public sealed class LocationsServiceTests
 
         var message = await AssertInvalidAsync(() => _service.CreateAsync(location));
 
-        Assert.Equal("WarehouseId must be greater than zero.", message);
+        Assert.Equal("WarehouseId must be greater than 0.", message);
     }
 
     [Theory]
-    [InlineData(nameof(Location.Code))]
-    [InlineData(nameof(Location.Name))]
+    [MemberData(nameof(Fields))]
     public async Task CreateAsync_MissingRequiredField_IsRejected(string field)
     {
-        foreach (var value in new[] { string.Empty, "   " })
+        foreach (var value in new[] { null, string.Empty, "   " })
         {
-            var location = ValidLocation();
-            typeof(Location).GetProperty(field)!.SetValue(location, value);
-
-            var message = await AssertInvalidAsync(() => _service.CreateAsync(location));
+            var message = await AssertInvalidAsync(() => _service.CreateAsync(LocationWith(field, value)));
 
             Assert.Equal($"Missing required fields: {field}.", message);
         }
     }
+
+    public static TheoryData<string> Fields => [.. RequiredFields];
 
     [Fact]
     public async Task CreateAsync_SeveralMissingFields_ListsAllOfThem()
@@ -83,6 +94,18 @@ public sealed class LocationsServiceTests
         var message = await AssertInvalidAsync(() => _service.CreateAsync(location));
 
         Assert.Equal("Missing required fields: Code, Name.", message);
+    }
+
+    [Fact]
+    public async Task CreateAsync_TrimsFields()
+    {
+        var location = ValidLocation();
+        location.Code = " LOC-001 ";
+        location.Name = "\tReceiving Area\n";
+
+        await AssertReachesDatabaseAsync(() => _service.CreateAsync(location));
+
+        Assert.Equal(("LOC-001", "Receiving Area"), (location.Code, location.Name));
     }
 
     [Theory]
@@ -101,12 +124,22 @@ public sealed class LocationsServiceTests
     [InlineData(nameof(Location.Name))]
     public async Task CreateAsync_TextLongerThan255Characters_IsRejected(string field)
     {
-        var location = ValidLocation();
-        typeof(Location).GetProperty(field)!.SetValue(location, new string('a', 256));
-
-        var message = await AssertInvalidAsync(() => _service.CreateAsync(location));
+        var message = await AssertInvalidAsync(() =>
+            _service.CreateAsync(LocationWith(field, new string('a', 256))));
 
         Assert.Equal($"Fields must not exceed 255 characters: {field}.", message);
+    }
+
+    [Theory]
+    [InlineData(nameof(Location.Code), "LOC\n001")]
+    [InlineData(nameof(Location.Name), "Receiving\tArea")]
+    public async Task CreateAsync_ControlCharacterInField_IsRejected(string field, string value)
+    {
+        var message = await AssertInvalidAsync(() => _service.CreateAsync(LocationWith(field, value)));
+
+        Assert.Equal(
+            $"Fields must not contain control characters such as line breaks or tabs: {field}.",
+            message);
     }
 
     [Fact]
@@ -139,6 +172,6 @@ public sealed class LocationsServiceTests
 
         var message = await AssertInvalidAsync(() => _service.UpdateAsync(1, location));
 
-        Assert.Equal("WarehouseId must be greater than zero.", message);
+        Assert.Equal("WarehouseId must be greater than 0.", message);
     }
 }

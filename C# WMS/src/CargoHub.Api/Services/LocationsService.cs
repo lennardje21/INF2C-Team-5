@@ -1,5 +1,6 @@
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
+using CargoHub.Api.Validation;
 using MySqlConnector;
 
 namespace CargoHub.Api.Services;
@@ -129,37 +130,20 @@ public sealed class LocationsService(
     {
         if (location.WarehouseId <= 0)
         {
-            throw new ArgumentException("WarehouseId must be greater than zero.");
+            throw new ArgumentException("WarehouseId must be greater than 0.");
         }
 
-        var missing = new (string Name, string Value)[]
+        location.Code = FieldRules.Trim(location.Code);
+        location.Name = FieldRules.Trim(location.Name);
+
+        var fields = new (string Name, string Value)[]
         {
             (nameof(Location.Code), location.Code),
             (nameof(Location.Name), location.Name)
-        }
-        .Where(f => string.IsNullOrWhiteSpace(f.Value))
-        .Select(f => f.Name)
-        .ToList();
+        };
 
-        if (missing.Count > 0)
-        {
-            throw new ArgumentException(
-                $"Missing required fields: {string.Join(", ", missing)}.");
-        }
-
-        var tooLong = new (string Name, string Value)[]
-        {
-            (nameof(Location.Code), location.Code),
-            (nameof(Location.Name), location.Name)
-        }
-        .Where(f => f.Value.Length > 255)
-        .Select(f => f.Name)
-        .ToList();
-
-        if (tooLong.Count > 0)
-        {
-            throw new ArgumentException(
-                $"Fields must not exceed 255 characters: {string.Join(", ", tooLong)}.");
-        }
+        FieldRules.CheckRequired(fields);
+        FieldRules.CheckMaxLength(fields);
+        FieldRules.CheckNoControlCharacters(fields);
     }
 }
