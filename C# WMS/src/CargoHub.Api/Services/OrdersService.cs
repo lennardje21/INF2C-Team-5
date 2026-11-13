@@ -330,10 +330,14 @@ public sealed class OrdersService(
 
         if (items.Any(i => i.ItemId <= 0))
             errors.Add("Every item needs an itemId greater than 0.");
-        if (items.Any(i => i.Amount <= 0 || i.Amount > MaxAmount))
-            errors.Add($"Every item needs an amount between 1 and {MaxAmount}.");
-        if (items.Any(i => i.UnitPrice < 0 || i.UnitPrice > MaxUnitPrice))
-            errors.Add($"Every item needs a unit price between 0 and {MaxUnitPrice}.");
+        if (items.Any(i => i.Amount <= 0))
+            errors.Add("Every item needs an amount greater than 0.");
+        if (items.Any(i => i.Amount > MaxAmount))
+            errors.Add($"An item amount can be at most {MaxAmount}.");
+        if (items.Any(i => i.UnitPrice < 0))
+            errors.Add("Unit prices cannot be negative.");
+        if (items.Any(i => i.UnitPrice > MaxUnitPrice))
+            errors.Add($"A unit price can be at most {MaxUnitPrice}.");
         if (items.GroupBy(i => i.ItemId).Any(g => g.Count() > 1))
             errors.Add("An item can only appear once in an order.");
 
