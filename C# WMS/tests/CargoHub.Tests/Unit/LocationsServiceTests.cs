@@ -142,6 +142,69 @@ public sealed class LocationsServiceTests
             message);
     }
 
+    [Theory]
+    [InlineData(nameof(Location.Code), "VGH-AMB-B12-R6-B7")]
+    [InlineData(nameof(Location.Code), "A1")]
+    [InlineData(nameof(Location.Name), "Zone B Aisle 12 Rack 6 Bin 7")]
+    [InlineData(nameof(Location.Name), "Koelcel 2 (Zuid)")]
+    [InlineData(nameof(Location.Name), "Retour & Inbound")]
+    [InlineData(nameof(Location.Name), "Étage 2 / Zuid")]
+    public async Task CreateAsync_ValidFormat_PassesValidation(string field, string value)
+    {
+        await AssertReachesDatabaseAsync(() => _service.CreateAsync(LocationWith(field, value)));
+    }
+
+    public static TheoryData<string, string, string> InvalidFormats => new()
+    {
+        {
+            nameof(Location.Code), "VGH--AMB",
+            "Code may only contain letters and digits, optionally in groups separated by single hyphens, " +
+            "such as 'VGH-AMB-B12-R6-B7'."
+        },
+        {
+            nameof(Location.Code), "VGH_AMB",
+            "Code may only contain letters and digits, optionally in groups separated by single hyphens, " +
+            "such as 'VGH-AMB-B12-R6-B7'."
+        },
+        {
+            nameof(Location.Name), "_Zone 1",
+            "Name must start with a letter or digit and may only contain letters, digits, spaces and the " +
+            "characters - . / ' & ( ), such as 'Zone B Aisle 12 Rack 6 Bin 7'."
+        },
+        {
+            nameof(Location.Name), "Zone: 1",
+            "Name must start with a letter or digit and may only contain letters, digits, spaces and the " +
+            "characters - . / ' & ( ), such as 'Zone B Aisle 12 Rack 6 Bin 7'."
+        }
+    };
+
+    [Theory]
+    [MemberData(nameof(InvalidFormats))]
+    public async Task CreateAsync_InvalidFormat_IsRejected(
+        string field, string value, string expected)
+    {
+        var message = await AssertInvalidAsync(() => _service.CreateAsync(LocationWith(field, value)));
+
+        Assert.Equal(expected, message);
+    }
+
+    [Fact]
+    public async Task CreateAsync_SeveralFormatErrors_ListsAllOfThem()
+    {
+        var location = ValidLocation();
+        location.Code = "VGH--AMB";
+        location.Name = "_Zone 1";
+
+        var message = await AssertInvalidAsync(() => _service.CreateAsync(location));
+
+        Assert.Equal(
+            "Code may only contain letters and digits, optionally in groups separated by single hyphens, " +
+            "such as 'VGH-AMB-B12-R6-B7'. " +
+            "Name must start with a letter or digit and may only contain letters, digits, spaces and the " +
+            "characters - . / ' & ( ), such as 'Zone B Aisle 12 Rack 6 Bin 7'.",
+            message);
+    }
+
     [Fact]
     public async Task CreateAsync_IgnoresIdAndTimestampsFromTheRequest()
     {
@@ -173,5 +236,14 @@ public sealed class LocationsServiceTests
         var message = await AssertInvalidAsync(() => _service.UpdateAsync(1, location));
 
         Assert.Equal("WarehouseId must be greater than 0.", message);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_InvalidFormat_IsRejected()
+    {
+        var message = await AssertInvalidAsync(() =>
+            _service.UpdateAsync(1, LocationWith(nameof(Location.Code), "VGH--AMB")));
+
+        Assert.StartsWith("Code may only contain letters and digits", message);
     }
 }
