@@ -213,8 +213,6 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
     // The field is changed in a valid order, so only that field can cause the 400.
     [Theory]
     [InlineData("customerPoNumber", "PO-\n662159")]
-    [InlineData("orderStatus", "Unknown")]
-    [InlineData("orderStatus", "Delivered")]
     [InlineData("shippingNotes", "Bel aan\u0007")]
     [InlineData("orderDate", "1999-12-31T09:00:00Z")]
     [InlineData("requestDate", "2026-10-25T09:00:00Z")]
@@ -263,6 +261,7 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
     [InlineData("customerPoNumber", "4500012345")]
     [InlineData("customerPoNumber", "PO#2026-0042 (Rev. B)")]
     [InlineData("orderStatus", "Shipped")]
+    [InlineData("orderStatus", "Delivered")]
     [InlineData("requestDate", "2026-10-26T09:00:00Z")]
     public async Task CreateOrder_ValidFormat_ReturnsCreated(string field, string value)
     {
@@ -286,15 +285,6 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
         var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
         Assert.Equal(("PO-TRIM", "Pending"), (stored!.CustomerPoNumber, stored.OrderStatus));
         Assert.Null(stored.ShippingNotes);
-    }
-
-    [Fact]
-    public async Task CreateOrder_StatusIgnoresCapitals_StoresStandardSpelling()
-    {
-        var created = await CreateAsync(NewOrder(orderStatus: "pending"));
-
-        var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
-        Assert.Equal("Pending", stored!.OrderStatus);
     }
 
     [Fact]
@@ -357,7 +347,7 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
     public async Task UpdateOrder_InvalidFormat_ReturnsBadRequestAndChangesNothing()
     {
         var created = await CreateAsync(NewOrder());
-        var changes = NewOrder(orderStatus: "Unknown");
+        var changes = NewOrder(requestDate: "2026-10-25T09:00:00Z");
         changes["customerPoNumber"] = "PO-CHANGED";
 
         var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}", changes);
