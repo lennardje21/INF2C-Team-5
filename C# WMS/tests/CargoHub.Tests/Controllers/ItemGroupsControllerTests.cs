@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using CargoHub.Api.Models;
 using CargoHub.Tests.Fixtures;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Tests.Controllers;
 
@@ -117,6 +118,70 @@ public sealed class ItemGroupsControllerTests(ApiFixture fixture)
         var response = await _client.PostAsJsonAsync(Url, itemGroup);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateItemGroup_TrimsFieldsAndAllowsMultilineDescription()
+    {
+        var itemGroup = NewItemGroup("  Test group  ");
+        itemGroup["description"] = "  First line\nSecond line  ";
+
+        var created = await CreateAsync(itemGroup);
+        var stored = await _client.GetFromJsonAsync<ItemGroup>($"{Url}/{created.Id}");
+
+        Assert.NotNull(stored);
+        Assert.Equal("Test group", created.Name);
+        Assert.Equal(created.Name, stored.Name);
+        Assert.Equal("First line\nSecond line", created.Description);
+        Assert.Equal(created.Description, stored.Description);
+    }
+
+    [Theory]
+    [InlineData(32767, true)]
+    [InlineData(32768, false)]
+    public async Task CreateItemGroup_DescriptionUtf8ByteLimit_IsEnforced(int count, bool accepted)
+    {
+        var itemGroup = NewItemGroup();
+        itemGroup["description"] = new string('é', count) + (accepted ? "a" : "");
+
+        using var response = await _client.PostAsJsonAsync(Url, itemGroup);
+
+        Assert.Equal(accepted ? HttpStatusCode.Created : HttpStatusCode.BadRequest, response.StatusCode);
+        if (!accepted)
+        {
+            var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+            Assert.NotNull(problem);
+            Assert.Equal("Description must not exceed 65535 UTF-8 bytes.", problem.Detail);
+        }
+    }
+
+    [Theory]
+    [InlineData("name", "Invalid\nname", "Name")]
+    [InlineData("description", "Invalid\0description", "Description")]
+    public async Task CreateItemGroup_ControlCharacter_ReturnsBadRequest(
+        string field, string value, string expectedField)
+    {
+        var itemGroup = NewItemGroup();
+        itemGroup[field] = value;
+
+        using var response = await _client.PostAsJsonAsync(Url, itemGroup);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains(expectedField, problem.Detail);
+    }
+
+    [Theory]
+    [InlineData(255, HttpStatusCode.Created)]
+    [InlineData(256, HttpStatusCode.BadRequest)]
+    public async Task CreateItemGroup_NameUnicodeCharacterLimit_IsEnforced(int count, HttpStatusCode expected)
+    {
+        var itemGroup = NewItemGroup(string.Concat(Enumerable.Repeat("😀", count)));
+
+        using var response = await _client.PostAsJsonAsync(Url, itemGroup);
+
+        Assert.Equal(expected, response.StatusCode);
     }
 
     [Fact]

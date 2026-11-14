@@ -1,5 +1,7 @@
+using System.Text;
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
+using CargoHub.Api.Validation;
 using MySqlConnector;
 
 namespace CargoHub.Api.Services;
@@ -9,6 +11,8 @@ public sealed class ItemGroupsService(
     MySqlConnectionFactory factory,
     MySqlRepository<ItemGroup> itemGroups)
 {
+    private const int MaxDescriptionBytes = 65_535;
+
     /// Returns all item groups.
     public Task<IReadOnlyList<ItemGroup>> GetAllAsync(CancellationToken cancellationToken = default) =>
         itemGroups.GetAsync(cancellationToken: cancellationToken);
@@ -99,11 +103,22 @@ public sealed class ItemGroupsService(
 
     private static void Validate(ItemGroup itemGroup)
     {
-        if (string.IsNullOrWhiteSpace(itemGroup.Name))
-            throw new ArgumentException("Missing required field: Name.");
-        if (itemGroup.Name.Length > 255)
+        itemGroup.Name = FieldRules.Trim(itemGroup.Name);
+        itemGroup.Description = FieldRules.Trim(itemGroup.Description);
+
+        FieldRules.CheckRequired(
+            (nameof(ItemGroup.Name), itemGroup.Name),
+            (nameof(ItemGroup.Description), itemGroup.Description));
+
+        if (itemGroup.Name.EnumerateRunes().Count() > FieldRules.MaxTextLength)
             throw new ArgumentException("Name must not exceed 255 characters.");
-        if (string.IsNullOrWhiteSpace(itemGroup.Description))
-            throw new ArgumentException("Missing required field: Description.");
+
+        FieldRules.CheckNoControlCharacters((nameof(ItemGroup.Name), itemGroup.Name));
+
+        if (itemGroup.Description.Any(c => char.IsControl(c) && c is not ('\r' or '\n' or '\t')))
+            throw new ArgumentException(
+                "Description must not contain control characters other than tabs or line breaks.");
+        if (Encoding.UTF8.GetByteCount(itemGroup.Description) > MaxDescriptionBytes)
+            throw new ArgumentException($"Description must not exceed {MaxDescriptionBytes} UTF-8 bytes.");
     }
 }
