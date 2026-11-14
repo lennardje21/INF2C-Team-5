@@ -147,7 +147,7 @@ public sealed class LocationsService(
     {
         if (location.WarehouseId <= 0)
         {
-            throw new ArgumentException("WarehouseId must be greater than zero.");
+            throw new ArgumentException("WarehouseId must be greater than 0.");
         }
 
         location.Code = FieldRules.Trim(location.Code);

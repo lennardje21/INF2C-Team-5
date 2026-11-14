@@ -40,6 +40,15 @@ public sealed class WarehousesServiceTests
         ContactEmail = "contact@example.com"
     };
 
+    private static Warehouse WarehouseWith(
+        string field, string? value, string country = "Netherlands")
+    {
+        var warehouse = ValidWarehouse();
+        warehouse.Country = country;
+        typeof(Warehouse).GetProperty(field)!.SetValue(warehouse, value);
+        return warehouse;
+    }
+
     // Asserts the input passed validation and reached the database.
     private static async Task AssertReachesDatabaseAsync(Func<Task> action)
     {
@@ -95,6 +104,22 @@ public sealed class WarehousesServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_TrimsFields()
+    {
+        var warehouse = ValidWarehouse();
+        warehouse.Code = " WH-001 ";
+        warehouse.Name = "\tMain Warehouse\n";
+        warehouse.ZipCode = " 3000AA ";
+        warehouse.ContactEmail = " contact@example.com ";
+
+        await AssertReachesDatabaseAsync(() => _service.CreateAsync(warehouse));
+
+        Assert.Equal(
+            ("WH-001", "Main Warehouse", "3000AA", "contact@example.com"),
+            (warehouse.Code, warehouse.Name, warehouse.ZipCode, warehouse.ContactEmail));
+    }
+
+    [Fact]
     public async Task CreateAsync_TextOf255Characters_PassesValidation()
     {
         var warehouse = ValidWarehouse();
@@ -114,15 +139,96 @@ public sealed class WarehousesServiceTests
         Assert.Equal("Fields must not exceed 255 characters: Name.", message);
     }
 
+    [Theory]
+    [InlineData(nameof(Warehouse.Name), "Main\nWarehouse")]
+    [InlineData(nameof(Warehouse.Address), "Warehouse\tStreet 1")]
+    public async Task CreateAsync_ControlCharacterInField_IsRejected(string field, string value)
+    {
+        var message = await AssertInvalidAsync(() => _service.CreateAsync(WarehouseWith(field, value)));
+
+        Assert.Equal(
+            $"Fields must not contain control characters such as line breaks or tabs: {field}.",
+            message);
+    }
+
+    [Theory]
+    [InlineData(nameof(Warehouse.Code), "VGH-AMB")]
+    [InlineData(nameof(Warehouse.Name), "7-Eleven")]
+    [InlineData(nameof(Warehouse.Address), "1e Middellandstraat 5")]
+    [InlineData(nameof(Warehouse.City), "'s-Hertogenbosch")]
+    [InlineData(nameof(Warehouse.Province), "São Paulo")]
+    [InlineData(nameof(Warehouse.Country), "Nederland")]
+    [InlineData(nameof(Warehouse.ContactName), "J. de Vries")]
+    [InlineData(nameof(Warehouse.ZipCode), "3000AA")]
+    [InlineData(nameof(Warehouse.ZipCode), "SW1A 1AA", "United Kingdom")]
+    [InlineData(nameof(Warehouse.ContactPhone), "+31 (0)10 123 4567")]
+    [InlineData(nameof(Warehouse.ContactEmail), "a+tag@sub.example.co.uk")]
+    public async Task CreateAsync_ValidFormat_PassesValidation(
+        string field, string value, string country = "Netherlands")
+    {
+        await AssertReachesDatabaseAsync(() => _service.CreateAsync(WarehouseWith(field, value, country)));
+    }
+
+    public static TheoryData<string, string, string, string> InvalidFormats => new()
+    {
+        {
+            nameof(Warehouse.Code), "WH__001", "Netherlands",
+            "Code may only contain letters and digits, optionally separated by single hyphens, such as 'VGH-AMB'."
+        },
+        {
+            nameof(Warehouse.Name), "!!!", "Netherlands",
+            "Name must contain at least one letter or digit."
+        },
+        {
+            nameof(Warehouse.Address), "12345", "Netherlands",
+            "Address must contain a street name."
+        },
+        { nameof(Warehouse.City), "Rotterdam1", "Netherlands", $"City {FieldRules.NameError}" },
+        { nameof(Warehouse.Province), "Zuid_Holland", "Netherlands", $"Province {FieldRules.NameError}" },
+        { nameof(Warehouse.Country), "N3therlands", "Netherlands", $"Country {FieldRules.NameError}" },
+        { nameof(Warehouse.ContactName), "<script>", "Netherlands", $"ContactName {FieldRules.NameError}" },
+        {
+            nameof(Warehouse.ZipCode), "0123 AB", "Netherlands",
+            $"ZipCode {FieldRules.DutchZipCodeError}"
+        },
+        {
+            nameof(Warehouse.ZipCode), "123--45", "United States",
+            $"ZipCode {FieldRules.ZipCodeError}"
+        },
+        {
+            nameof(Warehouse.ContactPhone), "12345678", "Netherlands",
+            $"ContactPhone {FieldRules.PhoneError}"
+        },
+        {
+            nameof(Warehouse.ContactEmail), "test@example", "Netherlands",
+            $"ContactEmail {FieldRules.EmailError}"
+        }
+    };
+
+    [Theory]
+    [MemberData(nameof(InvalidFormats))]
+    public async Task CreateAsync_InvalidFormat_IsRejected(
+        string field, string value, string country, string expected)
+    {
+        var message = await AssertInvalidAsync(() => _service.CreateAsync(WarehouseWith(field, value, country)));
+
+        Assert.Equal(expected, message);
+    }
+
     [Fact]
-    public async Task CreateAsync_InvalidContactEmail_IsRejected()
+    public async Task CreateAsync_SeveralFormatErrors_ListsAllOfThem()
     {
         var warehouse = ValidWarehouse();
+        warehouse.City = "Rotterdam1";
+        warehouse.ContactPhone = "123";
         warehouse.ContactEmail = "not-an-email";
 
         var message = await AssertInvalidAsync(() => _service.CreateAsync(warehouse));
 
-        Assert.Equal($"ContactEmail {FieldRules.EmailError}", message);
+        Assert.Equal(
+            $"City {FieldRules.NameError} ContactPhone {FieldRules.PhoneError} " +
+            $"ContactEmail {FieldRules.EmailError}",
+            message);
     }
 
     [Fact]
