@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using CargoHub.Api.Models;
 using CargoHub.Tests.Fixtures;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Tests.Controllers;
 
@@ -117,6 +118,75 @@ public sealed class ItemLinesControllerTests(ApiFixture fixture)
         var response = await _client.PostAsJsonAsync(Url, itemLine);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateItemLine_TrimsTextAndStoresMultilineDescription()
+    {
+        var itemLine = NewItemLine("  Test line  ");
+        itemLine["description"] = "  First line\nSecond line  ";
+
+        var created = await CreateAsync(itemLine);
+        var stored = await _client.GetFromJsonAsync<ItemLine>($"{Url}/{created.Id}");
+
+        Assert.NotNull(stored);
+        Assert.Equal("Test line", created.Name);
+        Assert.Equal(created.Name, stored.Name);
+        Assert.Equal("First line\nSecond line", created.Description);
+        Assert.Equal(created.Description, stored.Description);
+    }
+
+    [Theory]
+    [InlineData(32767, true)]
+    [InlineData(32768, false)]
+    public async Task CreateItemLine_DescriptionUtf8ByteLimit_IsEnforced(int count, bool accepted)
+    {
+        var itemLine = NewItemLine();
+        itemLine["description"] = new string('é', count) + (accepted ? "a" : "");
+
+        using var response = await _client.PostAsJsonAsync(Url, itemLine);
+
+        Assert.Equal(accepted ? HttpStatusCode.Created : HttpStatusCode.BadRequest, response.StatusCode);
+        if (!accepted)
+        {
+            var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+            Assert.NotNull(problem);
+            Assert.Equal("Description must not exceed 65535 UTF-8 bytes.", problem.Detail);
+        }
+    }
+
+    [Theory]
+    [InlineData(255, HttpStatusCode.Created)]
+    [InlineData(256, HttpStatusCode.BadRequest)]
+    public async Task CreateItemLine_NameUnicodeCharacterLimit_IsEnforced(int count, HttpStatusCode expected)
+    {
+        var itemLine = NewItemLine(string.Concat(Enumerable.Repeat("😀", count)));
+
+        using var response = await _client.PostAsJsonAsync(Url, itemLine);
+
+        Assert.Equal(expected, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("name", "Invalid\nname", "Name")]
+    [InlineData("description", "Invalid\0description", "Description")]
+    public async Task UpdateItemLine_ControlCharacter_ReturnsBadRequestAndKeepsItemLine(
+        string field, string value, string expectedField)
+    {
+        var created = await CreateAsync(NewItemLine());
+        var itemLine = NewItemLine();
+        itemLine[field] = value;
+
+        using var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}", itemLine);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains(expectedField, problem.Detail);
+        var stored = await _client.GetFromJsonAsync<ItemLine>($"{Url}/{created.Id}");
+        Assert.NotNull(stored);
+        Assert.Equal(created.Name, stored.Name);
+        Assert.Equal(created.Description, stored.Description);
     }
 
     [Fact]
