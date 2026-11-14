@@ -1,5 +1,7 @@
+using System.Text;
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
+using CargoHub.Api.Validation;
 using MySqlConnector;
 
 namespace CargoHub.Api.Services;
@@ -10,6 +12,21 @@ public sealed class OrdersService(
     MySqlRepository<Order> orders,
     MySqlRepository<OrderItem> orderItems)
 {
+    private static readonly DateTime MinOrderDate = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime MaxOrderDate = new(2100, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    // Same limits as ShipmentsService, so an order always fits in a shipment.
+    // The data has at most 10 items per order and amounts up to 200, so these leave plenty of room.
+    private const int MaxItems = 100;
+    private const int MaxAmount = 1_000_000;
+
+    // The largest price the unit_price column (DECIMAL(18,4)) can store after RoundPrice rounds it to 2 decimals;
+    // anything above it would make MySQL fail with a 500 instead of a clear 400.
+    private const decimal MaxUnitPrice = 99_999_999_999_999.99m;
+
+    // shipping_notes is a TEXT column, which holds at most 65,535 bytes (UTF-8).
+    private const int MaxShippingNotesBytes = 65_535;
+
     /// <summary>Returns all orders with their items.</summary>
     public async Task<IReadOnlyList<Order>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -241,9 +258,16 @@ public sealed class OrdersService(
     /// <summary>Builds the reference, e.g. ORD-004855.</summary>
     private static string ReferenceFor(int id) => $"ORD-{id:D6}";
 
-    /// <summary>Checks that the required fields are filled in.</summary>
+    // Trims the text fields, then checks that they are filled in and fit in the database,
+    // that the ids are positive and that the dates are realistic.
+    // OrderStatus is not limited to a fixed list: fixed statuses are a Could in our advice and need input from CargoHub.
     private static void ValidateOrder(Order order)
     {
+        order.CustomerPoNumber = FieldRules.Trim(order.CustomerPoNumber);
+        order.OrderStatus = FieldRules.Trim(order.OrderStatus);
+        // Empty notes are stored as null, the same as orders without notes.
+        order.ShippingNotes = string.IsNullOrWhiteSpace(order.ShippingNotes) ? null : order.ShippingNotes.Trim();
+
         var missing = new (string Name, string Value)[]
         {
             (nameof(Order.CustomerPoNumber), order.CustomerPoNumber),
@@ -255,17 +279,77 @@ public sealed class OrdersService(
             missing.Add(nameof(Order.RequestDate));
         if (missing.Count > 0)
             throw new ArgumentException($"Missing required fields: {string.Join(", ", missing)}.");
+
+        // The PO number comes from the customer, so its format is not checked; it only has to fit in the column.
+        var fields = new (string Name, string Value)[]
+        {
+            (nameof(Order.CustomerPoNumber), order.CustomerPoNumber),
+            (nameof(Order.OrderStatus), order.OrderStatus)
+        };
+        FieldRules.CheckMaxLength(fields);
+        FieldRules.CheckNoControlCharacters(fields);
+
+        var errors = new List<string>();
+
+        // Multiline shipping instructions are allowed: line breaks and tabs are fine, other control characters are not.
+        if (order.ShippingNotes is not null)
+        {
+            if (Encoding.UTF8.GetByteCount(order.ShippingNotes) > MaxShippingNotesBytes)
+                errors.Add($"ShippingNotes must not exceed {MaxShippingNotesBytes} bytes.");
+            if (order.ShippingNotes.Any(c => char.IsControl(c) && c is not ('\n' or '\r' or '\t')))
+                errors.Add("ShippingNotes may contain line breaks and tabs, but no other control characters.");
+        }
+
+        foreach (var (name, id) in new[]
+                 {
+                     (nameof(Order.ClientId), order.ClientId),
+                     (nameof(Order.WarehouseId), order.WarehouseId),
+                     (nameof(Order.ShipToClientId), order.ShipToClientId),
+                     (nameof(Order.BillToClientId), order.BillToClientId)
+                 })
+        {
+            if (id <= 0)
+                errors.Add($"{name} must be greater than 0.");
+        }
+
+        var orderDate = AsUtc(order.OrderDate);
+        var requestDate = AsUtc(order.RequestDate);
+        if (orderDate < MinOrderDate || orderDate >= MaxOrderDate)
+            errors.Add($"OrderDate must be between {MinOrderDate.Year} and {MaxOrderDate.Year - 1}.");
+        if (requestDate < MinOrderDate || requestDate >= MaxOrderDate)
+            errors.Add($"RequestDate must be between {MinOrderDate.Year} and {MaxOrderDate.Year - 1}.");
+        if (requestDate < orderDate)
+            errors.Add("RequestDate cannot be before OrderDate.");
+
+        FieldRules.ThrowIfAny(errors);
     }
 
-    /// <summary>Checks that amounts are positive, prices are not negative and no item appears twice.</summary>
-    private static void ValidateItems(IReadOnlyCollection<OrderItem> items)
+    // Checks the number of items, every item id, amount and price, and that no item appears twice.
+    private static void ValidateItems(IReadOnlyCollection<OrderItem>? items)
     {
+        if (items is null)
+            throw new ArgumentException("Items must be a list, use [] for an order without items.");
+        if (items.Any(i => i is null))
+            throw new ArgumentException("Items must not contain null.");
+        if (items.Count > MaxItems)
+            throw new ArgumentException($"An order can have at most {MaxItems} items.");
+
+        var errors = new List<string>();
+
+        if (items.Any(i => i.ItemId <= 0))
+            errors.Add("Every item needs an itemId greater than 0.");
         if (items.Any(i => i.Amount <= 0))
-            throw new ArgumentException("Every item needs an amount greater than 0.");
+            errors.Add("Every item needs an amount greater than 0.");
+        if (items.Any(i => i.Amount > MaxAmount))
+            errors.Add($"An item amount can be at most {MaxAmount}.");
         if (items.Any(i => i.UnitPrice < 0))
-            throw new ArgumentException("Unit prices cannot be negative.");
+            errors.Add("Unit prices cannot be negative.");
+        if (items.Any(i => i.UnitPrice > MaxUnitPrice))
+            errors.Add($"A unit price can be at most {MaxUnitPrice}.");
         if (items.GroupBy(i => i.ItemId).Any(g => g.Count() > 1))
-            throw new ArgumentException("An item can only appear once in an order.");
+            errors.Add("An item can only appear once in an order.");
+
+        FieldRules.ThrowIfAny(errors);
     }
 
     /// <summary>Treats dates without a time zone as UTC.</summary>

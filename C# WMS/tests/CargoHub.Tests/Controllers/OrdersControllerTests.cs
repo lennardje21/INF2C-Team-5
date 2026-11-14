@@ -174,6 +174,8 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
             missingPo["customerPoNumber"] = " ";
             var unknownShipTo = NewOrder();
             unknownShipTo["shipToClientId"] = 999999;
+            var nullItems = NewOrder();
+            nullItems["items"] = null;
             return new()
             {
                 NewOrder(clientId: 999999),
@@ -185,7 +187,13 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
                 NewOrder(items: Item(999999, 1)),
                 NewOrder(items: Item(50, 0)),
                 NewOrder(items: Item(50, 1, -1m)),
-                NewOrder(items: [Item(50, 1), Item(50, 2)])
+                NewOrder(items: [Item(50, 1), Item(50, 2)]),
+                // Input checks (#125)
+                nullItems,
+                NewOrder(items: Item(0, 1)),
+                NewOrder(items: Item(50, 1_000_001)),
+                NewOrder(items: Item(50, 1, 100_000_000_000_000m)),
+                NewOrder(items: Enumerable.Range(1, 101).Select(i => Item(i, 1)).ToArray())
             };
         }
     }
@@ -200,6 +208,163 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(count, await fixture.QueryIntAsync("SELECT COUNT(*) FROM `order`"));
+    }
+
+    // The field is changed in a valid order, so only that field can cause the 400.
+    [Theory]
+    [InlineData("customerPoNumber", "PO-\n662159")]
+    [InlineData("shippingNotes", "Bel aan\u0007")]
+    [InlineData("orderDate", "1999-12-31T09:00:00Z")]
+    [InlineData("requestDate", "2026-10-25T09:00:00Z")]
+    [InlineData("requestDate", "2100-01-01T00:00:00Z")]
+    public async Task CreateOrder_InvalidFormat_ReturnsBadRequest(string field, string value)
+    {
+        var order = NewOrder();
+        order[field] = value;
+
+        var response = await _client.PostAsJsonAsync(Url, order);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("customerPoNumber")]
+    [InlineData("orderStatus")]
+    public async Task CreateOrder_TextLongerThan255Characters_ReturnsBadRequest(string field)
+    {
+        var order = NewOrder();
+        order[field] = new string('A', 256);
+
+        var response = await _client.PostAsJsonAsync(Url, order);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("clientId")]
+    [InlineData("warehouseId")]
+    [InlineData("shipToClientId")]
+    [InlineData("billToClientId")]
+    public async Task CreateOrder_IdNotPositive_ReturnsBadRequestWithMessage(string field)
+    {
+        var order = NewOrder();
+        order[field] = 0;
+
+        var response = await _client.PostAsJsonAsync(Url, order);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("must be greater than 0", await response.Content.ReadAsStringAsync());
+    }
+
+    [Theory]
+    [InlineData("customerPoNumber", "PO 2026/0042")]
+    [InlineData("customerPoNumber", "4500012345")]
+    [InlineData("customerPoNumber", "PO#2026-0042 (Rev. B)")]
+    [InlineData("orderStatus", "Shipped")]
+    [InlineData("orderStatus", "Delivered")]
+    [InlineData("requestDate", "2026-10-26T09:00:00Z")]
+    public async Task CreateOrder_ValidFormat_ReturnsCreated(string field, string value)
+    {
+        var order = NewOrder();
+        order[field] = value;
+
+        var response = await _client.PostAsJsonAsync(Url, order);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateOrder_TrimsTextAndStoresEmptyNotesAsNull()
+    {
+        var order = NewOrder(orderStatus: " Pending ");
+        order["customerPoNumber"] = "  PO-TRIM  ";
+        order["shippingNotes"] = "   ";
+
+        var created = await CreateAsync(order);
+
+        var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
+        Assert.Equal(("PO-TRIM", "Pending"), (stored!.CustomerPoNumber, stored.OrderStatus));
+        Assert.Null(stored.ShippingNotes);
+    }
+
+    [Fact]
+    public async Task CreateOrder_MultilineShippingNotes_AreStoredAsGiven()
+    {
+        const string notes = "Achterom leveren.\nBel aan bij nr. 12\r\n\tNiet stapelen";
+        var order = NewOrder();
+        order["shippingNotes"] = notes;
+
+        var created = await CreateAsync(order);
+
+        var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
+        Assert.Equal(notes, stored!.ShippingNotes);
+    }
+
+    // shipping_notes is a TEXT column: 65,535 bytes fit, one more does not.
+    [Theory]
+    [InlineData(65_535, HttpStatusCode.Created)]
+    [InlineData(65_536, HttpStatusCode.BadRequest)]
+    public async Task CreateOrder_ShippingNotesSize_Boundary(int length, HttpStatusCode expected)
+    {
+        var order = NewOrder();
+        order["shippingNotes"] = new string('A', length);
+
+        var response = await _client.PostAsJsonAsync(Url, order);
+
+        Assert.Equal(expected, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateOrder_NullItemInList_ReturnsBadRequestWithMessage()
+    {
+        var order = NewOrder();
+        order["items"] = new object?[] { Item(50, 1), null };
+
+        var response = await _client.PostAsJsonAsync(Url, order);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("Items must not contain null.", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task CreateOrder_Exactly100Items_ReturnsCreated()
+    {
+        var created = await CreateAsync(NewOrder(items: Enumerable.Range(1, 100).Select(i => Item(i, 1)).ToArray()));
+
+        var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
+        Assert.Equal(100, stored!.Items.Count);
+    }
+
+    [Fact]
+    public async Task CreateOrder_HighestAmountAndPrice_ReturnsCreated()
+    {
+        var response = await _client.PostAsJsonAsync(Url, NewOrder(items: Item(50, 1_000_000, 99_999_999_999_999.99m)));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateOrder_InvalidFormat_ReturnsBadRequestAndChangesNothing()
+    {
+        var created = await CreateAsync(NewOrder());
+        var changes = NewOrder(requestDate: "2026-10-25T09:00:00Z");
+        changes["customerPoNumber"] = "PO-CHANGED";
+
+        var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}", changes);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var stored = await _client.GetFromJsonAsync<Order>($"{Url}/{created.Id}");
+        Assert.Equal(("PO-TEST", "Pending"), (stored!.CustomerPoNumber, stored.OrderStatus));
+    }
+
+    [Fact]
+    public async Task UpdateOrderItems_AmountTooHigh_ReturnsBadRequest()
+    {
+        var created = await CreateAsync(NewOrder(items: Item(64, 1)));
+
+        var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}/items", new[] { Item(64, 1_000_001) });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
