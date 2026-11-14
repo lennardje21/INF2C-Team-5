@@ -1,5 +1,7 @@
+using System.Text;
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
+using CargoHub.Api.Validation;
 using MySqlConnector;
 
 namespace CargoHub.Api.Services;
@@ -10,6 +12,9 @@ public sealed class ItemsService(
     MySqlRepository<Item> items,
     MySqlRepository<Inventory> inventories)
 {
+    private const int MaxDescriptionBytes = 65_535;
+    private const decimal MaxUnitWeight = 999_999_999_999.999999m;
+
     // Returns all items.
     public Task<IReadOnlyList<Item>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -143,7 +148,14 @@ public sealed class ItemsService(
 
     private static void ValidateItem(Item item)
     {
-        var missing = new (string Name, string Value)[]
+        item.Code = FieldRules.Trim(item.Code);
+        item.Description = FieldRules.Trim(item.Description);
+        item.Barcode = FieldRules.Trim(item.Barcode);
+        item.ModelNumber = FieldRules.Trim(item.ModelNumber);
+        item.PackagingType = FieldRules.Trim(item.PackagingType);
+        item.SupplierSku = FieldRules.Trim(item.SupplierSku);
+
+        var fields = new (string Name, string Value)[]
         {
             (nameof(Item.Code), item.Code),
             (nameof(Item.Description), item.Description),
@@ -151,33 +163,59 @@ public sealed class ItemsService(
             (nameof(Item.ModelNumber), item.ModelNumber),
             (nameof(Item.PackagingType), item.PackagingType),
             (nameof(Item.SupplierSku), item.SupplierSku)
-        }
-        .Where(field => string.IsNullOrWhiteSpace(field.Value))
-        .Select(field => field.Name)
-        .ToArray();
+        };
+        FieldRules.CheckRequired(fields);
 
-        if (missing.Length > 0)
-            throw new ArgumentException($"Missing required fields: {string.Join(", ", missing)}.");
-
-        var tooLong = new (string Name, string Value)[]
+        var varcharFields = new (string Name, string Value)[]
         {
             (nameof(Item.Code), item.Code),
             (nameof(Item.Barcode), item.Barcode),
             (nameof(Item.ModelNumber), item.ModelNumber),
             (nameof(Item.PackagingType), item.PackagingType),
             (nameof(Item.SupplierSku), item.SupplierSku)
-        }
-        .Where(field => field.Value.Length > 255)
-        .Select(field => field.Name)
-        .ToArray();
+        };
+        var tooLong = varcharFields
+            .Where(field => field.Value.EnumerateRunes().Count() > FieldRules.MaxTextLength)
+            .Select(field => field.Name)
+            .ToArray();
         if (tooLong.Length > 0)
-            throw new ArgumentException($"Fields must not exceed 255 characters: {string.Join(", ", tooLong)}.");
+            throw new ArgumentException(
+                $"Fields must not exceed {FieldRules.MaxTextLength} characters: {string.Join(", ", tooLong)}.");
 
-        if (item.UnitWeight < 0 || item.CommodityCode < 0 ||
-            item.MinPurchaseQuantity < 0 || item.CaseSize < 0 || item.OrderMultiple < 0)
+        FieldRules.CheckNoControlCharacters(varcharFields);
+
+        if (item.Description.Any(character =>
+                char.IsControl(character) && character is not '\r' and not '\n' and not '\t'))
         {
-            throw new ArgumentException("Weight and quantity fields cannot be negative.");
+            throw new ArgumentException(
+                "Description must not contain control characters other than tabs or line breaks.");
         }
+        if (Encoding.UTF8.GetByteCount(item.Description) > MaxDescriptionBytes)
+            throw new ArgumentException($"Description must not exceed {MaxDescriptionBytes} UTF-8 bytes.");
+
+        var errors = new List<string>();
+        if (item.ItemLineId <= 0)
+            errors.Add($"{nameof(Item.ItemLineId)} must be greater than 0.");
+        if (item.ItemGroupId <= 0)
+            errors.Add($"{nameof(Item.ItemGroupId)} must be greater than 0.");
+        if (item.ItemTypeId <= 0)
+            errors.Add($"{nameof(Item.ItemTypeId)} must be greater than 0.");
+        if (item.SupplierId <= 0)
+            errors.Add($"{nameof(Item.SupplierId)} must be greater than 0.");
+        if (item.CommodityCode < 0)
+            errors.Add($"{nameof(Item.CommodityCode)} cannot be negative.");
+        if (item.UnitWeight < 0 || item.UnitWeight > MaxUnitWeight)
+            errors.Add($"{nameof(Item.UnitWeight)} must be between 0 and {MaxUnitWeight}.");
+        else if (decimal.Round(item.UnitWeight, 6) != item.UnitWeight)
+            errors.Add($"{nameof(Item.UnitWeight)} must not have more than 6 decimal places.");
+        if (item.MinPurchaseQuantity < 0)
+            errors.Add($"{nameof(Item.MinPurchaseQuantity)} cannot be negative.");
+        if (item.CaseSize < 0)
+            errors.Add($"{nameof(Item.CaseSize)} cannot be negative.");
+        if (item.OrderMultiple < 0)
+            errors.Add($"{nameof(Item.OrderMultiple)} cannot be negative.");
+
+        FieldRules.ThrowIfAny(errors);
     }
 }
 
