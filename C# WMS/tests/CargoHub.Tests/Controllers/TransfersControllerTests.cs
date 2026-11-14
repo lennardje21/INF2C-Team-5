@@ -108,6 +108,22 @@ public sealed class TransfersControllerTests(ApiFixture fixture)
         Assert.Equal(count, await fixture.QueryIntAsync("SELECT COUNT(*) FROM `transfer`"));
     }
 
+    [Theory]
+    [InlineData("Scheduled")]
+    [InlineData("In Transit")]
+    [InlineData("Processed")]
+    public async Task CreateTransfer_ClientSuppliedStatus_ReturnsBadRequest(string status)
+    {
+        var transfer = NewTransfer(items: Item(10, 1));
+        transfer["transferStatus"] = status;
+        var count = await fixture.QueryIntAsync("SELECT COUNT(*) FROM `transfer`");
+
+        var response = await _client.PostAsJsonAsync(Url, transfer);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(count, await fixture.QueryIntAsync("SELECT COUNT(*) FROM `transfer`"));
+    }
+
     public static TheoryData<object> InvalidTransfers => new()
     {
         NewTransfer(fromLocationId: 0),
@@ -141,6 +157,27 @@ public sealed class TransfersControllerTests(ApiFixture fixture)
             created.CreatedAt.AddTicks(10));
         Assert.True(updated.UpdatedAt > created.UpdatedAt);
         Assert.Equal((11, 3), (Assert.Single(updated.Items).ItemId, updated.Items[0].Amount));
+    }
+
+    [Fact]
+    public async Task UpdateTransfer_MissingOrBlankStatus_PreservesExistingStatus()
+    {
+        var created = await CreateAsync(NewTransfer(items: Item(10, 2)));
+
+        var missingStatus = NewTransfer(fromLocationId: 3, toLocationId: 4, items: Item(11, 3));
+        var missingResponse = await _client.PutAsJsonAsync($"{Url}/{created.Id}", missingStatus);
+
+        Assert.Equal(HttpStatusCode.NoContent, missingResponse.StatusCode);
+        var afterMissing = await _client.GetFromJsonAsync<Transfer>($"{Url}/{created.Id}");
+        Assert.Equal("Scheduled", afterMissing!.TransferStatus);
+
+        var blankStatus = NewTransfer(fromLocationId: 5, toLocationId: 6, items: Item(12, 4));
+        blankStatus["transferStatus"] = "   ";
+        var blankResponse = await _client.PutAsJsonAsync($"{Url}/{created.Id}", blankStatus);
+
+        Assert.Equal(HttpStatusCode.NoContent, blankResponse.StatusCode);
+        var afterBlank = await _client.GetFromJsonAsync<Transfer>($"{Url}/{created.Id}");
+        Assert.Equal("Scheduled", afterBlank!.TransferStatus);
     }
 
     [Fact]
