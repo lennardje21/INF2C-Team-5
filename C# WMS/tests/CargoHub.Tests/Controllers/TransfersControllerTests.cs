@@ -108,6 +108,22 @@ public sealed class TransfersControllerTests(ApiFixture fixture)
         Assert.Equal(count, await fixture.QueryIntAsync("SELECT COUNT(*) FROM `transfer`"));
     }
 
+    [Theory]
+    [InlineData("Scheduled")]
+    [InlineData("In Transit")]
+    [InlineData("Processed")]
+    public async Task CreateTransfer_ClientSuppliedStatus_ReturnsBadRequest(string status)
+    {
+        var transfer = NewTransfer(items: Item(10, 1));
+        transfer["transferStatus"] = status;
+        var count = await fixture.QueryIntAsync("SELECT COUNT(*) FROM `transfer`");
+
+        var response = await _client.PostAsJsonAsync(Url, transfer);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(count, await fixture.QueryIntAsync("SELECT COUNT(*) FROM `transfer`"));
+    }
+
     public static TheoryData<object> InvalidTransfers => new()
     {
         NewTransfer(fromLocationId: 0),

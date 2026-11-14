@@ -48,6 +48,10 @@ public sealed class TransfersService(
     public async Task<Transfer> CreateAsync(
         Transfer transfer, CancellationToken cancellationToken = default)
     {
+        if (!string.IsNullOrWhiteSpace(transfer.TransferStatus))
+            throw new ArgumentException(
+                "TransferStatus is controlled by the server and must not be provided when creating a transfer.");
+
         ValidateTransfer(transfer);
         ValidateItems(transfer.Items);
 
