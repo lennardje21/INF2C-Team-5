@@ -12,9 +12,6 @@ public sealed class OrdersService(
     MySqlRepository<Order> orders,
     MySqlRepository<OrderItem> orderItems)
 {
-    // The statuses that occur in the CargoHub data (order.json and the seed). This is the same approach as
-    // ShipmentStatuses in ShipmentsService; add a status here when the business introduces a new one.
-    private static readonly string[] OrderStatuses = ["Pending", "Shipped"];
     private static readonly DateTime MinOrderDate = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     private static readonly DateTime MaxOrderDate = new(2100, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -261,8 +258,9 @@ public sealed class OrdersService(
     /// <summary>Builds the reference, e.g. ORD-004855.</summary>
     private static string ReferenceFor(int id) => $"ORD-{id:D6}";
 
-    // Trims the text fields, then checks that they are filled in and fit in the database, that the status is known,
+    // Trims the text fields, then checks that they are filled in and fit in the database,
     // that the ids are positive and that the dates are realistic.
+    // OrderStatus is not limited to a fixed list: fixed statuses are a Could in our advice and need input from CargoHub.
     private static void ValidateOrder(Order order)
     {
         order.CustomerPoNumber = FieldRules.Trim(order.CustomerPoNumber);
@@ -301,13 +299,6 @@ public sealed class OrdersService(
             if (order.ShippingNotes.Any(c => char.IsControl(c) && c is not ('\n' or '\r' or '\t')))
                 errors.Add("ShippingNotes may contain line breaks and tabs, but no other control characters.");
         }
-
-        // The status is matched without regard to capitals and stored in the standard spelling, e.g. "pending" -> "Pending".
-        var status = OrderStatuses.FirstOrDefault(s => s.Equals(order.OrderStatus, StringComparison.OrdinalIgnoreCase));
-        if (status is null)
-            errors.Add($"OrderStatus must be one of: {string.Join(", ", OrderStatuses)}.");
-        else
-            order.OrderStatus = status;
 
         foreach (var (name, id) in new[]
                  {
