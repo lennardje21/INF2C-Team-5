@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using CargoHub.Api.Services;
 using CargoHub.Api.Models;
 using CargoHub.Tests.Fixtures;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Tests.Controllers;
 
@@ -142,6 +143,39 @@ public sealed class ItemsControllerTests(ApiFixture fixture)
         Assert.Equal(item["supplierSku"], stored.SupplierSku);
         Assert.Equal(1.5m, stored.UnitWeight);
     }
+
+    [Fact]
+    public async Task CreateItem_TrimsFieldsBeforeStoring()
+    {
+        var item = NewItem();
+        item["description"] = "  First line\nSecond line  ";
+        item["supplierSku"] = "  SKU-TEST  ";
+
+        var created = await CreateAsync(item);
+        var stored = await _client.GetFromJsonAsync<Item>($"{Url}/{created.Id}");
+
+        Assert.NotNull(stored);
+        Assert.Equal("First line\nSecond line", created.Description);
+        Assert.Equal(created.Description, stored.Description);
+        Assert.Equal("SKU-TEST", created.SupplierSku);
+        Assert.Equal(created.SupplierSku, stored.SupplierSku);
+    }
+
+    [Fact]
+    public async Task CreateItem_WeightWithTooManyDecimalPlaces_ReturnsValidationDetails()
+    {
+        var item = NewItem();
+        item["unitWeight"] = 1.1234567m;
+
+        using var response = await _client.PostAsJsonAsync(Url, item);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Equal(400, problem.Status);
+        Assert.Equal("UnitWeight must not have more than 6 decimal places.", problem.Detail);
+    }
  
     [Fact]
     public async Task CreateItem_IgnoresIdAndTimestampsFromTheRequest()
@@ -258,6 +292,29 @@ public sealed class ItemsControllerTests(ApiFixture fixture)
         var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}", item);
  
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateItem_NonPositiveReference_ReturnsValidationDetailsAndKeepsItem()
+    {
+        var created = await CreateAsync(NewItem());
+        var item = NewItem();
+        item["supplierId"] = 0;
+
+        using var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}", item);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Equal(400, problem.Status);
+        Assert.Equal("SupplierId must be greater than 0.", problem.Detail);
+
+        var stored = await _client.GetFromJsonAsync<Item>($"{Url}/{created.Id}");
+        Assert.NotNull(stored);
+        Assert.Equal(created.Code, stored.Code);
+        Assert.Equal(created.SupplierId, stored.SupplierId);
+        Assert.Equal(created.UpdatedAt, stored.UpdatedAt);
     }
  
     [Fact]
