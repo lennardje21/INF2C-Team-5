@@ -1,5 +1,6 @@
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
+using CargoHub.Api.Validation;
 using MySqlConnector;
 
 namespace CargoHub.Api.Services;
@@ -11,6 +12,8 @@ public sealed class TransfersService(
     MySqlRepository<TransferItem> transferItems,
     MySqlRepository<Inventory> inventories)
 {
+    private static readonly string[] TransferStatuses = ["Scheduled", "In Transit", "Processed"];
+
     // Get all transfers, including their items.
     public async Task<IReadOnlyList<Transfer>> GetAllAsync(
         CancellationToken cancellationToken = default)
@@ -45,6 +48,10 @@ public sealed class TransfersService(
     public async Task<Transfer> CreateAsync(
         Transfer transfer, CancellationToken cancellationToken = default)
     {
+        if (!string.IsNullOrWhiteSpace(transfer.TransferStatus))
+            throw new ArgumentException(
+                "TransferStatus is controlled by the server and must not be provided when creating a transfer.");
+
         ValidateTransfer(transfer);
         ValidateItems(transfer.Items);
 
@@ -85,6 +92,11 @@ public sealed class TransfersService(
         var existing = await LockAsync(connection, transaction, id, cancellationToken);
         if (existing is null)
             return false;
+
+        if (string.IsNullOrWhiteSpace(transfer.TransferStatus))
+            transfer.TransferStatus = existing.TransferStatus;
+        else
+            RequireOneOf(nameof(Transfer.TransferStatus), transfer.TransferStatus, TransferStatuses);
 
         transfer.Id = id;
         transfer.Reference = existing.Reference;
@@ -218,6 +230,7 @@ public sealed class TransfersService(
         return await FindAsync(connection, transaction, id, cancellationToken);
     }
 
+    // Insert the items of a transfer into the database, setting their transferId to the given transferId.
     private async Task InsertItemsAsync(
         int transferId, IEnumerable<TransferItem> items, MySqlConnection connection,
         MySqlTransaction transaction, CancellationToken cancellationToken)
@@ -240,9 +253,19 @@ public sealed class TransfersService(
             cancellationToken)).SingleOrDefault();
     }
 
-    // Validate a transfer, ensuring that the source and destination locations are different and that required fields are present.
+    // Validate a transfer, ensuring that locations and status are valid and that text input is safe to store.
     private static void ValidateTransfer(Transfer transfer)
     {
+        transfer.TransferStatus = FieldRules.Trim(transfer.TransferStatus);
+        transfer.Items ??= [];
+
+        var fields = new[]
+        {
+            (nameof(Transfer.TransferStatus), transfer.TransferStatus)
+        };
+        FieldRules.CheckMaxLength(fields);
+        FieldRules.CheckNoControlCharacters(fields);
+
         var missing = new List<string>();
         if (transfer.FromLocationId <= 0)
             missing.Add(nameof(Transfer.FromLocationId));
@@ -252,14 +275,28 @@ public sealed class TransfersService(
             throw new ArgumentException("FromLocationId and ToLocationId must be different.");
         if (missing.Count > 0)
             throw new ArgumentException($"Missing required fields: {string.Join(", ", missing)}.");
+
+        if (!string.IsNullOrEmpty(transfer.TransferStatus))
+            RequireOneOf(nameof(Transfer.TransferStatus), transfer.TransferStatus, TransferStatuses);
     }
 
-    // Validate the items of a transfer, ensuring that each item has a positive amount and that no item appears more than once.
+    // Validate the items of a transfer, ensuring that each item has a positive id and amount and that no item appears more than once.
     private static void ValidateItems(IReadOnlyCollection<TransferItem> items)
     {
+        if (items.Any(item => item is null))
+            throw new ArgumentException("Items must not contain null.");
+        if (items.Any(item => item.ItemId <= 0))
+            throw new ArgumentException("Every item needs an itemId greater than 0.");
         if (items.Any(item => item.Amount <= 0))
             throw new ArgumentException("Every item needs an amount greater than 0.");
         if (items.GroupBy(item => item.ItemId).Any(group => group.Count() > 1))
             throw new ArgumentException("An item can only appear once in a transfer.");
+    }
+
+    // Checks that a value is one of the allowed values (case-sensitive).
+    private static void RequireOneOf(string name, string value, IReadOnlyCollection<string> allowed)
+    {
+        if (!allowed.Contains(value))
+            throw new ArgumentException($"{name} must be one of: {string.Join(", ", allowed)}.");
     }
 }
