@@ -109,6 +109,42 @@ public sealed class InventoriesServiceTests
         await AssertReachesDatabaseAsync(() => _service.CreateAsync(inventory));
     }
 
+    // All negative quantities are listed in one message, in order.
+    [Fact]
+    public async Task CreateAsync_SeveralNegativeQuantities_ListsAllOfThem()
+    {
+        var inventory = ValidInventory();
+        inventory.QuantityExpected = -1;
+        inventory.QuantityOrdered = -2;
+
+        var message = await AssertInvalidAsync(() => _service.CreateAsync(inventory));
+
+        Assert.Equal("Quantities cannot be negative: QuantityExpected, QuantityOrdered.", message);
+    }
+
+    // The server sets the timestamps (in UTC); values from the request are ignored.
+    [Fact]
+    public async Task CreateAsync_IgnoresTimestampsFromTheRequest()
+    {
+        var inventory = ValidInventory();
+        inventory.CreatedAt = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        inventory.UpdatedAt = inventory.CreatedAt;
+        var before = DateTime.UtcNow;
+
+        await AssertReachesDatabaseAsync(() => _service.CreateAsync(inventory));
+
+        Assert.True(inventory.CreatedAt >= before);
+        Assert.Equal(DateTimeKind.Utc, inventory.CreatedAt.Kind);
+        Assert.Equal(inventory.CreatedAt, inventory.UpdatedAt);
+    }
+
+    // A complete inventory also passes validation on update.
+    [Fact]
+    public async Task UpdateAsync_ValidInventory_PassesValidation()
+    {
+        await AssertReachesDatabaseAsync(() => _service.UpdateAsync(1, 1, ValidInventory()));
+    }
+
     [Fact]
     public async Task CreateAsync_AllocatedMoreThanOnHand_IsRejected()
     {
