@@ -167,6 +167,31 @@ public sealed class InventoriesControllerTests(ApiFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("itemId")]
+    [InlineData("locationId")]
+    public async Task CreateInventory_IdZero_ReturnsBadRequest(string field)
+    {
+        var (itemId, locationId) = await FreeKeyAsync();
+        var inventory = NewInventory(itemId, locationId);
+        inventory[field] = 0;
+
+        var response = await _client.PostAsJsonAsync(Url, inventory);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateInventory_AllocatedMoreThanOnHand_ReturnsBadRequest()
+    {
+        var (itemId, locationId) = await FreeKeyAsync();
+        var inventory = NewInventory(itemId, locationId, onHand: 1);
+
+        var response = await _client.PostAsJsonAsync(Url, inventory);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task UpdateInventory_ChangesQuantitiesButKeepsCreatedAt()
     {
@@ -219,6 +244,18 @@ public sealed class InventoriesControllerTests(ApiFixture fixture)
 
         var response = await _client.PutAsJsonAsync(
             $"{Url}/{itemId}/{locationId}", NewInventory(itemId, locationId, onHand: -1));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateInventory_AllocatedMoreThanOnHand_ReturnsBadRequest()
+    {
+        var (itemId, locationId) = await FreeKeyAsync();
+        await CreateAsync(NewInventory(itemId, locationId));
+
+        var response = await _client.PutAsJsonAsync(
+            $"{Url}/{itemId}/{locationId}", NewInventory(itemId, locationId, onHand: 1));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
