@@ -68,6 +68,30 @@ public sealed class SuppliersControllerTests(ApiFixture fixture)
     }
 
     [Fact]
+    public async Task GetSupplierItems_ReturnsItemsForTheSupplier()
+    {
+        var supplierId = await fixture.QueryIntAsync("SELECT `supplier_id` FROM `item` LIMIT 1");
+        var expectedCount = await fixture.QueryIntAsync(
+            "SELECT COUNT(*) FROM `item` WHERE `supplier_id` = @id", ("@id", supplierId));
+
+        var items = await _client.GetFromJsonAsync<List<Item>>($"{Url}/{supplierId}/items");
+
+        Assert.NotNull(items);
+        Assert.Equal(expectedCount, items.Count);
+        Assert.NotEmpty(items);
+        Assert.All(items, item => Assert.Equal(supplierId, item.SupplierId));
+    }
+
+    [Fact]
+    public async Task GetSupplierItems_UnknownSupplier_ReturnsEmptyList()
+    {
+        var response = await _client.GetAsync($"{Url}/999999/items");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("[]", (await response.Content.ReadAsStringAsync()).Trim());
+    }
+
+    [Fact]
     public async Task CreateSupplier_StoresTheSupplier()
     {
         var before = DateTime.UtcNow.AddSeconds(-1);

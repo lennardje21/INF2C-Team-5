@@ -9,7 +9,8 @@ namespace CargoHub.Api.Services;
 /// Business logic for item types.
 public sealed class ItemTypesService(
     MySqlConnectionFactory factory,
-    MySqlRepository<ItemType> itemTypes)
+    MySqlRepository<ItemType> itemTypes,
+    MySqlRepository<Item> items)
 {
     private const int MaxDescriptionBytes = 65_535;
 
@@ -23,6 +24,15 @@ public sealed class ItemTypesService(
         var result = await itemTypes.GetAsync(
             new Dictionary<string, object?> { ["id"] = id }, cancellationToken);
         return result.SingleOrDefault();
+    }
+
+    /// Returns the IDs of items of an item type.
+    public async Task<IReadOnlyList<int>> GetItemsAsync(
+        int id, CancellationToken cancellationToken = default)
+    {
+        var result = await items.GetAsync(
+            new Dictionary<string, object?> { ["item_type_id"] = id }, cancellationToken);
+        return result.Select(item => item.Id).ToArray();
     }
 
     /// Creates an item type; the id and timestamps are set here.

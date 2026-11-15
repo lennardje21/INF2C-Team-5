@@ -9,7 +9,8 @@ namespace CargoHub.Api.Services;
 /// Business logic for item groups.
 public sealed class ItemGroupsService(
     MySqlConnectionFactory factory,
-    MySqlRepository<ItemGroup> itemGroups)
+    MySqlRepository<ItemGroup> itemGroups,
+    MySqlRepository<Item> items)
 {
     private const int MaxDescriptionBytes = 65_535;
 
@@ -23,6 +24,15 @@ public sealed class ItemGroupsService(
         var result = await itemGroups.GetAsync(
             new Dictionary<string, object?> { ["id"] = id }, cancellationToken);
         return result.SingleOrDefault();
+    }
+
+    /// Returns the IDs of items in an item group.
+    public async Task<IReadOnlyList<int>> GetItemsAsync(
+        int id, CancellationToken cancellationToken = default)
+    {
+        var result = await items.GetAsync(
+            new Dictionary<string, object?> { ["item_group_id"] = id }, cancellationToken);
+        return result.Select(item => item.Id).ToArray();
     }
 
     /// Creates an item group; the id and timestamps are set here.

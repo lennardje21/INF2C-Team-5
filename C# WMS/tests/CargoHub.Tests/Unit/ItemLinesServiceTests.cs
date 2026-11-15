@@ -24,7 +24,8 @@ public sealed class ItemLinesServiceTests
     private static ItemLinesService CreateService()
     {
         var factory = new MySqlConnectionFactory(new ConfigurationBuilder().Build());
-        return new ItemLinesService(factory, new MySqlRepository<ItemLine>(factory));
+        return new ItemLinesService(
+            factory, new MySqlRepository<ItemLine>(factory), new MySqlRepository<Item>(factory));
     }
 
     private static ItemLine ValidItemLine() => new()

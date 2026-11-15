@@ -16,7 +16,8 @@ public sealed class ItemTypesServiceTests
     private static ItemTypesService CreateService()
     {
         var factory = new MySqlConnectionFactory(new ConfigurationBuilder().Build());
-        return new ItemTypesService(factory, new MySqlRepository<ItemType>(factory));
+        return new ItemTypesService(
+            factory, new MySqlRepository<ItemType>(factory), new MySqlRepository<Item>(factory));
     }
 
     private static ItemType ValidItemType() => new()

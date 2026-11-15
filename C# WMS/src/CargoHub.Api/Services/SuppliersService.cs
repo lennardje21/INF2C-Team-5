@@ -8,7 +8,8 @@ namespace CargoHub.Api.Services;
 /// <summary>Business logic for suppliers and the items that belong to them.</summary>
 public sealed class SuppliersService(
     MySqlConnectionFactory factory,
-    MySqlRepository<Supplier> suppliers)
+    MySqlRepository<Supplier> suppliers,
+    MySqlRepository<Item> items)
 {
     /// <summary>Returns all suppliers.</summary>
     public Task<IReadOnlyList<Supplier>> GetAllAsync(CancellationToken cancellationToken = default) =>
@@ -19,6 +20,14 @@ public sealed class SuppliersService(
     {
         await using var connection = await factory.OpenAsync(cancellationToken);
         return await FindAsync(connection, id, cancellationToken);
+    }
+
+    /// <summary>Returns the items associated with a supplier.</summary>
+    public Task<IReadOnlyList<Item>> GetItemsAsync(
+        int id, CancellationToken cancellationToken = default)
+    {
+        return items.GetAsync(
+            new Dictionary<string, object?> { ["supplier_id"] = id }, cancellationToken);
     }
 
     /// <summary>Creates a supplier; the id and timestamps are set here.</summary>

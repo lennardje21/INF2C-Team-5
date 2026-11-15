@@ -15,7 +15,8 @@ public sealed class ItemGroupsServiceTests
     private static ItemGroupsService CreateService()
     {
         var factory = new MySqlConnectionFactory(new ConfigurationBuilder().Build());
-        return new ItemGroupsService(factory, new MySqlRepository<ItemGroup>(factory));
+        return new ItemGroupsService(
+            factory, new MySqlRepository<ItemGroup>(factory), new MySqlRepository<Item>(factory));
     }
 
     private static ItemGroup ValidItemGroup() => new()

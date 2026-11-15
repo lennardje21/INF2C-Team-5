@@ -57,6 +57,33 @@ public sealed class ItemLinesControllerTests(ApiFixture fixture)
     }
 
     [Fact]
+    public async Task GetItemLineItems_ReturnsItemIdsForTheItemLine()
+    {
+        var itemLineId = await fixture.QueryIntAsync("SELECT `item_line_id` FROM `item` LIMIT 1");
+        var expectedCount = await fixture.QueryIntAsync(
+            "SELECT COUNT(*) FROM `item` WHERE `item_line_id` = @id", ("@id", itemLineId));
+
+        var items = await _client.GetFromJsonAsync<List<int>>($"{Url}/{itemLineId}/items");
+        var allItems = await _client.GetFromJsonAsync<List<Item>>("/api/v2/items");
+
+        Assert.NotNull(items);
+        Assert.NotNull(allItems);
+        Assert.Equal(expectedCount, items.Count);
+        Assert.NotEmpty(items);
+        Assert.All(items, id => Assert.Contains(allItems, item =>
+            item.Id == id && item.ItemLineId == itemLineId));
+    }
+
+    [Fact]
+    public async Task GetItemLineItems_UnknownItemLine_ReturnsEmptyList()
+    {
+        var response = await _client.GetAsync($"{Url}/999999/items");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("[]", (await response.Content.ReadAsStringAsync()).Trim());
+    }
+
+    [Fact]
     public async Task CreateItemLine_StoresTheItemLine()
     {
         var itemLine = NewItemLine();

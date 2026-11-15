@@ -30,6 +30,15 @@ public class SuppliersController(SuppliersService suppliersService) : Controller
         return Ok(supplier);
     }
 
+    /// <summary>Returns the items supplied by a supplier.</summary>
+    [HttpGet("{id:int}/items")]
+    public async Task<ActionResult<IEnumerable<Item>>> GetSupplierItems(
+        int id, CancellationToken cancellationToken)
+    {
+        var items = await suppliersService.GetItemsAsync(id, cancellationToken);
+        return Ok(items);
+    }
+
     /// <summary>Creates a supplier.</summary>
     [HttpPost]
     public async Task<ActionResult<Supplier>> CreateSupplier(Supplier supplier, CancellationToken cancellationToken)

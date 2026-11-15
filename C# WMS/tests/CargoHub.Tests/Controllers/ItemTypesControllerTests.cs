@@ -57,6 +57,33 @@ public sealed class ItemTypesControllerTests(ApiFixture fixture)
     }
 
     [Fact]
+    public async Task GetItemTypeItems_ReturnsItemIdsForTheItemType()
+    {
+        var itemTypeId = await fixture.QueryIntAsync("SELECT `item_type_id` FROM `item` LIMIT 1");
+        var expectedCount = await fixture.QueryIntAsync(
+            "SELECT COUNT(*) FROM `item` WHERE `item_type_id` = @id", ("@id", itemTypeId));
+
+        var items = await _client.GetFromJsonAsync<List<int>>($"{Url}/{itemTypeId}/items");
+        var allItems = await _client.GetFromJsonAsync<List<Item>>("/api/v2/items");
+
+        Assert.NotNull(items);
+        Assert.NotNull(allItems);
+        Assert.Equal(expectedCount, items.Count);
+        Assert.NotEmpty(items);
+        Assert.All(items, id => Assert.Contains(allItems, item =>
+            item.Id == id && item.ItemTypeId == itemTypeId));
+    }
+
+    [Fact]
+    public async Task GetItemTypeItems_UnknownItemType_ReturnsEmptyList()
+    {
+        var response = await _client.GetAsync($"{Url}/999999/items");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("[]", (await response.Content.ReadAsStringAsync()).Trim());
+    }
+
+    [Fact]
     public async Task CreateItemType_StoresTheItemType()
     {
         var ItemType = NewItemType();

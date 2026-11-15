@@ -24,6 +24,15 @@ public class ItemLinesController(ItemLinesService itemLinesService) : Controller
         return itemLine is null ? NotFound() : Ok(itemLine);
     }
 
+    /// Returns the IDs of items in an item line.
+    [HttpGet("{id:int}/items")]
+    public async Task<ActionResult<IEnumerable<int>>> GetItemLineItems(
+        int id, CancellationToken cancellationToken)
+    {
+        var items = await itemLinesService.GetItemsAsync(id, cancellationToken);
+        return Ok(items);
+    }
+
     /// Creates an item line.
     [HttpPost]
     public async Task<ActionResult<ItemLine>> CreateItemLine(

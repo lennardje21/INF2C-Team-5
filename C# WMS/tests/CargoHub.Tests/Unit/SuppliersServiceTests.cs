@@ -25,7 +25,8 @@ public sealed class SuppliersServiceTests
     private static SuppliersService CreateService()
     {
         var factory = new MySqlConnectionFactory(new ConfigurationBuilder().Build());
-        return new SuppliersService(factory, new MySqlRepository<Supplier>(factory));
+        return new SuppliersService(
+            factory, new MySqlRepository<Supplier>(factory), new MySqlRepository<Item>(factory));
     }
 
     // A Dutch supplier that passes every check.

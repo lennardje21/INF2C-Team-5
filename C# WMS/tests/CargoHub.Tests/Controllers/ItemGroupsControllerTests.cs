@@ -57,6 +57,33 @@ public sealed class ItemGroupsControllerTests(ApiFixture fixture)
     }
 
     [Fact]
+    public async Task GetItemGroupItems_ReturnsItemIdsForTheItemGroup()
+    {
+        var itemGroupId = await fixture.QueryIntAsync("SELECT `item_group_id` FROM `item` LIMIT 1");
+        var expectedCount = await fixture.QueryIntAsync(
+            "SELECT COUNT(*) FROM `item` WHERE `item_group_id` = @id", ("@id", itemGroupId));
+
+        var items = await _client.GetFromJsonAsync<List<int>>($"{Url}/{itemGroupId}/items");
+        var allItems = await _client.GetFromJsonAsync<List<Item>>("/api/v2/items");
+
+        Assert.NotNull(items);
+        Assert.NotNull(allItems);
+        Assert.Equal(expectedCount, items.Count);
+        Assert.NotEmpty(items);
+        Assert.All(items, id => Assert.Contains(allItems, item =>
+            item.Id == id && item.ItemGroupId == itemGroupId));
+    }
+
+    [Fact]
+    public async Task GetItemGroupItems_UnknownItemGroup_ReturnsEmptyList()
+    {
+        var response = await _client.GetAsync($"{Url}/999999/items");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("[]", (await response.Content.ReadAsStringAsync()).Trim());
+    }
+
+    [Fact]
     public async Task CreateItemGroup_StoresTheItemGroup()
     {
         var itemGroup = NewItemGroup();

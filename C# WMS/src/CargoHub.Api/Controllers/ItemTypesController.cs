@@ -24,6 +24,15 @@ public class ItemTypesController(ItemTypesService itemTypesService) : Controller
         return itemType is null ? NotFound() : Ok(itemType);
     }
 
+    /// Returns the IDs of items of an item type.
+    [HttpGet("{id:int}/items")]
+    public async Task<ActionResult<IEnumerable<int>>> GetItemTypeItems(
+        int id, CancellationToken cancellationToken)
+    {
+        var items = await itemTypesService.GetItemsAsync(id, cancellationToken);
+        return Ok(items);
+    }
+
     /// Creates an item type.
     [HttpPost]
     public async Task<ActionResult<ItemType>> CreateItemType(

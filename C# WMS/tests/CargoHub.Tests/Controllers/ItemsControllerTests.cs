@@ -52,6 +52,72 @@ public sealed class ItemsControllerTests(ApiFixture fixture)
         Assert.NotEmpty(items);
     }
 
+    [Theory]
+    [InlineData("item_lines")]
+    [InlineData("item_groups")]
+    [InlineData("item_types")]
+    [InlineData("suppliers")]
+    public async Task GetRelatedItems_ReturnsOnlyMatchingItemsInV1Format(string resource)
+    {
+        var allItems = await _client.GetFromJsonAsync<List<Item>>(Url);
+        Assert.NotNull(allItems);
+        Assert.NotEmpty(allItems);
+
+        int RelatedId(Item item) => resource switch
+        {
+            "item_lines" => item.ItemLineId,
+            "item_groups" => item.ItemGroupId,
+            "item_types" => item.ItemTypeId,
+            "suppliers" => item.SupplierId,
+            _ => throw new ArgumentOutOfRangeException(nameof(resource))
+        };
+
+        var id = RelatedId(allItems[0]);
+        var expected = allItems.Where(item => RelatedId(item) == id).ToList();
+        Assert.Contains(allItems, item => RelatedId(item) != id);
+
+        var path = $"/api/v2/{resource}/{id}/items";
+        if (resource == "suppliers")
+        {
+            var actual = await _client.GetFromJsonAsync<List<Item>>(path);
+            Assert.NotNull(actual);
+            Assert.Equal(expected.Select(item => item.Id), actual.Select(item => item.Id));
+            Assert.All(actual, item => Assert.Equal(id, item.SupplierId));
+        }
+        else
+        {
+            var actual = await _client.GetFromJsonAsync<List<int>>(path);
+            Assert.NotNull(actual);
+            Assert.Equal(expected.Select(item => item.Id), actual);
+        }
+    }
+
+    [Theory]
+    [InlineData("item_lines")]
+    [InlineData("item_groups")]
+    [InlineData("item_types")]
+    [InlineData("suppliers")]
+    public async Task GetRelatedItems_UnknownId_ReturnsEmptyList(string resource)
+    {
+        using var response = await _client.GetAsync($"/api/v2/{resource}/999999999/items");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("[]", (await response.Content.ReadAsStringAsync()).Trim());
+    }
+
+    [Theory]
+    [InlineData("item_lines")]
+    [InlineData("item_groups")]
+    [InlineData("item_types")]
+    [InlineData("suppliers")]
+    public async Task GetRelatedItems_MissingApiKey_ReturnsUnauthorized(string resource)
+    {
+        using var client = fixture.CreateUnauthenticatedClient();
+        using var response = await client.GetAsync($"/api/v2/{resource}/1/items");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     [Fact]
     public async Task GetItem_ReturnsTheItem()
     {

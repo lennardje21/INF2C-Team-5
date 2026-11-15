@@ -24,6 +24,15 @@ public class ItemGroupsController(ItemGroupsService itemGroupsService) : Control
         return itemGroup is null ? NotFound() : Ok(itemGroup);
     }
 
+    /// Returns the IDs of items in an item group.
+    [HttpGet("{id:int}/items")]
+    public async Task<ActionResult<IEnumerable<int>>> GetItemGroupItems(
+        int id, CancellationToken cancellationToken)
+    {
+        var items = await itemGroupsService.GetItemsAsync(id, cancellationToken);
+        return Ok(items);
+    }
+
     /// Creates an item group.
     [HttpPost]
     public async Task<ActionResult<ItemGroup>> CreateItemGroup(

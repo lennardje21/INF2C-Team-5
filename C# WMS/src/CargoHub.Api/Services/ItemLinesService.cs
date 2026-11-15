@@ -9,7 +9,8 @@ namespace CargoHub.Api.Services;
 /// Business logic for item lines.
 public sealed class ItemLinesService(
     MySqlConnectionFactory factory,
-    MySqlRepository<ItemLine> itemLines)
+    MySqlRepository<ItemLine> itemLines,
+    MySqlRepository<Item> items)
 {
     private const int MaxDescriptionBytes = 65_535;
 
@@ -23,6 +24,15 @@ public sealed class ItemLinesService(
         var result = await itemLines.GetAsync(
             new Dictionary<string, object?> { ["id"] = id }, cancellationToken);
         return result.SingleOrDefault();
+    }
+
+    /// Returns the IDs of items in an item line.
+    public async Task<IReadOnlyList<int>> GetItemsAsync(
+        int id, CancellationToken cancellationToken = default)
+    {
+        var result = await items.GetAsync(
+            new Dictionary<string, object?> { ["item_line_id"] = id }, cancellationToken);
+        return result.Select(item => item.Id).ToArray();
     }
 
     /// Creates an item line; the id and timestamps are set here.
