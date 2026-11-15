@@ -125,6 +125,105 @@ public sealed class SuppliersControllerTests(ApiFixture fixture)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("code", "SUP-0001")]
+    [InlineData("phoneNumber", "+31(0)14 9551127")]
+    [InlineData("phoneNumber", "(0275)-164807")]
+    [InlineData("zipCode", "3011 AA")]
+    [InlineData("city", "'s-Hertogenbosch")]
+    [InlineData("contactName", "Karlijn van der Laarse-van Luin")]
+    [InlineData("name", "Royal Swinkels Family Brewers (Bavaria)")]
+    public async Task CreateSupplier_ValidFormat_ReturnsCreated(string field, string value)
+    {
+        var supplier = NewSupplier();
+        supplier[field] = value;
+
+        var response = await _client.PostAsJsonAsync(Url, supplier);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("code", "SUP 0001")]
+    [InlineData("code", "SUP--0001")]
+    [InlineData("code", "-SUP")]
+    [InlineData("phoneNumber", "12345")]
+    [InlineData("phoneNumber", "010-12345ab")]
+    [InlineData("phoneNumber", "(010 1234567")]
+    [InlineData("zipCode", "0123 AB")]
+    [InlineData("zipCode", "3011")]
+    [InlineData("city", "Rotterdam1")]
+    [InlineData("province", "Zuid-Holland!")]
+    [InlineData("country", "123")]
+    [InlineData("contactName", "<script>")]
+    [InlineData("name", "Jumbo\nTest")]
+    [InlineData("name", "---")]
+    [InlineData("address", "12345")]
+    [InlineData("reference", "!!!")]
+    public async Task CreateSupplier_InvalidFormat_ReturnsBadRequest(string field, string value)
+    {
+        var supplier = NewSupplier();
+        supplier[field] = value;
+
+        var response = await _client.PostAsJsonAsync(Url, supplier);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateSupplier_TooLongField_ReturnsBadRequest()
+    {
+        var supplier = NewSupplier();
+        supplier["reference"] = new string('a', 256);
+
+        var response = await _client.PostAsJsonAsync(Url, supplier);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateSupplier_SeveralInvalidFields_ReturnsAllErrorsInOneMessage()
+    {
+        var supplier = NewSupplier();
+        supplier["phoneNumber"] = "12345";
+        supplier["zipCode"] = "3011";
+
+        var response = await _client.PostAsJsonAsync(Url, supplier);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("PhoneNumber", body);
+        Assert.Contains("ZipCode", body);
+    }
+
+    [Fact]
+    public async Task CreateSupplier_TrimsSpacesAroundValues()
+    {
+        var supplier = NewSupplier();
+        supplier["name"] = "  Jumbo Test  ";
+        supplier["code"] = " SUP-TEST ";
+
+        var created = await CreateAsync(supplier);
+
+        var stored = await _client.GetFromJsonAsync<Supplier>($"{Url}/{created.Id}");
+        Assert.Equal("Jumbo Test", stored!.Name);
+        Assert.Equal("SUP-TEST", stored.Code);
+    }
+
+    [Fact]
+    public async Task UpdateSupplier_InvalidPhone_ReturnsBadRequestAndKeepsTheSupplier()
+    {
+        var created = await CreateAsync(NewSupplier());
+        var supplier = NewSupplier(name: "Jumbo Changed");
+        supplier["phoneNumber"] = "12345";
+
+        var response = await _client.PutAsJsonAsync($"{Url}/{created.Id}", supplier);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var stored = await _client.GetFromJsonAsync<Supplier>($"{Url}/{created.Id}");
+        Assert.Equal("Jumbo Test", stored!.Name);
+    }
+
     [Fact]
     public async Task UpdateSupplier_ChangesFieldsButKeepsCreatedAt()
     {

@@ -1,5 +1,6 @@
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
+using CargoHub.Api.Validation;
 using MySqlConnector;
 
 namespace CargoHub.Api.Services;
@@ -92,10 +93,21 @@ public sealed class SuppliersService(
         (await suppliers.GetAsync(connection, null,
             new Dictionary<string, object?> { ["id"] = id }, cancellationToken)).SingleOrDefault();
 
-    /// <summary>Checks that the required fields are filled in.</summary>
+    // Checks every field; all format errors come back together in one message.
     private static void Validate(Supplier supplier)
     {
-        var missing = new (string Name, string Value)[]
+        supplier.Code = FieldRules.Trim(supplier.Code);
+        supplier.Name = FieldRules.Trim(supplier.Name);
+        supplier.Address = FieldRules.Trim(supplier.Address);
+        supplier.City = FieldRules.Trim(supplier.City);
+        supplier.ZipCode = FieldRules.Trim(supplier.ZipCode);
+        supplier.Province = FieldRules.Trim(supplier.Province);
+        supplier.Country = FieldRules.Trim(supplier.Country);
+        supplier.ContactName = FieldRules.Trim(supplier.ContactName);
+        supplier.PhoneNumber = FieldRules.Trim(supplier.PhoneNumber);
+        supplier.Reference = FieldRules.Trim(supplier.Reference);
+
+        var fields = new (string Name, string Value)[]
         {
             (nameof(Supplier.Name), supplier.Name),
             (nameof(Supplier.Address), supplier.Address),
@@ -107,8 +119,45 @@ public sealed class SuppliersService(
             (nameof(Supplier.PhoneNumber), supplier.PhoneNumber),
             (nameof(Supplier.Code), supplier.Code),
             (nameof(Supplier.Reference), supplier.Reference)
-        }.Where(f => string.IsNullOrWhiteSpace(f.Value)).Select(f => f.Name).ToList();
-        if (missing.Count > 0)
-            throw new ArgumentException($"Missing required fields: {string.Join(", ", missing)}.");
+        };
+
+        FieldRules.CheckRequired(fields);
+        FieldRules.CheckMaxLength(fields);
+        FieldRules.CheckNoControlCharacters(fields);
+
+        var errors = new List<string>();
+
+        // A code such as "SUP-0001": letters and digits, optionally separated by single hyphens.
+        if (!supplier.Code.Split('-').All(part => part.Length > 0 && part.All(char.IsAsciiLetterOrDigit)))
+            errors.Add("Code may only contain letters, digits and single hyphens, such as 'SUP-0001'.");
+
+        if (!supplier.Name.Any(char.IsLetterOrDigit))
+            errors.Add("Name must contain at least one letter or digit.");
+
+        if (!supplier.Address.Any(char.IsLetter))
+            errors.Add("Address must contain a street name.");
+
+        foreach (var (name, value) in new[]
+                 {
+                     (nameof(Supplier.City), supplier.City),
+                     (nameof(Supplier.Province), supplier.Province),
+                     (nameof(Supplier.Country), supplier.Country),
+                     (nameof(Supplier.ContactName), supplier.ContactName)
+                 })
+        {
+            if (!FieldRules.IsPlaceOrPersonName(value))
+                errors.Add($"{name} {FieldRules.NameError}");
+        }
+
+        if (!FieldRules.IsValidZipCode(supplier.ZipCode, supplier.Country))
+            errors.Add($"ZipCode {FieldRules.ZipCodeErrorFor(supplier.Country)}");
+
+        if (!FieldRules.IsValidPhone(supplier.PhoneNumber))
+            errors.Add($"PhoneNumber {FieldRules.PhoneError}");
+
+        if (!supplier.Reference.Any(char.IsLetterOrDigit))
+            errors.Add("Reference must contain at least one letter or digit.");
+
+        FieldRules.ThrowIfAny(errors);
     }
 }
