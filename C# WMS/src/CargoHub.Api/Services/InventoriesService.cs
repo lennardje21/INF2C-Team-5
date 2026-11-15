@@ -1,5 +1,6 @@
 using CargoHub.Api.Data;
 using CargoHub.Api.Models;
+using CargoHub.Api.Validation;
 using MySqlConnector;
 
 namespace CargoHub.Api.Services;
@@ -28,6 +29,7 @@ public sealed class InventoriesService(
     
     public async Task<Inventory> CreateAsync(Inventory inventory, CancellationToken cancellationToken = default)
     {
+        ValidateKeys(inventory);
         Validate(inventory);
         var now = DateTime.UtcNow;
         inventory.CreatedAt = now;
@@ -111,9 +113,23 @@ public sealed class InventoriesService(
             new Dictionary<string, object?> { ["item_id"] = itemId, ["location_id"] = locationId },
             cancellationToken)).SingleOrDefault();
 
-    // Checks that the quantities are not negative.
+    // Checks that the item and location ids are greater than 0. Only for create: on update the keys come from the URL.
+    private static void ValidateKeys(Inventory inventory)
+    {
+        var notPositive = new (string Name, int Value)[]
+        {
+            (nameof(Inventory.ItemId), inventory.ItemId),
+            (nameof(Inventory.LocationId), inventory.LocationId)
+        }.Where(f => f.Value <= 0).Select(f => f.Name).ToList();
+        if (notPositive.Count > 0)
+            throw new ArgumentException($"Ids must be greater than 0: {string.Join(", ", notPositive)}.");
+    }
+
+    // Checks that the quantities are not negative and that no more stock is allocated than is on hand.
     private static void Validate(Inventory inventory)
     {
+        var errors = new List<string>();
+
         var negative = new (string Name, int Value)[]
         {
             (nameof(Inventory.QuantityOnHand), inventory.QuantityOnHand),
@@ -122,6 +138,12 @@ public sealed class InventoriesService(
             (nameof(Inventory.QuantityAllocated), inventory.QuantityAllocated)
         }.Where(f => f.Value < 0).Select(f => f.Name).ToList();
         if (negative.Count > 0)
-            throw new ArgumentException($"Quantities cannot be negative: {string.Join(", ", negative)}.");
+            errors.Add($"Quantities cannot be negative: {string.Join(", ", negative)}.");
+
+        // You cannot reserve stock that is not there.
+        if (inventory.QuantityAllocated > inventory.QuantityOnHand)
+            errors.Add("QuantityAllocated cannot be greater than QuantityOnHand.");
+
+        FieldRules.ThrowIfAny(errors);
     }
 }
