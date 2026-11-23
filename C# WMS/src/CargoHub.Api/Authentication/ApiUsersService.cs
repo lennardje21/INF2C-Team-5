@@ -8,7 +8,15 @@ namespace CargoHub.Api.Authentication;
 public sealed class ApiUsersService(MySqlConnectionFactory factory, IMemoryCache cache)
 {
     private const string CacheKey = "api-users";
+    // Changes made through this API container apply at once (see Invalidate). Changes made
+    // through the other container, or with scripts/set-api-key.sh, within this time.
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(1);
+
+    // A new random key of 256 bits, as 64 hex characters (like scripts/set-api-key.sh).
+    public static string GenerateKey() => RandomNumberGenerator.GetHexString(64, lowercase: true);
+
+    // Call after changing accounts, keys or access, so the next request reloads them.
+    public void Invalidate() => cache.Remove(CacheKey);
 
     // Only the SHA-256 hash of a key is stored, as lowercase hex (the same as MySQL's SHA2()).
     public static string Hash(string apiKey) =>

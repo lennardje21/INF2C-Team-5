@@ -54,6 +54,12 @@ scripts/set-api-key.sh --list   # all accounts
 scripts/set-api-key.sh 1        # prints a new key for account 1, once
 ```
 
+From there, accounts are managed through `/api/v2/accounts`. Roles form a strict hierarchy,
+`superroot > root > admin > user`: an account manages the accounts below it in its own
+warehouse (the superroot in every warehouse), and can only grant access it has itself.
+Creating an account (`POST /api/v2/accounts`) returns its API key once;
+`POST /api/v2/accounts/{id}/api_key` replaces a key, also your own.
+
 ```sh
 curl -H "API_KEY: your-key" http://localhost:3000/api/v2/warehouses/1
 ```

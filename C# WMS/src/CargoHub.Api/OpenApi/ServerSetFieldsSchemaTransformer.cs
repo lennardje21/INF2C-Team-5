@@ -19,7 +19,8 @@ public sealed class ServerSetFieldsSchemaTransformer : IOpenApiSchemaTransformer
         [typeof(Transfer)] = ["reference"],
         [typeof(OrderItem)] = ["id", "orderId"],
         [typeof(ShipmentItem)] = ["id", "shipmentId"],
-        [typeof(TransferItem)] = ["id", "transferId"]
+        [typeof(TransferItem)] = ["id", "transferId"],
+        [typeof(CreatedAccount)] = ["apiKey"]
     };
 
     public Task TransformAsync(
