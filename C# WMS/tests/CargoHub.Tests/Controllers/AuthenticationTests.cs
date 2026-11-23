@@ -28,9 +28,7 @@ public sealed class AuthenticationTests(ApiFixture fixture)
     public async Task ReadOnlyApiKey_CanReadButCannotCreate()
     {
         using var client = fixture.CreateUnauthenticatedClient();
-        var key = await fixture.QueryStringAsync(
-            "SELECT `api_key` FROM `user` WHERE `app` = @app", ("@app", "analytics_dashboard"));
-        client.DefaultRequestHeaders.Add(ApiKeyMiddleware.HeaderName, key);
+        client.DefaultRequestHeaders.Add(ApiKeyMiddleware.HeaderName, fixture.ReadOnlyApiKey);
 
         using var read = await client.GetAsync("/api/v2/warehouses");
         Assert.Equal(HttpStatusCode.OK, read.StatusCode);
