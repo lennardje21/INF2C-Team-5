@@ -43,7 +43,9 @@ Wacht totdat de initialisatie klaar is voordat je de applicatie laat verbinden.
 
 ## Bestaand datavolume
 
-Bij een bestaand volume worden initialisatiescripts niet opnieuw uitgevoerd.
+Bij een bestaand volume worden initialisatiescripts niet opnieuw uitgevoerd. Een bestaande
+database met een oudere `schema_version` werk je bij met de migraties in
+`Data/MySql/migrations`; zie [Database migrations](DEPLOYMENT.md#database-migrations).
 Verwijder geen volume met bestaande data om een import af te dwingen.
 Maak eerst een backup en kies een lege doeldatabase. Schema en seed zijn bewust
 niet idempotent: dubbele tabellen of sleutels geven een fout in plaats van
@@ -76,11 +78,12 @@ python3 scripts/verify_mysql.py
 
 Het script vernieuwt de seed en het manifest, niet het schema of een actieve
 database. Het controleert velden, dubbele sleutels, verwijzingen, int-bereik,
-decimalprecisie, booleanrechten en tijdzones vóór het schrijven. Pas bij een
+decimalprecisie en tijdzones vóór het schrijven. De accounts maakt het script zelf
+aan op basis van de magazijnen. Pas bij een
 nieuw veld eerst het SQL-schema en de modelmapping aan.
 
 `verify_mysql.py` vergelijkt alle velden in de draaiende Compose-database met de
-JSON-bronnen, inclusief gereconstrueerde gebruikersrechten. Het voert alleen SELECTs
+JSON-bronnen. Accounts komen niet uit de JSON-bronnen en worden niet vergeleken. Het voert alleen SELECTs
 uit en print geen API-keys of wachtwoorden. Verwacht dat deze controle verschillen
 meldt zodra jullie applicatie de geïmporteerde data heeft gewijzigd.
 
@@ -88,14 +91,16 @@ Tekst wordt als UTF-8 hexliteral uitgevoerd; apostrofs, backslashes, regeleinden
 en Unicode blijven behouden, onafhankelijk van SQL-escapinginstellingen.
 Datums worden naar UTC `DATETIME(6)` omgezet. Decimalwaarden worden rechtstreeks
 uit JSON als `Decimal` ingelezen en niet via een floating-pointconversie.
-De seed bevat bestaande API-keys en hoort dezelfde toegangsbeperkingen te hebben
-als de oorspronkelijke gebruikersdata.
+De oorspronkelijke gebruikers en hun API-keys zijn niet overgenomen: de seed bevat alleen
+de superroot en per magazijn een root, admin en user, allemaal zonder API-key
+(zie Gebruikersrechten).
 
 ## Schema en modelmapping
 
 Tabelnamen volgen de JSON-bron: `warehouse`, `client`, `supplier`, `item_line`,
 `item_group`, `item_type`, `location`, `item`, `inventory`, `order`, `order_item`,
-`shipment`, `shipment_item`, `transfer`, `transfer_item`, `user`.
+`shipment`, `shipment_item`, `transfer`, `transfer_item`. Accounts staan in `account`,
+`account_endpoint` en `account_permission`.
 Gebruik backticks voor SQL-identifiers, bijvoorbeeld `SELECT * FROM \`order\``.
 
 | C# | MySQL | Mapping |
@@ -205,20 +210,23 @@ gelijktijdige voorraadwijzigingen een atomaire geparametriseerde UPDATE of
 
 ## Gebruikersrechten
 
-`user` bewaart `api_key` en `app`. `user_endpoint` bewaart de beschikbare resources;
-`user_permission` bewaart methode en expliciet booleanrecht, inclusief false.
-API-keys en resources gebruiken een case-sensitive collation.
-De bestaande bedrijfsmodels bevatten geen User-model; authenticatie wordt apart
-geïmplementeerd en is niet aangesloten op de endpoints.
+Elk account heeft precies één API-key. `account` bewaart rol (`superroot`, `root`,
+`admin`, `user`), naam, uniek e-mailadres, magazijn (verplicht, behalve voor de superroot), `app` en `api_key_hash`: de SHA-256
+van de key als lowercase hex, gelijk aan MySQL's `SHA2(key, 256)`. De key zelf wordt nergens
+opgeslagen; `NULL` betekent dat het account nog geen key heeft. Geef een account een key met
+`scripts/set-api-key.sh`. `account_endpoint` bewaart de beschikbare resources;
+`account_permission` bewaart methode en expliciet booleanrecht, inclusief false.
+Resources gebruiken een case-sensitive collation.
 
 ```sql
-SELECT allowed FROM user_permission
-WHERE api_key = @apiKey AND resource = @resource AND method = @method;
+SELECT p.allowed FROM account a
+JOIN account_permission p ON p.account_id = a.id
+WHERE a.api_key_hash = SHA2(@apiKey, 256) AND p.resource = @resource AND p.method = @method;
 ```
 
 Normaliseer HTTP-methodes naar lowercase (`get`, `post`, `put`, `delete`). Geen rij
-of `allowed = 0` betekent geen toegang. Controleer apart of de gebruiker bestaat
-als je onbekende gebruiker en ontbrekend recht wilt onderscheiden.
+of `allowed = 0` betekent geen toegang. Controleer apart of het account bestaat
+als je onbekende key en ontbrekend recht wilt onderscheiden.
 
 ## Overstap en validatie
 

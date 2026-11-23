@@ -3,7 +3,6 @@ using CargoHub.Api.Authentication;
 using CargoHub.Api.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -29,8 +28,7 @@ public sealed class ApiKeyMiddlewareTests
             httpContext.Response.StatusCode = status;
             return Task.CompletedTask;
         }, NullLogger<ApiKeyMiddleware>.Instance);
-        using var cache = new MemoryCache(new MemoryCacheOptions());
-        var users = CreateUsersService(cache);
+        var users = CreateUsersService();
 
         await middleware.InvokeAsync(context, users);
 
@@ -54,9 +52,8 @@ public sealed class ApiKeyMiddlewareTests
             nextCalled = true;
             return Task.CompletedTask;
         }, NullLogger<ApiKeyMiddleware>.Instance);
-        using var cache = new MemoryCache(new MemoryCacheOptions());
 
-        await middleware.InvokeAsync(context, CreateUsersService(cache));
+        await middleware.InvokeAsync(context, CreateUsersService());
 
         Assert.False(nextCalled);
         Assert.Equal(401, context.Response.StatusCode);
@@ -67,6 +64,6 @@ public sealed class ApiKeyMiddlewareTests
     }
 
     // An empty configuration makes any accidental database access fail.
-    private static ApiUsersService CreateUsersService(IMemoryCache cache) =>
-        new(new MySqlConnectionFactory(new ConfigurationBuilder().Build()), cache);
+    private static ApiUsersService CreateUsersService() =>
+        new(new MySqlConnectionFactory(new ConfigurationBuilder().Build()));
 }

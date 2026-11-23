@@ -13,10 +13,13 @@ from scripts.export_mysql import ROOT, OUTPUT, TABLES, export, literal, normaliz
 class MySqlExportTests(unittest.TestCase):
     def test_every_seed_field_matches_json(self):
         seed = (OUTPUT / "02-seed.sql").read_text()
-        actual = {table: [] for table in (*TABLES, "user_endpoint", "user_permission")}
+        actual = {table: [] for table in TABLES}
         for table, column_text, values in re.findall(
             r"INSERT INTO `([^`]+)` \(([^\n]+)\) VALUES\n(.*?);", seed, re.S
         ):
+            # The account tables are generated, not exported from JSON.
+            if table not in actual:
+                continue
             columns = re.findall(r"`([^`]+)`", column_text)
             for line in values.splitlines():
                 tokens = line.rstrip(",")[1:-1].split(", ")
@@ -33,25 +36,17 @@ class MySqlExportTests(unittest.TestCase):
         for table in TABLES:
             expected = json.loads((ROOT / "Python WMS/data" / f"{table}.json").read_text(),
                                   parse_float=Decimal)
-            if table == "user":
-                for user in actual[table]:
-                    access = {r["resource"]: {} for r in actual["user_endpoint"]
-                              if r["api_key"] == user["api_key"]}
-                    for row in actual["user_permission"]:
-                        if row["api_key"] == user["api_key"]:
-                            access[row["resource"]][row["method"]] = bool(row["allowed"])
-                    user["endpoint_access"] = access
             expected = [{k: normalize(k, v) for k, v in row.items()} for row in expected]
             self.assertEqual(actual[table], expected, table)
             count += len(expected)
-        self.assertEqual(count, 80471)
+        self.assertEqual(count, 80465)
 
     def test_manifest_and_deterministic_regeneration(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
             shutil.copyfile(OUTPUT / "01-schema.sql", output / "01-schema.sql")
             report = export(output=output)
-            self.assertEqual(report["source_records"], 80471)
+            self.assertEqual(report["source_records"], 80465)
             self.assertEqual((output / "02-seed.sql").read_bytes(), (OUTPUT / "02-seed.sql").read_bytes())
             self.assertEqual(report["seed_sha256"], hashlib.sha256((OUTPUT / "02-seed.sql").read_bytes()).hexdigest())
 
@@ -65,10 +60,11 @@ class MySqlExportTests(unittest.TestCase):
             text = path.read_text()
             table = re.sub(r"([a-z])([A-Z])", r"\1_\2", path.stem).lower()
             body = re.search(rf"CREATE TABLE `{table}` \((.*?)\n\)", schema, re.S)[1]
-            columns = set(re.findall(r"^    `([^`]+)` ", body, re.M))
+            # The API key hash deliberately has no model property: it never leaves the database.
+            columns = set(re.findall(r"^    `([^`]+)` ", body, re.M)) - {"api_key_hash"}
             if ": BaseModel" in text:
                 text += base
-            properties = re.findall(r"public (?:int|decimal|DateTime|string\??) (\w+) \{", text)
+            properties = re.findall(r"public (?:int|decimal|DateTime|string)\?? (\w+) \{", text)
             mapped = {"min_purchase_qty" if p == "MinPurchaseQuantity" else
                       re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", p).lower() for p in properties}
             self.assertEqual(columns, mapped, path.stem)

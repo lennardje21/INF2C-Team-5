@@ -25,6 +25,9 @@ public sealed class ApiFixture : IAsyncLifetime
 
     public HttpClient Client { get; private set; } = null!;
 
+    // API key of a seeded account that may only use GET.
+    public string ReadOnlyApiKey { get; private set; } = null!;
+
     public string ConnectionString => _mysql.GetConnectionString();
 
     public async Task InitializeAsync()
@@ -32,19 +35,32 @@ public sealed class ApiFixture : IAsyncLifetime
         await _mysql.StartAsync();
         await WaitForSeedAsync();
 
-        // This user exists only in the disposable test database. Keep production
+        // This superroot account exists only in the disposable test database. Keep production
         // authentication enabled while controller tests exercise all CRUD routes.
         var apiKey = Guid.NewGuid().ToString("N");
-        await ExecuteAsync("INSERT INTO `user` (`api_key`, `app`) VALUES (@key, 'integration-tests')",
-            ("@key", apiKey));
         await ExecuteAsync("""
-            INSERT INTO `user_endpoint` (`api_key`, `resource`)
-            SELECT DISTINCT @key, `resource` FROM `user_endpoint`
+            INSERT INTO `account` (`role`, `name`, `email`, `warehouse_id`, `app`, `api_key_hash`, `created_at`, `updated_at`)
+            VALUES ('superroot', 'Integration Tests', 'integration-tests@cargohub.nl', NULL, 'integration-tests',
+                    SHA2(@key, 256), UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
             """, ("@key", apiKey));
         await ExecuteAsync("""
-            INSERT INTO `user_permission` (`api_key`, `resource`, `method`, `allowed`)
-            SELECT DISTINCT @key, `resource`, `method`, 1 FROM `user_permission`
-            """, ("@key", apiKey));
+            INSERT INTO `account_endpoint` (`account_id`, `resource`)
+            SELECT a.`id`, e.`resource` FROM `account` a
+            CROSS JOIN (SELECT DISTINCT `resource` FROM `account_endpoint`) e
+            WHERE a.`email` = 'integration-tests@cargohub.nl'
+            """);
+        await ExecuteAsync("""
+            INSERT INTO `account_permission` (`account_id`, `resource`, `method`, `allowed`)
+            SELECT a.`id`, p.`resource`, p.`method`, 1 FROM `account` a
+            CROSS JOIN (SELECT DISTINCT `resource`, `method` FROM `account_permission`) p
+            WHERE a.`email` = 'integration-tests@cargohub.nl'
+            """);
+
+        // The seeded user of warehouse 1 may only read.
+        ReadOnlyApiKey = Guid.NewGuid().ToString("N");
+        await ExecuteAsync(
+            "UPDATE `account` SET `api_key_hash` = SHA2(@key, 256) WHERE `email` = 'user.vgh-amb@cargohub.nl'",
+            ("@key", ReadOnlyApiKey));
 
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {

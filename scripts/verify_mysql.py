@@ -1,4 +1,8 @@
-"""Read-only field comparison of the project MySQL database against JSON sources."""
+"""Read-only field comparison of the project MySQL database against JSON sources.
+
+Accounts are not compared: they do not come from the JSON sources, and setting an API key
+changes them.
+"""
 
 from decimal import Decimal
 import json
@@ -28,34 +32,17 @@ def read_rows(table, columns):
 
 
 def main():
-    endpoints = read_rows("user_endpoint", ("api_key", "resource"))
-    permissions = read_rows("user_permission", ("api_key", "resource", "method", "allowed"))
     count = 0
     for table in TABLES:
         source = json.loads((ROOT / "Python WMS/data" / f"{table}.json").read_text(),
                             parse_float=Decimal)
-        columns = [column for column in source[0] if column != "endpoint_access"]
-        actual = read_rows(table, columns)
-        if table == "user":
-            for user in actual:
-                user["endpoint_access"] = {
-                    row["resource"]: {} for row in endpoints if row["api_key"] == user["api_key"]
-                }
-                for row in permissions:
-                    if row["api_key"] == user["api_key"]:
-                        user["endpoint_access"][row["resource"]][row["method"]] = bool(row["allowed"])
+        actual = read_rows(table, list(source[0]))
         expected = [{key: normalize(key, value) for key, value in row.items()} for row in source]
-        key = lambda row: (row["item_id"], row["location_id"]) if table == "inventory" else (
-            row["api_key"] if table == "user" else row["id"]
-        )
+        key = lambda row: (row["item_id"], row["location_id"]) if table == "inventory" else row["id"]
         if sorted(actual, key=key) != sorted(expected, key=key):
             raise ValueError(f"MySQL data differs from source: {table}")
         count += len(source)
         print(f"{table}: {len(source)} records verified")
-    if len(endpoints) != sum(len(u["endpoint_access"]) for u in source):
-        raise ValueError("Unexpected endpoint records")
-    if len(permissions) != sum(len(p) for u in source for p in u["endpoint_access"].values()):
-        raise ValueError("Unexpected permission records")
     print(f"Verified all fields of {count} source records in live MySQL.")
 
 

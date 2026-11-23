@@ -16,10 +16,12 @@ healthy, and only then restarts `api-b`, so the API stays up during a deployment
 `api-a` does not become healthy, the deployment stops there and `api-b` keeps running
 the old version.
 
+Before restarting the API, `deploy.sh` applies the database migrations that come with the
+new image (see [Database migrations](#database-migrations)).
+
 Not updated automatically:
 
 - **The timer files.** After changing them, repeat step 4 of the setup.
-- **The database schema.** The SQL files only run on an empty database; see [MYSQL.md](MYSQL.md).
 - **`deploy/.env`.** It only exists on the server.
 
 ## Getting access
@@ -71,7 +73,7 @@ Already done on the current server. Run everything on the server.
    sudo systemctl enable --now cargohub-deploy.timer cargohub-backup.timer cargohub-watchdog.timer
    sudo systemctl start cargohub-deploy
    ```
-5. Replace the public API keys (see below).
+5. Give the accounts their API keys (see below).
 
 ## Useful commands
 
@@ -153,22 +155,60 @@ of the backup.
 
 ## API keys
 
-The keys in the seed data are public on GitHub, so the server needs its own. Open MySQL
-with the root password from `.env`:
+Every account has one API key; the database only stores its SHA-256 hash, so keys are
+never in the repository and cannot be looked up later. A new database has no keys at all.
+Give an account a key (this also replaces a lost or leaked one) from `/srv/cargohub/C# WMS`:
 
 ```sh
-sudo -u cargohub docker compose -f docker-compose.prod.yml exec mysql mysql -u root -p cargohub
+sudo -u cargohub scripts/set-api-key.sh --prod --list   # all accounts
+sudo -u cargohub scripts/set-api-key.sh --prod 1        # new key for account 1, the superroot
 ```
 
-List the keys with `SELECT api_key, app FROM user;`, then run this for each key with a
-new key from `openssl rand -hex 24`:
+The key is printed once and works right away. Store it in the password manager and
+share it privately, never in the repository.
 
-```sql
-SET @old = 'old-key', @new = 'new-key';
-INSERT INTO `user`            SELECT @new, app FROM `user` WHERE api_key = @old;
-INSERT INTO `user_endpoint`   SELECT @new, resource FROM `user_endpoint` WHERE api_key = @old;
-INSERT INTO `user_permission` SELECT @new, resource, method, allowed FROM `user_permission` WHERE api_key = @old;
-DELETE FROM `user` WHERE api_key = @old;
-```
+## Database migrations
 
-The new keys work within a minute. Share them privately, never in the repository.
+`01-schema.sql` and `02-seed.sql` only run on an empty database. An existing database is
+updated by the files in [`Data/MySql/migrations`](<../C# WMS/src/CargoHub.Api/Data/MySql/migrations>),
+named `NNN-description.sql`, where `NNN` is the schema version the file upgrades to.
+They are part of the API image, and `deploy.sh` applies every migration above the
+database's `schema_version` before it restarts the API, after a backup
+(see [Backups](#backups)). So a schema change reaches the server together with the code
+that needs it, never earlier. While the migration runs and until `api-a` is replaced,
+the old containers use the new schema, so expect errors for about a minute.
+
+If a migration fails, the deployment stops before the API is restarted, so the old version
+keeps running; the error is in `journalctl -u cargohub-deploy`. Every 5 minutes the next
+deployment tries again, so fix the cause (if it is not temporary) and wait, or run
+`sudo systemctl start cargohub-deploy`. A migration must be safe to run again after failing
+at any statement: MySQL commits every DDL statement on its own, so write it like `002`
+(remove what an earlier attempt created, insert in one transaction, set `schema_version`
+as the very last statement).
+
+The backup before a migration is called `cargohub-before-migration-NNN-description.sql.gz`.
+It is made before the first attempt only and is never removed automatically, so it still
+holds the data from before the migration after any number of retries. Restore it (see
+[Restoring](#restoring)) to undo a migration; delete it yourself once it is no longer needed.
+
+Changing the schema:
+
+1. Add a migration `NNN-description.sql` that ends with
+   ``UPDATE `schema_version` SET `version` = NNN;``. Make it stop on the wrong version,
+   like [`002-accounts.sql`](<../C# WMS/src/CargoHub.Api/Data/MySql/migrations/002-accounts.sql>).
+2. Make the same change in `01-schema.sql` (including the version in `schema_version`)
+   and, if needed, `02-seed.sql`, `verify.sql` and `manifest.json`, so new databases end
+   up the same.
+3. Locally, either apply the migration to your database or start over with
+   `docker compose down -v` (this deletes your local data). To apply it, from `C# WMS`:
+   ```sh
+   docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -u root "$MYSQL_DATABASE"' \
+       < src/CargoHub.Api/Data/MySql/migrations/NNN-description.sql
+   ```
+
+### 002: accounts
+
+Migration 002 removes the old users and their API keys, and creates the superroot and a
+root, admin and user for every warehouse, all without a key. Until the superroot has a
+key, nobody can use the API, so give it one right after the deployment (see
+[API keys](#api-keys)), and from there create the other accounts' keys.

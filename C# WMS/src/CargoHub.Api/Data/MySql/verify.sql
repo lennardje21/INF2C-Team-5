@@ -29,9 +29,9 @@ SELECT 'transfer' AS table_name, COUNT(*) AS actual, 800 AS expected FROM `trans
 UNION ALL
 SELECT 'transfer_item' AS table_name, COUNT(*) AS actual, 2370 AS expected FROM `transfer_item`
 UNION ALL
-SELECT 'user' AS table_name, COUNT(*) AS actual, 6 AS expected FROM `user`
+SELECT 'account' AS table_name, COUNT(*) AS actual, 31 AS expected FROM `account`
 UNION ALL
-SELECT 'user_endpoint' AS table_name, COUNT(*) AS actual, 72 AS expected FROM `user_endpoint`
+SELECT 'account_endpoint' AS table_name, COUNT(*) AS actual, 372 AS expected FROM `account_endpoint`
 UNION ALL
-SELECT 'user_permission' AS table_name, COUNT(*) AS actual, 288 AS expected FROM `user_permission`;
+SELECT 'account_permission' AS table_name, COUNT(*) AS actual, 1488 AS expected FROM `account_permission`;
 SELECT `version` FROM `schema_version`;
