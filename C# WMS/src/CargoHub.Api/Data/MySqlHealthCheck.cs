@@ -13,7 +13,7 @@ public sealed class MySqlHealthCheck(MySqlConnectionFactory connectionFactory) :
     {
         try
         {
-            await using var connection = await connectionFactory.OpenAsync(cancellationToken);
+            await using var connection = await connectionFactory.OpenHealthCheckAsync(cancellationToken);
             await using var command = new MySqlCommand("SELECT 1", connection);
             await command.ExecuteScalarAsync(cancellationToken);
             return HealthCheckResult.Healthy();
