@@ -44,7 +44,15 @@ data; `docker compose down -v` also deletes it. More about the database is in
 
 ## Authentication
 
-Every request needs an `API_KEY` header. Locally you can use the keys from the seed data.
+Every request needs an `API_KEY` header. Each key belongs to an account; the database
+only stores a hash of it, so keys are never in the repository. Give a local account a key
+(account 1 is the superroot, which may use every endpoint):
+
+```sh
+cd "C# WMS"
+scripts/set-api-key.sh --list   # all accounts
+scripts/set-api-key.sh 1        # prints a new key for account 1, once
+```
 
 ```sh
 curl -H "API_KEY: your-key" http://localhost:3000/api/v2/warehouses/1

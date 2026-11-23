@@ -211,28 +211,47 @@ CREATE TABLE `transfer_item` (
     FOREIGN KEY (`item_id`) REFERENCES `item` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `user` (
-    `api_key` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+-- Everyone and everything that uses the API has an account with exactly one API key.
+-- Roles from high to low: superroot, root, admin, user. The superroot is not bound to a
+-- warehouse; every other account belongs to exactly one.
+-- Only the SHA-256 hash of the key is stored (lowercase hex, as MySQL's SHA2() returns);
+-- NULL means the account has no key yet (see scripts/set-api-key.sh).
+CREATE TABLE `account` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `role` VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `email` VARCHAR(255) NOT NULL,
+    `warehouse_id` INT NULL,
     `app` VARCHAR(255) NOT NULL,
-    PRIMARY KEY (`api_key`)
+    `api_key_hash` CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+    `created_at` DATETIME(6) NOT NULL,
+    `updated_at` DATETIME(6) NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_account_email` (`email`),
+    UNIQUE KEY `uq_account_api_key_hash` (`api_key_hash`),
+    CHECK (`role` IN ('superroot', 'root', 'admin', 'user')),
+    CHECK ((`role` = 'superroot') = (`warehouse_id` IS NULL)),
+    FOREIGN KEY (`warehouse_id`) REFERENCES `warehouse` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `user_endpoint` (
-    `api_key` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+CREATE TABLE `account_endpoint` (
+    `account_id` INT NOT NULL,
     `resource` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-    PRIMARY KEY (`api_key`, `resource`),
-    FOREIGN KEY (`api_key`) REFERENCES `user` (`api_key`) ON DELETE CASCADE
+    PRIMARY KEY (`account_id`, `resource`),
+    FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `user_permission` (
-    `api_key` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+
+CREATE TABLE `account_permission` (
+    `account_id` INT NOT NULL,
     `resource` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
     `method` VARCHAR(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
     `allowed` BOOLEAN NOT NULL,
-    PRIMARY KEY (`api_key`, `resource`, `method`),
+    PRIMARY KEY (`account_id`, `resource`, `method`),
     CHECK (`allowed` IN (0, 1)),
-    FOREIGN KEY (`api_key`, `resource`) REFERENCES `user_endpoint` (`api_key`, `resource`) ON DELETE CASCADE
+    FOREIGN KEY (`account_id`, `resource`) REFERENCES `account_endpoint` (`account_id`, `resource`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE `schema_version` (
     `version` INT NOT NULL PRIMARY KEY
 ) ENGINE=InnoDB;
-INSERT INTO `schema_version` (`version`) VALUES (1);
+INSERT INTO `schema_version` (`version`) VALUES (2);

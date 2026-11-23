@@ -88,14 +88,16 @@ Tekst wordt als UTF-8 hexliteral uitgevoerd; apostrofs, backslashes, regeleinden
 en Unicode blijven behouden, onafhankelijk van SQL-escapinginstellingen.
 Datums worden naar UTC `DATETIME(6)` omgezet. Decimalwaarden worden rechtstreeks
 uit JSON als `Decimal` ingelezen en niet via een floating-pointconversie.
-De seed bevat bestaande API-keys en hoort dezelfde toegangsbeperkingen te hebben
-als de oorspronkelijke gebruikersdata.
+De oorspronkelijke gebruikers en hun API-keys zijn niet overgenomen: de seed bevat alleen
+de superroot en per magazijn een root, admin en user, allemaal zonder API-key
+(zie Gebruikersrechten).
 
 ## Schema en modelmapping
 
 Tabelnamen volgen de JSON-bron: `warehouse`, `client`, `supplier`, `item_line`,
 `item_group`, `item_type`, `location`, `item`, `inventory`, `order`, `order_item`,
-`shipment`, `shipment_item`, `transfer`, `transfer_item`, `user`.
+`shipment`, `shipment_item`, `transfer`, `transfer_item`. Accounts staan in `account`,
+`account_endpoint` en `account_permission`.
 Gebruik backticks voor SQL-identifiers, bijvoorbeeld `SELECT * FROM \`order\``.
 
 | C# | MySQL | Mapping |
@@ -205,20 +207,23 @@ gelijktijdige voorraadwijzigingen een atomaire geparametriseerde UPDATE of
 
 ## Gebruikersrechten
 
-`user` bewaart `api_key` en `app`. `user_endpoint` bewaart de beschikbare resources;
-`user_permission` bewaart methode en expliciet booleanrecht, inclusief false.
-API-keys en resources gebruiken een case-sensitive collation.
-De bestaande bedrijfsmodels bevatten geen User-model; authenticatie wordt apart
-geïmplementeerd en is niet aangesloten op de endpoints.
+Elk account heeft precies één API-key. `account` bewaart rol (`superroot`, `root`,
+`admin`, `user`), naam, uniek e-mailadres, magazijn (verplicht, behalve voor de superroot), `app` en `api_key_hash`: de SHA-256
+van de key als lowercase hex, gelijk aan MySQL's `SHA2(key, 256)`. De key zelf wordt nergens
+opgeslagen; `NULL` betekent dat het account nog geen key heeft. Geef een account een key met
+`scripts/set-api-key.sh`. `account_endpoint` bewaart de beschikbare resources;
+`account_permission` bewaart methode en expliciet booleanrecht, inclusief false.
+Resources gebruiken een case-sensitive collation.
 
 ```sql
-SELECT allowed FROM user_permission
-WHERE api_key = @apiKey AND resource = @resource AND method = @method;
+SELECT p.allowed FROM account a
+JOIN account_permission p ON p.account_id = a.id
+WHERE a.api_key_hash = SHA2(@apiKey, 256) AND p.resource = @resource AND p.method = @method;
 ```
 
 Normaliseer HTTP-methodes naar lowercase (`get`, `post`, `put`, `delete`). Geen rij
-of `allowed = 0` betekent geen toegang. Controleer apart of de gebruiker bestaat
-als je onbekende gebruiker en ontbrekend recht wilt onderscheiden.
+of `allowed = 0` betekent geen toegang. Controleer apart of het account bestaat
+als je onbekende key en ontbrekend recht wilt onderscheiden.
 
 ## Overstap en validatie
 

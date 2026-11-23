@@ -71,7 +71,7 @@ Already done on the current server. Run everything on the server.
    sudo systemctl enable --now cargohub-deploy.timer cargohub-backup.timer cargohub-watchdog.timer
    sudo systemctl start cargohub-deploy
    ```
-5. Replace the public API keys (see below).
+5. Give the accounts their API keys (see below).
 
 ## Useful commands
 
@@ -153,22 +153,14 @@ of the backup.
 
 ## API keys
 
-The keys in the seed data are public on GitHub, so the server needs its own. Open MySQL
-with the root password from `.env`:
+Every account has one API key; the database only stores its SHA-256 hash, so keys are
+never in the repository and cannot be looked up later. A new database has no keys at all.
+Give an account a key (this also replaces a lost or leaked one) from `/srv/cargohub/C# WMS`:
 
 ```sh
-sudo -u cargohub docker compose -f docker-compose.prod.yml exec mysql mysql -u root -p cargohub
+sudo -u cargohub scripts/set-api-key.sh --prod --list   # all accounts
+sudo -u cargohub scripts/set-api-key.sh --prod 1        # new key for account 1, the superroot
 ```
 
-List the keys with `SELECT api_key, app FROM user;`, then run this for each key with a
-new key from `openssl rand -hex 24`:
-
-```sql
-SET @old = 'old-key', @new = 'new-key';
-INSERT INTO `user`            SELECT @new, app FROM `user` WHERE api_key = @old;
-INSERT INTO `user_endpoint`   SELECT @new, resource FROM `user_endpoint` WHERE api_key = @old;
-INSERT INTO `user_permission` SELECT @new, resource, method, allowed FROM `user_permission` WHERE api_key = @old;
-DELETE FROM `user` WHERE api_key = @old;
-```
-
-The new keys work within a minute. Share them privately, never in the repository.
+The key is printed once and works within a minute. Store it in the password manager and
+share it privately, never in the repository.

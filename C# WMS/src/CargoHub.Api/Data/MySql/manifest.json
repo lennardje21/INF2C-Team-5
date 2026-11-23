@@ -16,9 +16,9 @@
     "shipment_item": 33660,
     "transfer": 800,
     "transfer_item": 2370,
-    "user": 6,
-    "user_endpoint": 72,
-    "user_permission": 288
+    "account": 31,
+    "account_endpoint": 372,
+    "account_permission": 1488
   },
   "source_sha256": {
     "warehouse": "e6c83ab320189f0ddad7c3e02d75be3cc5c508c0a5ac12e1cdca68289d82d5de",
@@ -38,5 +38,5 @@
     "transfer_item": "d30ed3b9919de5bc74041e472591ca9863f65f0c5d2b911ea3074461f10cda32",
     "user": "31c7bfd1b8f008aa15bd24402c09cd4cf21f929acabdd5b36fb99614069cdfb1"
   },
-  "seed_sha256": "9426e35811cda51866289ef3519c38192389ac05f7cfd07fd470a3d155b4181e"
+  "seed_sha256": "29f7c6a02a0fc61fe822af4b3e9d5a54acedc6e4cd4fff3fcb2df68d9c0c6b7c"
 }
