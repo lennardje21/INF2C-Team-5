@@ -21,28 +21,3 @@ public class Account : BaseModel
     // leave it out to keep the current access.
     public Dictionary<string, EndpointPermissions>? EndpointAccess { get; set; }
 }
-
-public sealed class EndpointPermissions
-{
-    public bool Get { get; set; }
-
-    public bool Post { get; set; }
-
-    public bool Put { get; set; }
-
-    public bool Delete { get; set; }
-}
-
-// The response to creating an account: the only time its API key is shown.
-public sealed class CreatedAccount : Account
-{
-    public string ApiKey { get; set; } = string.Empty;
-}
-
-// The response to issuing a new API key: the only time it is shown.
-public sealed class IssuedApiKey
-{
-    public int AccountId { get; set; }
-
-    public string ApiKey { get; set; } = string.Empty;
-}
