@@ -54,4 +54,4 @@ echo "New API key for account $account_id, $account:"
 echo
 echo "    $key"
 echo
-echo "It is shown only this once and works within a minute. Share it privately, never in the repository."
+echo "It is shown only this once and works right away. Share it privately, never in the repository."

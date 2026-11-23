@@ -21,8 +21,10 @@ git -C "$repo_dir" checkout --quiet --force --detach origin/main
 
 # Database migrations come from the new image, so the schema changes together with the
 # code that needs it: never before CI has published that code. Every migration numbered
-# above schema_version is applied in order, after a backup. The running api containers
-# use the old schema until they are replaced below, which takes about a minute.
+# above schema_version is applied in order, after a backup. A migration that fails stops
+# the deployment before the api containers restart; the next run tries it again. The
+# running api containers use the old schema until they are replaced below, which takes
+# about a minute.
 migrations_dir=/app/Data/MySql/migrations
 # Over TCP: while a new database imports the seed, MySQL already reports healthy but runs a
 # temporary server that only accepts socket connections, so this waits for the real one.
@@ -50,7 +52,9 @@ for name in $(in_new_image ls "$migrations_dir" 2> /dev/null || true); do
     fi
 done
 if (( ${#pending[@]} > 0 )); then
-    "$repo_dir/C# WMS/deploy/backup.sh"
+    # Labelled, so a failing migration retried every 5 minutes keeps the backup of the
+    # state before its first attempt instead of rotating it away.
+    "$repo_dir/C# WMS/deploy/backup.sh" "before-migration-${pending[0]%.sql}"
     for name in "${pending[@]}"; do
         echo "Applying database migration $name"
         in_new_image cat "$migrations_dir/$name" | mysql_root

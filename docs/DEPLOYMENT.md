@@ -164,7 +164,7 @@ sudo -u cargohub scripts/set-api-key.sh --prod --list   # all accounts
 sudo -u cargohub scripts/set-api-key.sh --prod 1        # new key for account 1, the superroot
 ```
 
-The key is printed once and works within a minute. Store it in the password manager and
+The key is printed once and works right away. Store it in the password manager and
 share it privately, never in the repository.
 
 ## Database migrations
@@ -178,10 +178,18 @@ database's `schema_version` before it restarts the API, after a backup
 that needs it, never earlier. While the migration runs and until `api-a` is replaced,
 the old containers use the new schema, so expect errors for about a minute.
 
-If a migration fails, the deployment stops before the API is restarted; the error is in
-`journalctl -u cargohub-deploy`. Every 5 minutes the next deployment tries again.
-Restore the backup (see [Restoring](#restoring)) if the database was left half-migrated
-and the migration cannot simply be run again.
+If a migration fails, the deployment stops before the API is restarted, so the old version
+keeps running; the error is in `journalctl -u cargohub-deploy`. Every 5 minutes the next
+deployment tries again, so fix the cause (if it is not temporary) and wait, or run
+`sudo systemctl start cargohub-deploy`. A migration must be safe to run again after failing
+at any statement: MySQL commits every DDL statement on its own, so write it like `002`
+(remove what an earlier attempt created, insert in one transaction, set `schema_version`
+as the very last statement).
+
+The backup before a migration is called `cargohub-before-migration-NNN-description.sql.gz`.
+It is made before the first attempt only and is never removed automatically, so it still
+holds the data from before the migration after any number of retries. Restore it (see
+[Restoring](#restoring)) to undo a migration; delete it yourself once it is no longer needed.
 
 Changing the schema:
 

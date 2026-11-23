@@ -13,8 +13,7 @@ namespace CargoHub.Api.Services;
 /// </summary>
 public sealed class AccountsService(
     MySqlConnectionFactory factory,
-    MySqlRepository<Account> accounts,
-    ApiUsersService apiUsers)
+    MySqlRepository<Account> accounts)
 {
     // Get every account the caller may see
     public async Task<IReadOnlyList<Account>> GetAllAsync(
@@ -76,8 +75,11 @@ public sealed class AccountsService(
             EndpointAccess = input.EndpointAccess
         };
 
-        // Accounts below the superroot are always in the caller's warehouse, so that is the default.
-        if (caller.Role != AccountRoles.Superroot)
+        // Accounts below the superroot are always in the caller's warehouse, so that is the
+        // default. Not for a superroot, which has no warehouse: that is refused as a role
+        // the caller may not give (403), not as a validation error.
+        if (caller.Role != AccountRoles.Superroot &&
+            FieldRules.Trim(account.Role).ToLowerInvariant() != AccountRoles.Superroot)
             account.WarehouseId ??= caller.WarehouseId;
 
         ValidateAccount(account);
@@ -111,7 +113,6 @@ public sealed class AccountsService(
         await ReplaceAccessAsync(connection, transaction, account.Id, account.EndpointAccess, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
-        apiUsers.Invalidate();
 
         return account;
     }
@@ -157,7 +158,6 @@ public sealed class AccountsService(
             await ReplaceAccessAsync(connection, transaction, id, account.EndpointAccess, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
-        apiUsers.Invalidate();
 
         return true;
     }
@@ -182,7 +182,6 @@ public sealed class AccountsService(
         await accounts.DeleteAsync(existing, connection, transaction, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
-        apiUsers.Invalidate();
 
         return true;
     }
@@ -208,7 +207,6 @@ public sealed class AccountsService(
         await SetKeyHashAsync(connection, transaction, id, key, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
-        apiUsers.Invalidate();
 
         return new IssuedApiKey { AccountId = id, ApiKey = key };
     }

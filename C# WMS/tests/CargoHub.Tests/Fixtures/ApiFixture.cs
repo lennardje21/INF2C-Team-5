@@ -56,8 +56,7 @@ public sealed class ApiFixture : IAsyncLifetime
             WHERE a.`email` = 'integration-tests@cargohub.nl'
             """);
 
-        // The seeded user of warehouse 1 may only read. Set before the API starts, because
-        // the API caches the keys for a minute.
+        // The seeded user of warehouse 1 may only read.
         ReadOnlyApiKey = Guid.NewGuid().ToString("N");
         await ExecuteAsync(
             "UPDATE `account` SET `api_key_hash` = SHA2(@key, 256) WHERE `email` = 'user.vgh-amb@cargohub.nl'",

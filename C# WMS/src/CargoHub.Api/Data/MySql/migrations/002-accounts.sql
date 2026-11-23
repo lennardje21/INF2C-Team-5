@@ -5,8 +5,15 @@
 --
 -- deploy/deploy.sh applies this automatically (after a backup) when it deploys the first
 -- image that contains it. It needs the mysql client, which stops at the first error.
--- If it fails halfway, it can simply be run again: it only continues on version 1 and
--- first removes what an earlier attempt created.
+--
+-- MySQL commits every DDL statement on its own, so a failure can leave a partial result.
+-- The order makes that safe to run again (deploy.sh retries every 5 minutes):
+--   1. the new tables are dropped and created again, so a partial earlier attempt is replaced;
+--   2. their rows are inserted in one transaction, so they are all there or none are;
+--   3. the old tables are dropped in one statement, which MySQL 8 does atomically;
+--   4. only then does schema_version become 2, as the very last statement.
+-- Until step 4 the database stays on version 1 and the next attempt starts over; after it,
+-- everything is done.
 SET NAMES utf8mb4;
 SET time_zone = '+00:00';
 
@@ -96,8 +103,8 @@ JOIN `account` a ON a.`id` = e.`account_id`
 CROSS JOIN (SELECT 'get' AS `method` UNION ALL SELECT 'post' UNION ALL SELECT 'put'
             UNION ALL SELECT 'delete') m;
 
-UPDATE `schema_version` SET `version` = 2;
-
 COMMIT;
 
 DROP TABLE IF EXISTS `user_permission`, `user_endpoint`, `user`;
+
+UPDATE `schema_version` SET `version` = 2;

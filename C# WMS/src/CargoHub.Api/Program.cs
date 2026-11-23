@@ -17,7 +17,6 @@ builder.Services.AddScoped<CargoHub.Api.Services.SuppliersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.InventoriesService>();
 builder.Services.AddScoped<CargoHub.Api.Services.OrdersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.AccountsService>();
-builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
 builder
     .Services.AddHealthChecks()
