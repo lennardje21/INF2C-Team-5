@@ -21,7 +21,8 @@ public sealed class MySqlRepository<T>(MySqlConnectionFactory factory) where T :
         [typeof(Inventory)] = "inventory", [typeof(Order)] = "order",
         [typeof(OrderItem)] = "order_item", [typeof(Shipment)] = "shipment",
         [typeof(ShipmentItem)] = "shipment_item", [typeof(Transfer)] = "transfer",
-        [typeof(TransferItem)] = "transfer_item"
+        [typeof(TransferItem)] = "transfer_item",
+        [typeof(Account)] = "account"
     };
 
     private static readonly string Table = Tables.TryGetValue(typeof(T), out var table)
