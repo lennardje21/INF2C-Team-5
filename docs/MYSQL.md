@@ -78,11 +78,12 @@ python3 scripts/verify_mysql.py
 
 Het script vernieuwt de seed en het manifest, niet het schema of een actieve
 database. Het controleert velden, dubbele sleutels, verwijzingen, int-bereik,
-decimalprecisie, booleanrechten en tijdzones vóór het schrijven. Pas bij een
+decimalprecisie en tijdzones vóór het schrijven. De accounts maakt het script zelf
+aan op basis van de magazijnen. Pas bij een
 nieuw veld eerst het SQL-schema en de modelmapping aan.
 
 `verify_mysql.py` vergelijkt alle velden in de draaiende Compose-database met de
-JSON-bronnen, inclusief gereconstrueerde gebruikersrechten. Het voert alleen SELECTs
+JSON-bronnen. Accounts komen niet uit de JSON-bronnen en worden niet vergeleken. Het voert alleen SELECTs
 uit en print geen API-keys of wachtwoorden. Verwacht dat deze controle verschillen
 meldt zodra jullie applicatie de geïmporteerde data heeft gewijzigd.
 

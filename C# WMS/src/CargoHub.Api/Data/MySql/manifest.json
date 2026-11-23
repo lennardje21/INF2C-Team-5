@@ -1,5 +1,5 @@
 {
-  "source_records": 80471,
+  "source_records": 80465,
   "table_counts": {
     "warehouse": 10,
     "client": 300,
@@ -35,8 +35,7 @@
     "shipment": "fd94222f3c753a4e77a943e1210d8250c5abe88427656f08b1698fbf7552c9ba",
     "shipment_item": "991ea5b921e301264fcdf3afdf87ab7cd9f397103886a6b3f651a3e9058953e4",
     "transfer": "4c490ac808481d52214f71d92319f8d0696e4178a4ce88b9723d7b526f43b3fc",
-    "transfer_item": "d30ed3b9919de5bc74041e472591ca9863f65f0c5d2b911ea3074461f10cda32",
-    "user": "31c7bfd1b8f008aa15bd24402c09cd4cf21f929acabdd5b36fb99614069cdfb1"
+    "transfer_item": "d30ed3b9919de5bc74041e472591ca9863f65f0c5d2b911ea3074461f10cda32"
   },
-  "seed_sha256": "29f7c6a02a0fc61fe822af4b3e9d5a54acedc6e4cd4fff3fcb2df68d9c0c6b7c"
+  "seed_sha256": "7288b05a96296bce1d87e146ca7df23f78644d7e51da46d81cbe8c4e8aad6ac6"
 }

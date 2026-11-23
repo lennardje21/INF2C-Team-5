@@ -1,4 +1,9 @@
-"""Export all legacy JSON data as a validated MySQL 8.4 seed file."""
+"""Export the legacy JSON data as a validated MySQL 8.4 seed file.
+
+The legacy users are not exported: their API keys are public. Instead the seed gets the
+superroot and a root, admin and user for every warehouse, all without an API key (give
+an account one with "C# WMS/scripts/set-api-key.sh").
+"""
 
 import argparse
 from datetime import datetime, timezone
@@ -13,8 +18,15 @@ OUTPUT = ROOT / "C# WMS/src/CargoHub.Api/Data/MySql"
 TABLES = (
     "warehouse", "client", "supplier", "item_line", "item_group", "item_type",
     "location", "item", "inventory", "order", "order_item", "shipment",
-    "shipment_item", "transfer", "transfer_item", "user",
+    "shipment_item", "transfer", "transfer_item",
 )
+# Every account may use these resources; root and admin with every method, a user only get.
+RESOURCES = (
+    "warehouses", "locations", "transfers", "items", "item_lines", "item_groups", "item_types",
+    "suppliers", "orders", "clients", "shipments", "inventories",
+)
+METHODS = ("get", "post", "put", "delete")
+ACCOUNTS_CREATED_AT = "2026-11-23T00:00:00Z"
 
 
 def literal(value):
@@ -39,6 +51,26 @@ def normalize(column, value):
     return value
 
 
+def accounts(warehouses):
+    codes = [w["code"].lower() for w in warehouses]
+    if len(set(codes)) != len(codes):
+        raise ValueError("Account emails need unique warehouse codes")
+    rows = [dict(id=1, role="superroot", name="CargoHub Superroot", email="superroot@cargohub.nl",
+                 warehouse_id=None, app="account_management")]
+    for warehouse in warehouses:
+        for role, app in (("root", "warehouse_portal"), ("admin", "warehouse_portal"),
+                          ("user", "handheld_scanner")):
+            rows.append(dict(id=len(rows) + 1, role=role, name=f"{role.title()} {warehouse['code']}",
+                             email=f"{role}.{warehouse['code'].lower()}@cargohub.nl",
+                             warehouse_id=warehouse["id"], app=app))
+    for row in rows:
+        row.update(api_key_hash=None, created_at=ACCOUNTS_CREATED_AT, updated_at=ACCOUNTS_CREATED_AT)
+    endpoints = [dict(account_id=a["id"], resource=r) for a in rows for r in RESOURCES]
+    permissions = [dict(account_id=a["id"], resource=r, method=m, allowed=a["role"] != "user" or m == "get")
+                   for a in rows for r in RESOURCES for m in METHODS]
+    return {"account": rows, "account_endpoint": endpoints, "account_permission": permissions}
+
+
 def export(source=ROOT / "Python WMS/data", output=OUTPUT):
     source, output = Path(source), Path(output)
     schema = (output / "01-schema.sql").read_text()
@@ -54,29 +86,13 @@ def export(source=ROOT / "Python WMS/data", output=OUTPUT):
         if not isinstance(records, list):
             raise ValueError(f"Expected list: {table}")
         for record in records:
-            expected = set(columns[table]) | ({"endpoint_access"} if table == "user" else set())
-            if set(record) != expected:
+            if set(record) != set(columns[table]):
                 raise ValueError(f"Unexpected or missing fields: {table}")
         rows[table] = records
-    rows["user_endpoint"], rows["user_permission"] = [], []
-    for user in rows["user"]:
-        for resource, permissions in user["endpoint_access"].items():
-            rows["user_endpoint"].append({"api_key": user["api_key"], "resource": resource})
-            for method, allowed in permissions.items():
-                if not isinstance(allowed, bool):
-                    raise ValueError("Permissions must be booleans")
-                rows["user_permission"].append(dict(
-                    api_key=user["api_key"], resource=resource, method=method, allowed=allowed
-                ))
     ids = {table: {record["id"] for record in records}
-           for table, records in rows.items() if table not in
-           ("inventory", "user", "user_endpoint", "user_permission")}
+           for table, records in rows.items() if table != "inventory"}
     for table, records in rows.items():
-        keys = ("item_id", "location_id") if table == "inventory" else (
-            ("api_key", "resource", "method") if table == "user_permission" else
-            ("api_key", "resource") if table == "user_endpoint" else
-            ("api_key",) if table == "user" else ("id",)
-        )
+        keys = ("item_id", "location_id") if table == "inventory" else ("id",)
         if len({tuple(r[k] for k in keys) for r in records}) != len(records):
             raise ValueError(f"Duplicate key: {table}")
         for record in records:
@@ -98,9 +114,14 @@ def export(source=ROOT / "Python WMS/data", output=OUTPUT):
                     if Decimal(value).quantize(Decimal(10) ** -scale) != value or abs(value) >= 10 ** (18 - scale):
                         raise ValueError(f"Decimal cannot be stored losslessly: {table}.{column}")
                 normalize(column, value)
+    # Generated from the validated warehouses, so they need no checks of their own.
+    rows.update(accounts(rows["warehouse"]))
     sql = ["-- Generated by scripts/export_mysql.py. Import into empty tables only.",
            "SET NAMES utf8mb4;", "SET time_zone = '+00:00';", "START TRANSACTION;"]
     for table, records in rows.items():
+        if table == "account":
+            sql.append("-- Accounts have no API key: keys must never be in the repository. Give an\n"
+                       "-- account one with \"C# WMS/scripts/set-api-key.sh\".")
         fields = columns[table]
         for offset in range(0, len(records), 250):
             values = ["(" + ", ".join(literal(normalize(k, r[k])) for k in fields) + ")"
