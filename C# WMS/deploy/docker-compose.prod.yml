@@ -20,8 +20,13 @@ x-api: &api
   depends_on:
     mysql:
       condition: service_healthy
+  # MySQL accepts at most 151 connections. Without a limit each container may open 100,
+  # so under heavy load MySQL refused connections with "Too many connections" and the API
+  # answered 500. 60 per container, plus 2 each for /health, stays below 151 with room
+  # for deploy.sh, backup.sh and the watchdog. Requests above the limit wait for a free
+  # connection instead of failing.
   environment:
-    ConnectionStrings__CargoHub: Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User ID=${MYSQL_USER};Password=${MYSQL_PASSWORD}
+    ConnectionStrings__CargoHub: Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User ID=${MYSQL_USER};Password=${MYSQL_PASSWORD};Maximum Pool Size=60
   # No published port: requests come in through nginx.
   # The runtime image has no curl, so bash sends the request itself.
   # Two failed checks 5s apart mark the container unhealthy, after which watchdog.sh
