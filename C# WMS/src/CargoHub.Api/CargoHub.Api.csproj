@@ -13,4 +13,10 @@
     <PackageReference Include="Scalar.AspNetCore" Version="2.18.7" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- deploy/deploy.sh applies the migrations from the image, so a schema change
+         always reaches the server together with the code that needs it. -->
+    <None Update="Data/MySql/migrations/*.sql" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

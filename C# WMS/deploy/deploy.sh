@@ -17,12 +17,51 @@ git -C "$repo_dir" checkout --quiet --force --detach origin/main
 
 "${compose[@]}" pull --quiet api-a api-b nginx
 
+"${compose[@]}" up --detach --wait --wait-timeout 300 mysql
+
+# Database migrations come from the new image, so the schema changes together with the
+# code that needs it: never before CI has published that code. Every migration numbered
+# above schema_version is applied in order, after a backup. The running api containers
+# use the old schema until they are replaced below, which takes about a minute.
+migrations_dir=/app/Data/MySql/migrations
+# Over TCP: while a new database imports the seed, MySQL already reports healthy but runs a
+# temporary server that only accepts socket connections, so this waits for the real one.
+mysql_root() {
+    "${compose[@]}" exec -T mysql sh -c \
+        'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -h 127.0.0.1 -u root -N "$MYSQL_DATABASE"'
+}
+in_new_image() {
+    "${compose[@]}" run --rm --no-deps -T --entrypoint "$1" api-a "${@:2}"
+}
+mysql_ready_by=$((SECONDS + 900))
+until mysql_root <<< 'SELECT 1;' > /dev/null 2>&1; do
+    if (( SECONDS > mysql_ready_by )); then
+        echo "MySQL did not accept connections within 15 minutes." >&2
+        exit 1
+    fi
+    sleep 5
+done
+schema_version="$(mysql_root <<< 'SELECT MAX(`version`) FROM `schema_version`;')"
+pending=()
+# Older images have no migrations directory; that simply means there is nothing to apply.
+for name in $(in_new_image ls "$migrations_dir" 2> /dev/null || true); do
+    if [[ "$name" =~ ^([0-9]{3})-.+\.sql$ ]] && (( 10#${BASH_REMATCH[1]} > schema_version )); then
+        pending+=("$name")
+    fi
+done
+if (( ${#pending[@]} > 0 )); then
+    "$repo_dir/C# WMS/deploy/backup.sh"
+    for name in "${pending[@]}"; do
+        echo "Applying database migration $name"
+        in_new_image cat "$migrations_dir/$name" | mysql_root
+    done
+fi
+
 # One api container at a time, and only continue once it is healthy, so the other
 # one keeps serving requests. --wait fails the deployment (visible in journalctl)
 # when a container does not become healthy; the other one is then left untouched.
 # The sleep gives nginx time to find the new container's IP (see nginx/default.conf)
 # before the other one goes down.
-"${compose[@]}" up --detach --wait --wait-timeout 300 mysql
 "${compose[@]}" up --detach --no-deps --wait --wait-timeout 300 api-a
 sleep 5
 "${compose[@]}" up --detach --no-deps --wait --wait-timeout 300 api-b

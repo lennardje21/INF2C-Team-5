@@ -43,7 +43,9 @@ Wacht totdat de initialisatie klaar is voordat je de applicatie laat verbinden.
 
 ## Bestaand datavolume
 
-Bij een bestaand volume worden initialisatiescripts niet opnieuw uitgevoerd.
+Bij een bestaand volume worden initialisatiescripts niet opnieuw uitgevoerd. Een bestaande
+database met een oudere `schema_version` werk je bij met de migraties in
+`Data/MySql/migrations`; zie [Database migrations](DEPLOYMENT.md#database-migrations).
 Verwijder geen volume met bestaande data om een import af te dwingen.
 Maak eerst een backup en kies een lege doeldatabase. Schema en seed zijn bewust
 niet idempotent: dubbele tabellen of sleutels geven een fout in plaats van
