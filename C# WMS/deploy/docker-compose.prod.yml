@@ -22,6 +22,10 @@ x-api: &api
       condition: service_healthy
   environment:
     ConnectionStrings__CargoHub: Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User ID=${MYSQL_USER};Password=${MYSQL_PASSWORD}
+    BlockadeDetection__OrderMaxMinutes: ${BLOCKADE_ORDER_MAX_MINUTES:-120}
+    BlockadeDetection__ShipmentMaxMinutes: ${BLOCKADE_SHIPMENT_MAX_MINUTES:-240}
+    BlockadeDetection__TransferMaxMinutes: ${BLOCKADE_TRANSFER_MAX_MINUTES:-240}
+    BlockadeDetection__CheckIntervalMinutes: ${BLOCKADE_CHECK_INTERVAL_MINUTES:-15}
   # No published port: requests come in through nginx.
   # The runtime image has no curl, so bash sends the request itself.
   # Two failed checks 5s apart mark the container unhealthy, after which watchdog.sh
