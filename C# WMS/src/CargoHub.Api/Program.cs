@@ -18,6 +18,13 @@ builder.Services.AddScoped<CargoHub.Api.Services.InventoriesService>();
 builder.Services.AddScoped<CargoHub.Api.Services.OrdersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.AccountsService>();
 builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
+
+// Settings for blockade detection; the app refuses to start when a value is below 1.
+builder
+    .Services.AddOptions<CargoHub.Api.Settings.BlockadeDetectionOptions>()
+    .Bind(builder.Configuration.GetSection(CargoHub.Api.Settings.BlockadeDetectionOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 builder
     .Services.AddHealthChecks()
     .AddCheck<CargoHub.Api.Data.MySqlHealthCheck>("mysql", timeout: TimeSpan.FromSeconds(4));
