@@ -4,7 +4,17 @@ namespace CargoHub.Api.Data;
 
 public sealed class MySqlConnectionFactory(IConfiguration configuration)
 {
-    public async Task<MySqlConnection> OpenAsync(CancellationToken cancellationToken = default)
+    public Task<MySqlConnection> OpenAsync(CancellationToken cancellationToken = default) =>
+        OpenAsync(healthCheck: false, cancellationToken);
+
+    // Opens a connection from a separate pool of at most 2 connections. MySqlConnector keeps
+    // one pool per connection string, so a different application name gives a different pool.
+    // When requests use up the normal pool under heavy load, /health then does not have to
+    // wait behind them, and the watchdog does not restart a container that is only busy.
+    public Task<MySqlConnection> OpenHealthCheckAsync(CancellationToken cancellationToken = default) =>
+        OpenAsync(healthCheck: true, cancellationToken);
+
+    private async Task<MySqlConnection> OpenAsync(bool healthCheck, CancellationToken cancellationToken)
     {
         var connectionString = configuration.GetConnectionString("CargoHub");
         if (string.IsNullOrWhiteSpace(connectionString))
@@ -16,6 +26,12 @@ public sealed class MySqlConnectionFactory(IConfiguration configuration)
             DateTimeKind = MySqlDateTimeKind.Utc,
             UseAffectedRows = false
         };
+        if (healthCheck)
+        {
+            settings.ApplicationName = "cargohub-health";
+            settings.MaximumPoolSize = 2;
+        }
+
         var connection = new MySqlConnection(settings.ConnectionString);
         try
         {

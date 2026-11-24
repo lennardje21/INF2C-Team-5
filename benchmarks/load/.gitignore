@@ -1,0 +1,2 @@
+# Reports k6 writes here during a run. Rename them into results/ to keep them.
+/*-report.html
