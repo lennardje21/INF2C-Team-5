@@ -17,11 +17,6 @@ builder.Services.AddScoped<CargoHub.Api.Services.SuppliersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.InventoriesService>();
 builder.Services.AddScoped<CargoHub.Api.Services.OrdersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.AccountsService>();
-builder.Services.Configure<CargoHub.Api.Monitoring.UptimeKumaOptions>(
-    builder.Configuration.GetSection("UptimeKuma"));
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<CargoHub.Api.Monitoring.IUptimeKumaClient, CargoHub.Api.Monitoring.UptimeKumaClient>();
-builder.Services.AddScoped<CargoHub.Api.Monitoring.UptimeService>();
 builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
 
 // Settings for blockade detection; the app refuses to start when a value is below 1.
@@ -39,7 +34,8 @@ builder
     .ValidateOnStart();
 builder.Services.AddSingleton<CargoHub.Api.Services.IEmailService, CargoHub.Api.Services.EmailService>();
 
-// Background job that looks for blocked orders, shipments and transfers.
+// Blockade detection (FR-7): the stored times, the check itself, and the job that runs it.
+builder.Services.AddSingleton<CargoHub.Api.Services.IBlockadeSettingsService, CargoHub.Api.Services.BlockadeSettingsService>();
 builder.Services.AddScoped<CargoHub.Api.Services.IBlockadeDetectionService, CargoHub.Api.Services.BlockadeDetectionService>();
 builder.Services.AddHostedService<CargoHub.Api.Services.BlockadeDetectionWorker>();
 builder
