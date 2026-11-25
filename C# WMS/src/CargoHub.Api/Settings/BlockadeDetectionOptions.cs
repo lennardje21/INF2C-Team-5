@@ -9,6 +9,10 @@ public class BlockadeDetectionOptions
 {
     public const string SectionName = "BlockadeDetection";
 
+    // Switch for the background job. Set to false to stop the checks without a code change;
+    // the integration tests do this so the job does not run during other tests.
+    public bool Enabled { get; set; } = true;
+
     // How long an order may stay in a not-finished status before it counts as blocked.
     [Range(1, int.MaxValue)]
     public int OrderMaxMinutes { get; set; } = 120;
