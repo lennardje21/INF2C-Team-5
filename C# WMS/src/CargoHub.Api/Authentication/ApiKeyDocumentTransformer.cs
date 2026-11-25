@@ -28,6 +28,10 @@ public sealed class ApiKeyDocumentTransformer : IOpenApiDocumentTransformer
                 [new OpenApiSecuritySchemeReference(ApiKeyMiddleware.HeaderName, document)] = []
             }
         ];
+        // The customer-facing uptime summary is public, like /health.
+        if (document.Paths.TryGetValue("/metrics/uptime", out var metrics) && metrics.Operations is not null)
+            foreach (var operation in metrics.Operations.Values)
+                operation.Security = [];
         return Task.CompletedTask;
     }
 }
