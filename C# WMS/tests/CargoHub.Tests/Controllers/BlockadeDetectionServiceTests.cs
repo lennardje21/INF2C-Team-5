@@ -283,6 +283,25 @@ public sealed class BlockadeDetectionServiceTests(ApiFixture fixture) : IAsyncLi
     }
 
     [Fact]
+    public async Task RunOnce_FailedMailsDoNotUseUpTheMailLimit()
+    {
+        var failing = await AddFloormanagerAsync(Warehouse);
+        var working = await AddFloormanagerAsync(OtherWarehouse);
+        await AddOrderAsync("Pending", MinutesAgo(130), Warehouse);
+        await AddOrderAsync("Pending", MinutesAgo(130), OtherWarehouse);
+        _email.FailFor.Add(failing);
+        var service = CreateService(maxMailsPerCheck: 1);
+
+        var handled = await service.RunOnceAsync();
+
+        // The failed mail does not count, so the limit of one mail is still free for the
+        // other warehouse in the same check.
+        Assert.Equal(1, handled);
+        var mail = Assert.Single(_email.Sent);
+        Assert.Equal(working, mail.To);
+    }
+
+    [Fact]
     public async Task RunOnce_MailsAtMostMaxMailsPerCheck_AndTheRestFollowsNextTime()
     {
         await AddFloormanagerAsync(Warehouse);
@@ -336,10 +355,13 @@ public sealed class BlockadeDetectionServiceTests(ApiFixture fixture) : IAsyncLi
 
         public bool Succeed { get; set; } = true;
 
+        // Mails to these addresses fail, the others succeed.
+        public HashSet<string> FailFor { get; } = [];
+
         public Task<bool> SendAsync(
             string to, string subject, string body, CancellationToken cancellationToken = default)
         {
-            if (!Succeed)
+            if (!Succeed || FailFor.Contains(to))
                 return Task.FromResult(false);
 
             Sent.Add((to, subject, body));

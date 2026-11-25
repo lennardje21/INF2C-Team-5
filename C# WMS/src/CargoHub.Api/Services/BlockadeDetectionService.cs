@@ -94,8 +94,6 @@ public sealed class BlockadeDetectionService(
                     if (!await ClaimAsync(connection, blockade, cancellationToken))
                         continue;
 
-                    handled++;
-                    mailed++;
                     var sent = 0;
                     foreach (var recipient in recipients)
                     {
@@ -107,11 +105,19 @@ public sealed class BlockadeDetectionService(
                     if (sent == 0)
                     {
                         // Nothing could be sent: forget the blockade so the next check tries again.
+                        // A failed try does not count as a mail, so it does not use up the limit.
+                        // The rest of this warehouse waits for the next check, because the mail
+                        // service or these recipients most likely have a problem, and trying
+                        // every blockade again would only make the check slow.
                         await UnclaimAsync(connection, blockade, cancellationToken);
-                        handled--;
-                        logger.LogWarning("Could not mail the blockade of {Type} {Id}; will retry.",
+                        logger.LogWarning(
+                            "Could not mail the blockade of {Type} {Id}; will retry at the next check.",
                             blockade.Type, blockade.Id);
+                        break;
                     }
+
+                    handled++;
+                    mailed++;
                 }
             }
 

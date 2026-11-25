@@ -1,6 +1,7 @@
 -- Version 3 -> 4: blockade detection (FR-7). Adds two tables: blockade_setting (the times an
 -- admin or root sets through the API) and blockade_notification (which blockades were mailed).
--- No data is changed or removed. The floormanager role came with migration 003.
+-- No data is changed or removed, and existing tables are never dropped. The floormanager role
+-- came with migration 003.
 --
 -- deploy/deploy.sh applies this automatically (after a backup) when it deploys the first
 -- image that contains it. It needs the mysql client, which stops at the first error.
@@ -8,7 +9,8 @@
 -- MySQL commits every DDL statement on its own, so a failure can leave a partial result.
 -- The order makes that safe to run again (deploy.sh retries every 5 minutes):
 --   1. the version is checked first, so a wrong database is never touched;
---   2. the two tables are dropped and created again, so a partial earlier attempt is replaced;
+--   2. the tables are created with IF NOT EXISTS, so tables from an earlier attempt are kept
+--      as they are and nothing is lost;
 --   3. only then does schema_version become 4, as the very last statement.
 SET NAMES utf8mb4;
 SET time_zone = '+00:00';
@@ -25,9 +27,7 @@ DELIMITER ;
 CALL `check_004_blockade_detection`();
 DROP PROCEDURE `check_004_blockade_detection`;
 
-DROP TABLE IF EXISTS `blockade_notification`, `blockade_setting`;
-
-CREATE TABLE `blockade_setting` (
+CREATE TABLE IF NOT EXISTS `blockade_setting` (
     `id` TINYINT NOT NULL,
     `order_max_minutes` INT NOT NULL,
     `shipment_max_minutes` INT NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE `blockade_setting` (
     CHECK (`check_interval_minutes` BETWEEN 1 AND 1440)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `blockade_notification` (
+CREATE TABLE IF NOT EXISTS `blockade_notification` (
     `item_type` VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     `item_id` INT NOT NULL,
     `item_updated_at` DATETIME(6) NOT NULL,
