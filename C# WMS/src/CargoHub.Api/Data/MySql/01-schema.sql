@@ -212,30 +212,25 @@ CREATE TABLE `transfer_item` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Everyone and everything that uses the API has an account with exactly one API key.
--- Roles from high to low: superroot, root, admin, floormanager, user. The superroot is not
--- bound to a warehouse; every other account belongs to exactly one.
--- Deleting an account sets deleted_at and clears its name, email and key, so the row stays
--- for anything that refers to it (such as audit logs) but the account can no longer be used.
+-- Roles from high to low: superroot, root, admin, floormanager, user. The superroot is not bound to a
+-- warehouse; every other account belongs to exactly one.
 -- Only the SHA-256 hash of the key is stored (lowercase hex, as MySQL's SHA2() returns);
 -- NULL means the account has no key yet (see scripts/set-api-key.sh).
 CREATE TABLE `account` (
     `id` INT NOT NULL AUTO_INCREMENT,
     `role` VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-    `name` VARCHAR(255) NULL,
-    `email` VARCHAR(255) NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `email` VARCHAR(255) NOT NULL,
     `warehouse_id` INT NULL,
     `app` VARCHAR(255) NOT NULL,
     `api_key_hash` CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
     `created_at` DATETIME(6) NOT NULL,
     `updated_at` DATETIME(6) NOT NULL,
-    `deleted_at` DATETIME(6) NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_account_email` (`email`),
     UNIQUE KEY `uq_account_api_key_hash` (`api_key_hash`),
-    CONSTRAINT `account_role` CHECK (`role` IN ('superroot', 'root', 'admin', 'floormanager', 'user')),
-    CONSTRAINT `account_superroot_warehouse` CHECK ((`role` = 'superroot') = (`warehouse_id` IS NULL)),
-    CONSTRAINT `account_deleted_cleared` CHECK (`deleted_at` IS NULL OR (`name` IS NULL AND `email` IS NULL AND `api_key_hash` IS NULL)),
-    CONSTRAINT `account_active_named` CHECK (`deleted_at` IS NOT NULL OR (`name` IS NOT NULL AND `email` IS NOT NULL)),
+    CONSTRAINT `chk_account_role` CHECK (`role` IN ('superroot', 'root', 'admin', 'floormanager', 'user')),
+    CHECK ((`role` = 'superroot') = (`warehouse_id` IS NULL)),
     FOREIGN KEY (`warehouse_id`) REFERENCES `warehouse` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -259,4 +254,33 @@ CREATE TABLE `account_permission` (
 CREATE TABLE `schema_version` (
     `version` INT NOT NULL PRIMARY KEY
 ) ENGINE=InnoDB;
+
+-- Blockade detection (FR-7). blockade_setting holds the times an admin or root set through
+-- the API; without a row the defaults from appsettings.json apply. blockade_notification
+-- records which blockades were already mailed: the item and its updated_at at that time,
+-- so an item that moves on and gets stuck again counts as a new blockade.
+CREATE TABLE `blockade_setting` (
+    `id` TINYINT NOT NULL,
+    `order_max_minutes` INT NOT NULL,
+    `shipment_max_minutes` INT NOT NULL,
+    `transfer_max_minutes` INT NOT NULL,
+    `check_interval_minutes` INT NOT NULL,
+    `updated_at` DATETIME(6) NOT NULL,
+    PRIMARY KEY (`id`),
+    CHECK (`id` = 1),
+    CHECK (`order_max_minutes` BETWEEN 1 AND 525600),
+    CHECK (`shipment_max_minutes` BETWEEN 1 AND 525600),
+    CHECK (`transfer_max_minutes` BETWEEN 1 AND 525600),
+    CHECK (`check_interval_minutes` BETWEEN 1 AND 1440)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `blockade_notification` (
+    `item_type` VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    `item_id` INT NOT NULL,
+    `item_updated_at` DATETIME(6) NOT NULL,
+    `notified_at` DATETIME(6) NOT NULL,
+    PRIMARY KEY (`item_type`, `item_id`, `item_updated_at`),
+    CHECK (`item_type` IN ('order', 'shipment', 'transfer'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 INSERT INTO `schema_version` (`version`) VALUES (3);
