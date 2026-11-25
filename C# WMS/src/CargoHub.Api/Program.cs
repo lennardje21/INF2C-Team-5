@@ -17,6 +17,11 @@ builder.Services.AddScoped<CargoHub.Api.Services.SuppliersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.InventoriesService>();
 builder.Services.AddScoped<CargoHub.Api.Services.OrdersService>();
 builder.Services.AddScoped<CargoHub.Api.Services.AccountsService>();
+builder.Services.Configure<CargoHub.Api.Monitoring.UptimeKumaOptions>(
+    builder.Configuration.GetSection("UptimeKuma"));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<CargoHub.Api.Monitoring.IUptimeKumaClient, CargoHub.Api.Monitoring.UptimeKumaClient>();
+builder.Services.AddScoped<CargoHub.Api.Monitoring.UptimeService>();
 builder.Services.AddSingleton<CargoHub.Api.Authentication.ApiUsersService>();
 
 // Settings for blockade detection; the app refuses to start when a value is below 1.
