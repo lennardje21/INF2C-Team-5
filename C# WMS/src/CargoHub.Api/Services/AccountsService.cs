@@ -1,5 +1,6 @@
 using CargoHub.Api.Authentication;
 using CargoHub.Api.Data;
+using CargoHub.Api.Errors;
 using CargoHub.Api.Models;
 using CargoHub.Api.Validation;
 using MySqlConnector;
@@ -7,9 +8,10 @@ using MySqlConnector;
 namespace CargoHub.Api.Services;
 
 /// <summary>
-/// Accounts as the calling account may see and manage them (see AccountPolicy): accounts
-/// it may not see behave as if they do not exist (null/false), operations it may not
-/// perform throw ForbiddenException.
+/// Accounts as the calling account may see and manage them (see AccountPolicy). Accounts
+/// that do not exist or are deleted give null/false (404); accounts or operations the
+/// caller may not see or perform throw ForbiddenException (403); a duplicate email throws
+/// ConflictException (409). Deleting is a soft delete (see DeleteAsync).
 /// </summary>
 public sealed class AccountsService(
     MySqlConnectionFactory factory,
@@ -22,13 +24,11 @@ public sealed class AccountsService(
         await using var connection = await factory.OpenAsync(cancellationToken);
 
         // Only the superroot sees other warehouses, so the others only need their own.
-        var result = (await accounts.GetAsync(
-                connection,
-                null,
-                caller.Role == AccountRoles.Superroot
-                    ? null
-                    : new Dictionary<string, object?> { ["warehouse_id"] = caller.WarehouseId },
-                cancellationToken))
+        var filters = new Dictionary<string, object?> { ["deleted_at"] = null };
+        if (caller.Role != AccountRoles.Superroot)
+            filters["warehouse_id"] = caller.WarehouseId;
+
+        var result = (await accounts.GetAsync(connection, null, filters, cancellationToken))
             .Where(account => AccountPolicy.CanView(caller, account))
             .ToList();
 
@@ -37,7 +37,7 @@ public sealed class AccountsService(
         return result;
     }
 
-    // Get account by id, or null when it does not exist or the caller may not see it
+    // Get account by id, or null when it does not exist or is deleted
     public async Task<Account?> GetByIdAsync(
         ApiUser caller, int id, CancellationToken cancellationToken = default)
     {
@@ -46,22 +46,24 @@ public sealed class AccountsService(
         var result = await accounts.GetAsync(
             connection,
             null,
-            new Dictionary<string, object?> { ["id"] = id },
+            new Dictionary<string, object?> { ["id"] = id, ["deleted_at"] = null },
             cancellationToken);
 
         var account = result.SingleOrDefault();
 
-        if (account is null || !AccountPolicy.CanView(caller, account))
+        if (account is null)
         {
             return null;
         }
+
+        AccountPolicy.CheckView(caller, account);
 
         await LoadAccessAsync(connection, null, [account], cancellationToken);
 
         return account;
     }
 
-    // Create an account below the caller, with a new API key
+    // Create an account with a role the caller manages, with a new API key
     public async Task<CreatedAccount> CreateAsync(
         ApiUser caller, Account input, CancellationToken cancellationToken = default)
     {
@@ -106,7 +108,7 @@ public sealed class AccountsService(
         }
         catch (MySqlException e) when (e.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
         {
-            throw new ArgumentException("An account with this Email already exists.", e);
+            throw new ConflictException("An account with this Email already exists.", e);
         }
 
         await SetKeyHashAsync(connection, transaction, account.Id, account.ApiKey, cancellationToken);
@@ -128,7 +130,7 @@ public sealed class AccountsService(
 
         var existing = await LockAsync(connection, transaction, id, cancellationToken);
 
-        if (existing is null || !AccountPolicy.CanView(caller, existing))
+        if (existing is null)
         {
             return false;
         }
@@ -151,7 +153,7 @@ public sealed class AccountsService(
         }
         catch (MySqlException e) when (e.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
         {
-            throw new ArgumentException("An account with this Email already exists.", e);
+            throw new ConflictException("An account with this Email already exists.", e);
         }
 
         if (account.EndpointAccess is not null)
@@ -162,7 +164,7 @@ public sealed class AccountsService(
         return true;
     }
 
-    // Delete an account the caller manages
+    // Delete an account the caller manages (a soft delete)
     public async Task<bool> DeleteAsync(
         ApiUser caller, int id, CancellationToken cancellationToken = default)
     {
@@ -171,15 +173,24 @@ public sealed class AccountsService(
 
         var existing = await LockAsync(connection, transaction, id, cancellationToken);
 
-        if (existing is null || !AccountPolicy.CanView(caller, existing))
+        if (existing is null)
         {
             return false;
         }
 
         AccountPolicy.CheckManage(caller, existing);
 
-        // Its endpoint access is deleted with it (ON DELETE CASCADE).
-        await accounts.DeleteAsync(existing, connection, transaction, cancellationToken);
+        // A soft delete: the row stays for anything that refers to it (such as audit logs),
+        // but without name, email or key, so its key stops working at once and the email
+        // can be used for a new account. The CHECK account_deleted_cleared enforces this.
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText =
+            "UPDATE `account` SET `deleted_at` = @now, `updated_at` = @now, `name` = NULL, " +
+            "`email` = NULL, `api_key_hash` = NULL WHERE `id` = @id";
+        command.Parameters.AddWithValue("@now", Now());
+        command.Parameters.AddWithValue("@id", id);
+        await command.ExecuteNonQueryAsync(cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
 
@@ -187,7 +198,7 @@ public sealed class AccountsService(
     }
 
     // Give an account a new API key; its previous key stops working.
-    // Null when the account does not exist or the caller may not see it.
+    // Null when the account does not exist or is deleted.
     public async Task<IssuedApiKey?> IssueApiKeyAsync(
         ApiUser caller, int id, CancellationToken cancellationToken = default)
     {
@@ -196,7 +207,7 @@ public sealed class AccountsService(
 
         var account = await LockAsync(connection, transaction, id, cancellationToken);
 
-        if (account is null || !AccountPolicy.CanView(caller, account))
+        if (account is null)
         {
             return null;
         }
@@ -330,7 +341,8 @@ public sealed class AccountsService(
         }
     }
 
-    // Lock an account record for update to prevent concurrent modifications
+    // Lock an account record for update to prevent concurrent modifications.
+    // Null when it does not exist or is deleted.
     private async Task<Account?> LockAsync(
         MySqlConnection connection,
         MySqlTransaction transaction,
@@ -353,7 +365,9 @@ public sealed class AccountsService(
             new Dictionary<string, object?> { ["id"] = id },
             cancellationToken);
 
-        return result.SingleOrDefault();
+        var account = result.SingleOrDefault();
+
+        return account?.DeletedAt is null ? account : null;
     }
 
     private static async Task CheckWarehouseExistsAsync(
@@ -403,8 +417,8 @@ public sealed class AccountsService(
 
         var errors = new List<string>();
 
-        if (!account.Name.Any(char.IsLetterOrDigit))
-            errors.Add("Name must contain at least one letter or digit.");
+        if (!FieldRules.IsPlaceOrPersonName(account.Name))
+            errors.Add($"Name {FieldRules.NameError}");
 
         if (!FieldRules.IsValidEmail(account.Email))
             errors.Add($"Email {FieldRules.EmailError}");
