@@ -48,7 +48,9 @@ public sealed class BlockadeDetectionServiceTests(ApiFixture fixture) : IAsyncLi
         await fixture.ExecuteAsync("DELETE FROM `shipment` WHERE `reference` LIKE 'BLOCKTEST-%'");
         await fixture.ExecuteAsync("DELETE FROM `transfer` WHERE `reference` LIKE 'BLOCKTEST-%'");
         await fixture.ExecuteAsync("DELETE FROM `order` WHERE `reference` LIKE 'BLOCKTEST-%'");
-        await fixture.ExecuteAsync("DELETE FROM `account` WHERE `email` LIKE 'blocktest-%@cargohub.nl'");
+        // Every floormanager goes, also those other tests left behind, because the mails of
+        // these tests go to all floormanagers of a warehouse.
+        await fixture.ExecuteAsync("DELETE FROM `account` WHERE `role` = 'floormanager'");
         await fixture.ExecuteAsync("DELETE FROM `blockade_notification`");
         await fixture.ExecuteAsync("DELETE FROM `blockade_setting`");
     }
