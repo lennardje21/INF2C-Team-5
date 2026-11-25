@@ -36,8 +36,7 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddlew
         }
 
         // The account endpoints are open to every account: what an account may see and do
-        // there follows from its role (AccountPolicy), not from endpoint permissions. The
-        // same goes for the blockade settings, which only an admin or higher may use.
+        // there follows from its role (AccountPolicy), not from endpoint permissions.
         var resource = GetResource(context.Request.Path);
         var method = GetPermissionMethod(context.Request.Method);
         if (resource is null || method is null ||
