@@ -10,7 +10,11 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddlew
 {
     public const string HeaderName = "API_KEY";
     private const string AccountsResource = "accounts";
+<<<<<<< HEAD
     private const string BlockadeSettingsResource = "blockade-settings";
+=======
+    private const string MetricsResource = "metrics";
+>>>>>>> origin/development
 
     public async Task InvokeAsync(HttpContext context, ApiUsersService apiUsersService)
     {
@@ -37,11 +41,16 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddlew
 
         // The account endpoints are open to every account: what an account may see and do
         // there follows from its role (AccountPolicy), not from endpoint permissions.
+        // The metrics endpoints (read-only performance overview) are open to every account.
         var resource = GetResource(context.Request.Path);
         var method = GetPermissionMethod(context.Request.Method);
         if (resource is null || method is null ||
+<<<<<<< HEAD
             (resource != AccountsResource && resource != BlockadeSettingsResource &&
              !user.HasAccess(resource, method)))
+=======
+            (resource is not (AccountsResource or MetricsResource) && !user.HasAccess(resource, method)))
+>>>>>>> origin/development
         {
             logger.LogWarning("{App} denied {Method} {Path}",
                 user.App, context.Request.Method, context.Request.Path);
