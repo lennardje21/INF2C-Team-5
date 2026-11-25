@@ -64,7 +64,8 @@ def accounts(warehouses):
                              email=f"{role}.{warehouse['code'].lower()}@cargohub.nl",
                              warehouse_id=warehouse["id"], app=app))
     for row in rows:
-        row.update(api_key_hash=None, created_at=ACCOUNTS_CREATED_AT, updated_at=ACCOUNTS_CREATED_AT)
+        row.update(api_key_hash=None, created_at=ACCOUNTS_CREATED_AT, updated_at=ACCOUNTS_CREATED_AT,
+                   deleted_at=None)
     endpoints = [dict(account_id=a["id"], resource=r) for a in rows for r in RESOURCES]
     permissions = [dict(account_id=a["id"], resource=r, method=m, allowed=a["role"] != "user" or m == "get")
                    for a in rows for r in RESOURCES for m in METHODS]

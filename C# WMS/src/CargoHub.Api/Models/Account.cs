@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace CargoHub.Api.Models;
 
 // The API key hash is deliberately not a property: it never leaves the database.
@@ -15,6 +17,10 @@ public class Account : BaseModel
 
     // The application that uses the account's API key, e.g. "handheld_scanner".
     public string App { get; set; } = string.Empty;
+
+    // Set when the account is deleted. Deleted accounts are never returned by the API.
+    [JsonIgnore]
+    public DateTime? DeletedAt { get; set; }
 
     // Resource (the path segment after /api/v2, e.g. "item_lines") -> allowed methods.
     // When creating an account, leave it out for the default of the role; when updating,
