@@ -3,35 +3,56 @@ using CargoHub.Api.Models;
 namespace CargoHub.Api.Authentication;
 
 /// <summary>
-/// Which accounts an account may see and manage, following AccountRoles. Nobody manages
-/// their own account (only someone above them does), so nobody can raise their own role
-/// or access, and nobody can manage the superroot.
+/// Which accounts an account may see and manage, following AccountRoles: it manages only the
+/// roles directly below it, and if it manages any, it also sees every account below it; both
+/// within its own warehouse, or in every warehouse for the superroot. Every account sees
+/// itself. Nobody manages their own account,
+/// so nobody can raise their own role or access. Anything else is refused with a
+/// ForbiddenException (403).
 /// </summary>
 public static class AccountPolicy
 {
-    // A strictly higher role, in the same warehouse; the superroot in every warehouse.
-    public static bool CanManage(ApiUser caller, Account target) =>
-        AccountRoles.IsAbove(caller.Role, target.Role) &&
-        (caller.Role == AccountRoles.Superroot || target.WarehouseId == caller.WarehouseId);
+    public static bool InScope(ApiUser caller, Account target) =>
+        caller.Role == AccountRoles.Superroot || target.WarehouseId == caller.WarehouseId;
 
-    // Your own account, and every account you manage. Others are reported as not found.
     public static bool CanView(ApiUser caller, Account target) =>
-        target.Id == caller.AccountId || CanManage(caller, target);
+        target.Id == caller.AccountId ||
+        (SeesBelow(caller, target) && InScope(caller, target));
+
+    public static bool CanManage(ApiUser caller, Account target) =>
+        target.Id != caller.AccountId &&
+        AccountRoles.CanManageRole(caller.Role, target.Role) && InScope(caller, target);
+
+    public static void CheckView(ApiUser caller, Account target)
+    {
+        if (CanView(caller, target))
+            return;
+
+        throw new ForbiddenException(SeesBelow(caller, target)
+            ? "This account belongs to another warehouse."
+            : AccountRoles.Manages.ContainsKey(caller.Role)
+                ? "You can only see your own account and the accounts below yours."
+                : "You can only see your own account.");
+    }
 
     public static void CheckManage(ApiUser caller, Account target)
     {
-        if (!CanManage(caller, target))
-            throw new ForbiddenException(target.Id == caller.AccountId
-                ? "You cannot change or delete your own account; an account above yours can."
-                : "You can only manage accounts with a lower role than yours, in your own warehouse.");
+        if (CanManage(caller, target))
+            return;
+
+        if (target.Id == caller.AccountId)
+            throw new ForbiddenException("You cannot change or delete your own account; an account above yours can.");
+        if (!AccountRoles.CanManageRole(caller.Role, target.Role))
+            throw new ForbiddenException(RoleError(caller));
+        throw new ForbiddenException("This account belongs to another warehouse.");
     }
 
-    // The new or changed account must also be one the caller manages: a lower role, and
-    // the caller's warehouse unless the caller is the superroot.
+    // The new or changed account must also be one the caller manages: a role it manages,
+    // in its own warehouse unless the caller is the superroot.
     public static void CheckManageAs(ApiUser caller, Account account)
     {
-        if (!AccountRoles.IsAbove(caller.Role, account.Role))
-            throw new ForbiddenException($"You can only give accounts a role below yours ({caller.Role}).");
+        if (!AccountRoles.CanManageRole(caller.Role, account.Role))
+            throw new ForbiddenException(RoleError(caller));
 
         if (caller.Role != AccountRoles.Superroot && account.WarehouseId != caller.WarehouseId)
             throw new ForbiddenException("You can only manage accounts in your own warehouse.");
@@ -58,15 +79,18 @@ public static class AccountPolicy
     }
 
     // The default access of a new account: everything for root and admin, reading for a
-    // user; limited to what the caller may do itself.
-    public static Dictionary<string, EndpointPermissions> DefaultAccess(ApiUser caller, string role) =>
-        ApiResources.All.ToDictionary(resource => resource, resource => new EndpointPermissions
+    // floormanager or user; limited to what the caller may do itself.
+    public static Dictionary<string, EndpointPermissions> DefaultAccess(ApiUser caller, string role)
+    {
+        var write = role is AccountRoles.Root or AccountRoles.Admin;
+        return ApiResources.All.ToDictionary(resource => resource, resource => new EndpointPermissions
         {
             Get = caller.HasAccess(resource, "get"),
-            Post = role != AccountRoles.User && caller.HasAccess(resource, "post"),
-            Put = role != AccountRoles.User && caller.HasAccess(resource, "put"),
-            Delete = role != AccountRoles.User && caller.HasAccess(resource, "delete")
+            Post = write && caller.HasAccess(resource, "post"),
+            Put = write && caller.HasAccess(resource, "put"),
+            Delete = write && caller.HasAccess(resource, "delete")
         });
+    }
 
     public static IEnumerable<(string Resource, string Method)> Allowed(
         Dictionary<string, EndpointPermissions> access)
@@ -79,4 +103,13 @@ public static class AccountPolicy
             if (permissions.Delete) yield return (resource, "delete");
         }
     }
+
+    // Only roles that manage accounts see the accounts below them.
+    private static bool SeesBelow(ApiUser caller, Account target) =>
+        AccountRoles.Manages.ContainsKey(caller.Role) && AccountRoles.IsAbove(caller.Role, target.Role);
+
+    private static string RoleError(ApiUser caller) =>
+        AccountRoles.Manages.TryGetValue(caller.Role, out var roles)
+            ? $"A {caller.Role} can only manage accounts with role {string.Join(" or ", roles)}."
+            : $"A {caller.Role} cannot manage accounts.";
 }
