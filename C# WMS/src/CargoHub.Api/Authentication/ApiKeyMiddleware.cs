@@ -10,11 +10,8 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddlew
 {
     public const string HeaderName = "API_KEY";
     private const string AccountsResource = "accounts";
-<<<<<<< HEAD
-    private const string BlockadeSettingsResource = "blockade-settings";
-=======
     private const string MetricsResource = "metrics";
->>>>>>> origin/development
+    private const string BlockadeSettingsResource = "blockade-settings";
 
     public async Task InvokeAsync(HttpContext context, ApiUsersService apiUsersService)
     {
@@ -45,12 +42,7 @@ public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddlew
         var resource = GetResource(context.Request.Path);
         var method = GetPermissionMethod(context.Request.Method);
         if (resource is null || method is null ||
-<<<<<<< HEAD
-            (resource != AccountsResource && resource != BlockadeSettingsResource &&
-             !user.HasAccess(resource, method)))
-=======
-            (resource is not (AccountsResource or MetricsResource) && !user.HasAccess(resource, method)))
->>>>>>> origin/development
+            (resource is not (AccountsResource or MetricsResource or BlockadeSettingsResource) && !user.HasAccess(resource, method)))
         {
             logger.LogWarning("{App} denied {Method} {Path}",
                 user.App, context.Request.Method, context.Request.Path);
