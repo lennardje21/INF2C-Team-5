@@ -170,6 +170,7 @@ public sealed class BlockadeDetectionService(
         command.CommandText = """
             SELECT `email` FROM `account`
             WHERE `role` = 'floormanager' AND `warehouse_id` = @warehouse
+              AND `deleted_at` IS NULL AND `email` IS NOT NULL
             ORDER BY `id`
             """;
         command.Parameters.AddWithValue("@warehouse", warehouseId);
