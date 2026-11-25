@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\CargoHub.Api\CargoHub.Api.csproj" />
+    <Compile Include="../../../benchmarks/CargoHub.UptimeVerification/TransitionScenarios.cs" Link="Fixtures/TransitionScenarios.cs" />
   </ItemGroup>
 
 </Project>
