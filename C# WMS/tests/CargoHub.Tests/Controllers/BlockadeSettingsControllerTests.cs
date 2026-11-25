@@ -20,7 +20,12 @@ public sealed class BlockadeSettingsControllerTests(ApiFixture fixture) : IAsync
     // Every test starts and ends without stored settings, so the tests do not depend on each other.
     public Task InitializeAsync() => fixture.ExecuteAsync("DELETE FROM `blockade_setting`");
 
-    public Task DisposeAsync() => fixture.ExecuteAsync("DELETE FROM `blockade_setting`");
+    // The accounts of these tests are removed again, so other tests do not find them.
+    public async Task DisposeAsync()
+    {
+        await fixture.ExecuteAsync("DELETE FROM `blockade_setting`");
+        await fixture.ExecuteAsync("DELETE FROM `account` WHERE `email` LIKE 'blockade-%@cargohub.nl'");
+    }
 
     public void Dispose()
     {
