@@ -259,4 +259,32 @@ CREATE TABLE `account_permission` (
 CREATE TABLE `schema_version` (
     `version` INT NOT NULL PRIMARY KEY
 ) ENGINE=InnoDB;
-INSERT INTO `schema_version` (`version`) VALUES (3);
+-- Blockade detection (FR-7). blockade_setting holds the times an admin or root set through
+-- the API; without a row the defaults from appsettings.json apply. blockade_notification
+-- records which blockades were already mailed: the item and its updated_at at that time,
+-- so an item that moves on and gets stuck again counts as a new blockade.
+CREATE TABLE `blockade_setting` (
+    `id` TINYINT NOT NULL,
+    `order_max_minutes` INT NOT NULL,
+    `shipment_max_minutes` INT NOT NULL,
+    `transfer_max_minutes` INT NOT NULL,
+    `check_interval_minutes` INT NOT NULL,
+    `updated_at` DATETIME(6) NOT NULL,
+    PRIMARY KEY (`id`),
+    CHECK (`id` = 1),
+    CHECK (`order_max_minutes` BETWEEN 1 AND 525600),
+    CHECK (`shipment_max_minutes` BETWEEN 1 AND 525600),
+    CHECK (`transfer_max_minutes` BETWEEN 1 AND 525600),
+    CHECK (`check_interval_minutes` BETWEEN 1 AND 1440)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `blockade_notification` (
+    `item_type` VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    `item_id` INT NOT NULL,
+    `item_updated_at` DATETIME(6) NOT NULL,
+    `notified_at` DATETIME(6) NOT NULL,
+    PRIMARY KEY (`item_type`, `item_id`, `item_updated_at`),
+    CHECK (`item_type` IN ('order', 'shipment', 'transfer'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO `schema_version` (`version`) VALUES (4);

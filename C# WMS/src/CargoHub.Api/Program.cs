@@ -39,6 +39,11 @@ builder
     .ValidateOnStart();
 builder.Services.AddSingleton<CargoHub.Api.Services.IEmailService, CargoHub.Api.Services.EmailService>();
 
+// Blockade detection (FR-7): the stored times, the check itself, and the job that runs it.
+builder.Services.AddSingleton<CargoHub.Api.Services.IBlockadeSettingsService, CargoHub.Api.Services.BlockadeSettingsService>();
+builder.Services.AddScoped<CargoHub.Api.Services.IBlockadeDetectionService, CargoHub.Api.Services.BlockadeDetectionService>();
+builder.Services.AddHostedService<CargoHub.Api.Services.BlockadeDetectionWorker>();
+
 // Performance monitoring (NFR-2): request durations in perf-dd-mm-yyyy.log, a mail for slow
 // requests, and GET /api/v2/metrics/performance.
 builder
