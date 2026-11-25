@@ -42,7 +42,7 @@ default timeout for connect, login and retrieval together is 10 seconds, adjusta
 with `UptimeKuma:TimeoutSeconds` from 1 to 60 seconds.
 
 Availability is weighted by elapsed time rather than the number of checks.
-Intervals are clipped to the seven-day window. Kuma attributes the elapsed
+Intervals are clipped to the seven-day window. CargoHub attributes the elapsed
 interval before a heartbeat to its status. Adjacent timestamps preserve
 sub-second precision when Kuma rounds `duration` to whole seconds.
 
@@ -88,6 +88,13 @@ compliance. Actual service availability also depends on the running API, databas
 proxy and deployment process.
 
 ## Verification
+
+The reproducible [UP → DOWN → UP validation](UPTIME_VALIDATION.md) compares
+the same heartbeat fixtures with the unmodified calculator from Kuma 2.5.12.
+That version counts UP/DOWN checks rather than weighting elapsed seconds.
+Equal intervals and complete coverage agree; shorter retry intervals and missing
+history can produce different percentages. Kuma also uses hourly buckets for
+the 168-hour aggregate, whereas CargoHub uses an exact rolling seven-day window.
 
 ```sh
 dotnet test 'C# WMS/CargoHub.slnx' --filter 'FullyQualifiedName~Uptime|FullyQualifiedName~MetricsControllerTests'
