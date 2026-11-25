@@ -18,8 +18,22 @@ env:
   DOTNET_NOLOGO: '1'
 
 jobs:
+  source-branch:
+    name: Check source branch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Only development may merge into main
+        if: github.event_name == 'pull_request' && github.base_ref == 'main' && github.head_ref != 'development'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          echo "PRs into main must come from development (this one is from $HEAD_REF)." >&2
+          exit 1
+
   test:
     name: Build and test
+    needs: source-branch
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     defaults:
