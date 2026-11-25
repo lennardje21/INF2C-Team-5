@@ -89,6 +89,12 @@ with their parameters and responses. Click **Authentication**, enter your API ke
 use **Test Request** to call an endpoint from the browser. The raw OpenAPI document
 is at `/openapi/v2.json`. Neither page needs a key.
 
+## Uptime monitoring
+
+The public `/metrics/uptime?SLA=99.99` endpoint reports weekly availability from
+Uptime Kuma. Configuration, the calculation and monitoring setup are described in
+[docs/UPTIME.md](docs/UPTIME.md).
+
 ## CI/CD
 
 The [pipeline](.github/workflows/ci-cd.yml) runs on every pull request and on `main`.
