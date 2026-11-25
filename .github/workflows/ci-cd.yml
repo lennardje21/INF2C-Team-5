@@ -3,7 +3,7 @@ name: CI/CD
 on:
   pull_request:
   push:
-    branches: [main, ci/setup-ci-cd]
+    branches: [main, development, ci/setup-ci-cd]
   workflow_dispatch:
 
 permissions:
