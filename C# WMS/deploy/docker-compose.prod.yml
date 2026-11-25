@@ -31,6 +31,13 @@ x-api: &api
     BlockadeDetection__ShipmentMaxMinutes: ${BLOCKADE_SHIPMENT_MAX_MINUTES:-240}
     BlockadeDetection__TransferMaxMinutes: ${BLOCKADE_TRANSFER_MAX_MINUTES:-240}
     BlockadeDetection__CheckIntervalMinutes: ${BLOCKADE_CHECK_INTERVAL_MINUTES:-15}
+    # Mail goes through Resend over SMTP; the API key comes from deploy/.env.
+    Email__Host: ${EMAIL_HOST:-smtp.resend.com}
+    Email__Port: ${EMAIL_PORT:-587}
+    Email__EnableSsl: ${EMAIL_ENABLE_SSL:-true}
+    Email__Username: ${EMAIL_USERNAME:-resend}
+    Email__Password: ${RESEND_API_KEY:-}
+    Email__From: ${EMAIL_FROM:-onboarding@resend.dev}
   # No published port: requests come in through nginx.
   # The runtime image has no curl, so bash sends the request itself.
   # Two failed checks 5s apart mark the container unhealthy, after which watchdog.sh
