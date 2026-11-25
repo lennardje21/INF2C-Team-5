@@ -33,6 +33,10 @@ builder
     .ValidateDataAnnotations()
     .ValidateOnStart();
 builder.Services.AddSingleton<CargoHub.Api.Services.IEmailService, CargoHub.Api.Services.EmailService>();
+
+// Background job that looks for blocked orders, shipments and transfers.
+builder.Services.AddScoped<CargoHub.Api.Services.IBlockadeDetectionService, CargoHub.Api.Services.BlockadeDetectionService>();
+builder.Services.AddHostedService<CargoHub.Api.Services.BlockadeDetectionWorker>();
 builder
     .Services.AddHealthChecks()
     .AddCheck<CargoHub.Api.Data.MySqlHealthCheck>("mysql", timeout: TimeSpan.FromSeconds(4));
