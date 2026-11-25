@@ -29,7 +29,10 @@ public sealed class PerformanceLog(
     public const string TimestampFormat = "yyyy-MM-ddTHH:mm:ss";
 
     private readonly Channel<PerformanceEntry> queue = Channel.CreateUnbounded<PerformanceEntry>(
-        new UnboundedChannelOptions { SingleReader = true });
+        new UnboundedChannelOptions());
+
+    // ExecuteAsync and StopAsync can both write; one line at a time keeps lines whole.
+    private readonly SemaphoreSlim writeLock = new(1, 1);
 
     // Absolute folder that holds one subfolder per container.
     public string Directory { get; } = Path.GetFullPath(
@@ -46,30 +49,43 @@ public sealed class PerformanceLog(
     {
         // Keep writing what is still queued when the app stops.
         await foreach (var entry in queue.Reader.ReadAllAsync(CancellationToken.None))
-        {
-            try
-            {
-                System.IO.Directory.CreateDirectory(OwnDirectory);
-                var day = DateOnly.FromDateTime(
-                    DateTime.ParseExact(entry.Timestamp, TimestampFormat, CultureInfo.InvariantCulture));
-                var line = JsonSerializer.Serialize(entry) + "\n";
-
-                await using var file = new FileStream(Path.Combine(OwnDirectory, FileName(day)),
-                    FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-                await file.WriteAsync(Encoding.UTF8.GetBytes(line), CancellationToken.None);
-            }
-            catch (Exception exception)
-            {
-                // A full or read-only disk must not stop the API.
-                logger.LogError(exception, "Could not write the performance log.");
-            }
-        }
+            await WriteAsync(entry);
     }
 
-    public override Task StopAsync(CancellationToken cancellationToken)
+    public override async Task StopAsync(CancellationToken cancellationToken)
     {
         queue.Writer.TryComplete();
-        return base.StopAsync(cancellationToken);
+        await base.StopAsync(cancellationToken);
+
+        // When the app stops right after starting, ExecuteAsync may never have run;
+        // write what is left so no measurement is lost.
+        while (queue.Reader.TryRead(out var entry))
+            await WriteAsync(entry);
+    }
+
+    private async Task WriteAsync(PerformanceEntry entry)
+    {
+        await writeLock.WaitAsync();
+        try
+        {
+            System.IO.Directory.CreateDirectory(OwnDirectory);
+            var day = DateOnly.FromDateTime(
+                DateTime.ParseExact(entry.Timestamp, TimestampFormat, CultureInfo.InvariantCulture));
+            var line = JsonSerializer.Serialize(entry) + "\n";
+
+            await using var file = new FileStream(Path.Combine(OwnDirectory, FileName(day)),
+                FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+            await file.WriteAsync(Encoding.UTF8.GetBytes(line), CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            // A full or read-only disk must not stop the API.
+            logger.LogError(exception, "Could not write the performance log.");
+        }
+        finally
+        {
+            writeLock.Release();
+        }
     }
 
     // All entries from `from` up to and including `to`, from every container, oldest first.
