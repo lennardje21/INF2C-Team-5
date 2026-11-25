@@ -32,6 +32,7 @@ x-api: &api
     BlockadeDetection__ShipmentMaxMinutes: ${BLOCKADE_SHIPMENT_MAX_MINUTES:-240}
     BlockadeDetection__TransferMaxMinutes: ${BLOCKADE_TRANSFER_MAX_MINUTES:-240}
     BlockadeDetection__CheckIntervalMinutes: ${BLOCKADE_CHECK_INTERVAL_MINUTES:-15}
+    BlockadeDetection__MaxMailsPerCheck: ${BLOCKADE_MAX_MAILS_PER_CHECK:-25}
     # Mail goes through Resend over SMTP; the API key comes from deploy/.env.
     Email__Host: ${EMAIL_HOST:-smtp.resend.com}
     Email__Port: ${EMAIL_PORT:-587}
@@ -39,11 +40,6 @@ x-api: &api
     Email__Username: ${EMAIL_USERNAME:-resend}
     Email__Password: ${RESEND_API_KEY:-}
     Email__From: ${EMAIL_FROM:-onboarding@resend.dev}
-    UptimeKuma__Url: ${UPTIME_KUMA_URL:-}
-    UptimeKuma__MonitorId: ${UPTIME_KUMA_MONITOR_ID:-0}
-    UptimeKuma__Username: ${UPTIME_KUMA_USERNAME:-}
-    UptimeKuma__Password: ${UPTIME_KUMA_PASSWORD:-}
-    UptimeKuma__Token: ${UPTIME_KUMA_TOKEN:-}
   # No published port: requests come in through nginx.
   # The runtime image has no curl, so bash sends the request itself.
   # Two failed checks 5s apart mark the container unhealthy, after which watchdog.sh
