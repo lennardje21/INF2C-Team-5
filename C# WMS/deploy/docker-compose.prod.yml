@@ -27,6 +27,7 @@ x-api: &api
   # connection instead of failing.
   environment:
     ConnectionStrings__CargoHub: Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User ID=${MYSQL_USER};Password=${MYSQL_PASSWORD};Maximum Pool Size=60
+    BlockadeDetection__Enabled: ${BLOCKADE_ENABLED:-true}
     BlockadeDetection__OrderMaxMinutes: ${BLOCKADE_ORDER_MAX_MINUTES:-120}
     BlockadeDetection__ShipmentMaxMinutes: ${BLOCKADE_SHIPMENT_MAX_MINUTES:-240}
     BlockadeDetection__TransferMaxMinutes: ${BLOCKADE_TRANSFER_MAX_MINUTES:-240}
