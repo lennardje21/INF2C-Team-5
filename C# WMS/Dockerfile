@@ -11,5 +11,8 @@ WORKDIR /app
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
 COPY --from=build /app/publish .
+# Folder for the performance logs. Docker copies its owner to a new volume mounted here,
+# so the non-root app user can write to it.
+RUN mkdir -p /app/logs && chown $APP_UID /app/logs
 USER $APP_UID
 ENTRYPOINT ["dotnet", "CargoHub.Api.dll"]
