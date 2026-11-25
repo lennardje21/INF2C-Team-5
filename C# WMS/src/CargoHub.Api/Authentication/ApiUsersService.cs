@@ -29,7 +29,7 @@ public sealed class ApiUsersService(MySqlConnectionFactory factory)
             "SELECT a.`id`, a.`role`, a.`warehouse_id`, a.`app`, p.`resource`, p.`method` " +
             "FROM `account` a " +
             "LEFT JOIN `account_permission` p ON p.`account_id` = a.`id` AND p.`allowed` = 1 " +
-            "WHERE a.`api_key_hash` = @hash";
+            "WHERE a.`api_key_hash` = @hash AND a.`deleted_at` IS NULL";
         command.Parameters.AddWithValue("@hash", Hash(apiKey));
 
         ApiUser? user = null;

@@ -54,11 +54,17 @@ scripts/set-api-key.sh --list   # all accounts
 scripts/set-api-key.sh 1        # prints a new key for account 1, once
 ```
 
-From there, accounts are managed through `/api/v2/accounts`. Roles form a strict hierarchy,
-`superroot > root > admin > user`: an account manages the accounts below it in its own
-warehouse (the superroot in every warehouse), and can only grant access it has itself.
+From there, accounts are managed through `/api/v2/accounts`. Each role manages the role
+directly below it, in its own warehouse: the superroot manages roots (in every warehouse),
+a root manages admins, and an admin manages floormanagers and users. Roots and admins also
+see the accounts further down, but cannot change them. Nobody changes or deletes their own
+account, or grants access they do not have themselves; that gives `403`, as does an account
+in another warehouse. A duplicate email gives `409`.
+
 Creating an account (`POST /api/v2/accounts`) returns its API key once;
-`POST /api/v2/accounts/{id}/api_key` replaces a key, also your own.
+`POST /api/v2/accounts/{id}/api_key` replaces a key, also your own. `DELETE` is a soft
+delete: the account stays in the database without name, email or key, so its key stops
+working at once and the account no longer appears in the API.
 
 ```sh
 curl -H "API_KEY: your-key" http://localhost:3000/api/v2/warehouses/1
