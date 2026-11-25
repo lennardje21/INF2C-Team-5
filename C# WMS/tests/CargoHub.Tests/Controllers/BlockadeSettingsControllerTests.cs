@@ -36,20 +36,38 @@ public sealed class BlockadeSettingsControllerTests(ApiFixture fixture) : IAsync
         return client;
     }
 
-    // A client for a new account with this role; roles below the superroot get a warehouse.
-    private async Task<HttpClient> ClientForRoleAsync(string role)
+    // Creates an account through the API as the given creator and returns it with a client
+    // that sends its API key. Only the first account in a chain gets a warehouse: the others
+    // belong to the warehouse of the account that creates them.
+    private async Task<HttpClient> CreateAsync(HttpClient creator, string role, int? warehouse = null)
     {
-        var response = await fixture.Client.PostAsJsonAsync("/api/v2/accounts", new Dictionary<string, object?>
+        var response = await creator.PostAsJsonAsync("/api/v2/accounts", new Dictionary<string, object?>
         {
             ["role"] = role,
             ["name"] = $"Test {role}",
             ["email"] = $"blockade-{Guid.NewGuid():N}@cargohub.nl",
-            ["warehouseId"] = Warehouse,
+            ["warehouseId"] = warehouse,
             ["app"] = "integration-tests"
         });
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var created = (await response.Content.ReadFromJsonAsync<CreatedAccount>())!;
         return ClientWithKey(created.ApiKey);
+    }
+
+    // A client for a new account with this role. Every role only creates the roles below it:
+    // superroot creates root, root creates admin, admin creates floormanager and user. So the
+    // account is made at the end of that chain.
+    private async Task<HttpClient> ClientForRoleAsync(string role)
+    {
+        var root = await CreateAsync(fixture.Client, "root", Warehouse);
+        if (role == "root")
+            return root;
+
+        var admin = await CreateAsync(root, "admin");
+        if (role == "admin")
+            return admin;
+
+        return await CreateAsync(admin, role);
     }
 
     private static BlockadeSettings Settings(int order, int shipment, int transfer, int interval) => new()
