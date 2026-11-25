@@ -1,0 +1,228 @@
+{
+  "verifiedAt": "2026-11-25T11:01:01.545649+00:00",
+  "fixtureKind": "Deterministic test data; no production outage was induced",
+  "inputSha256": "22597628123a35fc7aba93d9d6e08bf4d2e9f4427a47391cd5e049631bde2907",
+  "kumaVersion": "2.5.12",
+  "kumaCalculatorSha256": "0790e97e5b68ee426917f114a210c82ab96aa212098dfed59da4e3720744464f",
+  "referenceMethod": "Unmodified UptimeCalculator.update() and getData(168, hour) from the official Kuma image in TEST_BACKEND mode",
+  "scenarios": [
+    {
+      "name": "equal_interval_60s_down",
+      "passed": true,
+      "upChecks": 10079,
+      "downChecks": 1,
+      "cargoHub": {
+        "monitorId": 1,
+        "periodStart": "2026-11-18T11:59:59+00:00",
+        "periodEnd": "2026-11-25T11:59:59+00:00",
+        "uptimePercentage": 99.990079,
+        "coveragePercentage": 100,
+        "sla": 99.99,
+        "slaMet": true,
+        "upSeconds": 604740,
+        "downSeconds": 60,
+        "unknownSeconds": 0,
+        "allowedDowntimeSeconds": 60.48
+      },
+      "kumaPercentage": 99.99007936507937,
+      "kumaUpChecks": 10079,
+      "kumaDownChecks": 1,
+      "agreementExpected": true,
+      "agrees": true,
+      "differencePercentagePoints": -0.00000036507937,
+      "transitionHeartbeats": [
+        {
+          "time": "2026-11-21T23:17:59+00:00",
+          "status": 1,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:18:59+00:00",
+          "status": 1,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:19:59+00:00",
+          "status": 0,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:20:59+00:00",
+          "status": 1,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:21:59+00:00",
+          "status": 1,
+          "duration": 60
+        }
+      ]
+    },
+    {
+      "name": "equal_interval_120s_down",
+      "passed": true,
+      "upChecks": 10078,
+      "downChecks": 2,
+      "cargoHub": {
+        "monitorId": 1,
+        "periodStart": "2026-11-18T11:59:59+00:00",
+        "periodEnd": "2026-11-25T11:59:59+00:00",
+        "uptimePercentage": 99.980159,
+        "coveragePercentage": 100,
+        "sla": 99.99,
+        "slaMet": false,
+        "upSeconds": 604680,
+        "downSeconds": 120,
+        "unknownSeconds": 0,
+        "allowedDowntimeSeconds": 60.48
+      },
+      "kumaPercentage": 99.98015873015873,
+      "kumaUpChecks": 10078,
+      "kumaDownChecks": 2,
+      "agreementExpected": true,
+      "agrees": true,
+      "differencePercentagePoints": 0.00000026984127,
+      "transitionHeartbeats": [
+        {
+          "time": "2026-11-21T23:17:59+00:00",
+          "status": 1,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:18:59+00:00",
+          "status": 1,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:19:59+00:00",
+          "status": 0,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:20:59+00:00",
+          "status": 0,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:21:59+00:00",
+          "status": 1,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:22:59+00:00",
+          "status": 1,
+          "duration": 60
+        }
+      ]
+    },
+    {
+      "name": "short_retry_3x20s_down",
+      "passed": true,
+      "upChecks": 10079,
+      "downChecks": 3,
+      "cargoHub": {
+        "monitorId": 1,
+        "periodStart": "2026-11-18T11:59:59+00:00",
+        "periodEnd": "2026-11-25T11:59:59+00:00",
+        "uptimePercentage": 99.990079,
+        "coveragePercentage": 100,
+        "sla": 99.99,
+        "slaMet": true,
+        "upSeconds": 604740,
+        "downSeconds": 60,
+        "unknownSeconds": 0,
+        "allowedDowntimeSeconds": 60.48
+      },
+      "kumaPercentage": 99.9702439992065,
+      "kumaUpChecks": 10079,
+      "kumaDownChecks": 3,
+      "agreementExpected": false,
+      "agrees": false,
+      "differencePercentagePoints": 0.0198350007935,
+      "transitionHeartbeats": [
+        {
+          "time": "2026-11-21T23:17:59+00:00",
+          "status": 1,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:18:59+00:00",
+          "status": 1,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:19:19+00:00",
+          "status": 0,
+          "duration": 20
+        },
+        {
+          "time": "2026-11-21T23:19:39+00:00",
+          "status": 0,
+          "duration": 20
+        },
+        {
+          "time": "2026-11-21T23:19:59+00:00",
+          "status": 0,
+          "duration": 20
+        },
+        {
+          "time": "2026-11-21T23:20:59+00:00",
+          "status": 1,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-21T23:21:59+00:00",
+          "status": 1,
+          "duration": 60
+        }
+      ]
+    },
+    {
+      "name": "incomplete_history",
+      "passed": true,
+      "upChecks": 2,
+      "downChecks": 2,
+      "cargoHub": {
+        "monitorId": 1,
+        "periodStart": "2026-11-18T11:59:59+00:00",
+        "periodEnd": "2026-11-25T11:59:59+00:00",
+        "uptimePercentage": 0.009921,
+        "coveragePercentage": 0.029762,
+        "sla": 99.99,
+        "slaMet": null,
+        "upSeconds": 60,
+        "downSeconds": 120,
+        "unknownSeconds": 604620,
+        "allowedDowntimeSeconds": 60.48
+      },
+      "kumaPercentage": 50,
+      "kumaUpChecks": 2,
+      "kumaDownChecks": 2,
+      "agreementExpected": false,
+      "agrees": false,
+      "differencePercentagePoints": -49.990079,
+      "transitionHeartbeats": [
+        {
+          "time": "2026-11-25T11:56:59+00:00",
+          "status": 1,
+          "duration": 0
+        },
+        {
+          "time": "2026-11-25T11:57:59+00:00",
+          "status": 0,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-25T11:58:59+00:00",
+          "status": 0,
+          "duration": 60
+        },
+        {
+          "time": "2026-11-25T11:59:59+00:00",
+          "status": 1,
+          "duration": 60
+        }
+      ]
+    }
+  ]
+}
