@@ -1,11 +1,13 @@
 using CargoHub.Api.Authentication;
+using CargoHub.Api.Errors;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
 
-// Open to every account; what it may see and do follows from its role (see AccountPolicy).
+// Open to every account; what it may see and do follows from its role (see AccountPolicy):
+// 403 for accounts it may not see or manage, 404 for accounts that do not exist or are deleted.
 [ApiController]
 [Route("api/v2/accounts")]
 public class AccountsController(AccountsService accountsService) : ControllerBase
@@ -33,14 +35,21 @@ public class AccountsController(AccountsService accountsService) : ControllerBas
     public async Task<ActionResult<Account>> GetAccount(
         int id, CancellationToken cancellationToken)
     {
-        var account = await accountsService.GetByIdAsync(Caller, id, cancellationToken);
-
-        if (account is null)
+        try
         {
-            return NotFound();
-        }
+            var account = await accountsService.GetByIdAsync(Caller, id, cancellationToken);
 
-        return Ok(account);
+            if (account is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(account);
+        }
+        catch (ForbiddenException e)
+        {
+            return Problem(statusCode: StatusCodes.Status403Forbidden, detail: e.Message);
+        }
     }
 
 	// POST: api/v2/accounts
@@ -63,6 +72,10 @@ public class AccountsController(AccountsService accountsService) : ControllerBas
         {
             return Problem(statusCode: StatusCodes.Status403Forbidden, detail: e.Message);
         }
+        catch (ConflictException e)
+        {
+            return Problem(statusCode: StatusCodes.Status409Conflict, detail: e.Message);
+        }
     }
 
 	// PUT: api/v2/accounts/{id}
@@ -84,9 +97,14 @@ public class AccountsController(AccountsService accountsService) : ControllerBas
         {
             return Problem(statusCode: StatusCodes.Status403Forbidden, detail: e.Message);
         }
+        catch (ConflictException e)
+        {
+            return Problem(statusCode: StatusCodes.Status409Conflict, detail: e.Message);
+        }
     }
 
 	// DELETE: api/v2/accounts/{id}
+	// A soft delete: the account stays in the database without name, email or key.
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAccount(
         int id, CancellationToken cancellationToken)
