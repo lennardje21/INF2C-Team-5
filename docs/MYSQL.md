@@ -211,9 +211,12 @@ gelijktijdige voorraadwijzigingen een atomaire geparametriseerde UPDATE of
 ## Gebruikersrechten
 
 Elk account heeft precies één API-key. `account` bewaart rol (`superroot`, `root`,
-`admin`, `user`), naam, uniek e-mailadres, magazijn (verplicht, behalve voor de superroot), `app` en `api_key_hash`: de SHA-256
-van de key als lowercase hex, gelijk aan MySQL's `SHA2(key, 256)`. De key zelf wordt nergens
-opgeslagen; `NULL` betekent dat het account nog geen key heeft. Geef een account een key met
+`admin`, `floormanager`, `user`), naam, uniek e-mailadres, magazijn (verplicht, behalve voor
+de superroot), `app` en `api_key_hash`: de SHA-256 van de key als lowercase hex, gelijk aan
+MySQL's `SHA2(key, 256)`. De key zelf wordt nergens opgeslagen; `NULL` betekent dat het
+account nog geen key heeft. Een verwijderd account houdt zijn rij, met `deleted_at` gevuld en
+naam, e-mail en key leeg (afgedwongen door de CHECK `account_deleted_cleared`), zodat
+verwijzingen ernaar blijven werken. Geef een account een key met
 `scripts/set-api-key.sh`. `account_endpoint` bewaart de beschikbare resources;
 `account_permission` bewaart methode en expliciet booleanrecht, inclusief false.
 Resources gebruiken een case-sensitive collation.

@@ -212,3 +212,8 @@ Migration 002 removes the old users and their API keys, and creates the superroo
 root, admin and user for every warehouse, all without a key. Until the superroot has a
 key, nobody can use the API, so give it one right after the deployment (see
 [API keys](#api-keys)), and from there create the other accounts' keys.
+
+### 003: floormanager and soft delete
+
+Migration 003 adds the `floormanager` role and `deleted_at` to `account`, and gives the
+account CHECK constraints names. It changes no data; existing keys keep working.
