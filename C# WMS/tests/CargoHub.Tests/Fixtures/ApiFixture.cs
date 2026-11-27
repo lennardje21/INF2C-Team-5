@@ -99,6 +99,21 @@ public sealed class ApiFixture : IAsyncLifetime
         return Convert.ToInt32(await command.ExecuteScalarAsync());
     }
 
+    public async Task<List<int>> QueryIntListAsync(string sql, params (string Name, object Value)[] parameters)
+    {
+        await using var connection = new MySqlConnection(ConnectionString);
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        foreach (var (name, value) in parameters)
+            command.Parameters.AddWithValue(name, value);
+        await using var reader = await command.ExecuteReaderAsync();
+        var values = new List<int>();
+        while (await reader.ReadAsync())
+            values.Add(reader.GetInt32(0));
+        return values;
+    }
+
     public async Task<string> QueryStringAsync(string sql, params (string Name, object Value)[] parameters)
     {
         await using var connection = new MySqlConnection(ConnectionString);

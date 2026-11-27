@@ -28,12 +28,11 @@ public sealed class ItemTypesControllerTests(ApiFixture fixture)
     [Fact]
     public async Task GetItemTypes_ReturnsSeededItemTypes()
     {
-        var ItemTypes = await _client.GetFromJsonAsync<List<ItemType>>(Url);
+        var itemTypes = await _client.GetPageAsync<ItemType>(Url);
         var expected = await fixture.QueryIntAsync("SELECT COUNT(*) FROM `item_type`");
 
-        Assert.NotNull(ItemTypes);
-        Assert.Equal(expected, ItemTypes.Count);
-        Assert.NotEmpty(ItemTypes);
+        Assert.Equal(expected, itemTypes.Total);
+        Assert.NotEmpty(itemTypes.Items);
     }
 
     [Fact]
@@ -64,10 +63,9 @@ public sealed class ItemTypesControllerTests(ApiFixture fixture)
             "SELECT COUNT(*) FROM `item` WHERE `item_type_id` = @id", ("@id", itemTypeId));
 
         var items = await _client.GetFromJsonAsync<List<int>>($"{Url}/{itemTypeId}/items");
-        var allItems = await _client.GetFromJsonAsync<List<Item>>("/api/v2/items");
+        var allItems = await _client.GetAllAsync<Item>("/api/v2/items");
 
         Assert.NotNull(items);
-        Assert.NotNull(allItems);
         Assert.Equal(expectedCount, items.Count);
         Assert.NotEmpty(items);
         Assert.All(items, id => Assert.Contains(allItems, item =>

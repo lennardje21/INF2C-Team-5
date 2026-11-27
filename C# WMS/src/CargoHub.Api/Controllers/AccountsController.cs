@@ -1,7 +1,9 @@
 using CargoHub.Api.Authentication;
+using CargoHub.Api.Data;
 using CargoHub.Api.Errors;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
@@ -17,10 +19,12 @@ public class AccountsController(AccountsService accountsService) : ControllerBas
 
 	// GET: api/v2/accounts
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Account>>> GetAccounts(
-        CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<Account>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<Account>>> GetAccounts(
+        [FromQuery] ListQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await accountsService.GetAllAsync(Caller, cancellationToken));
+        return Ok(await accountsService.GetPageAsync(Caller, query.ToPageRequest(), cancellationToken));
     }
 
 	// GET: api/v2/accounts/me

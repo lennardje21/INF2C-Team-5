@@ -12,9 +12,10 @@ public sealed class InventoriesService(
     MySqlConnectionFactory factory,
     MySqlRepository<Inventory> inventories)
 {
-    // Returns all inventories.
-    public Task<IReadOnlyList<Inventory>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        inventories.GetAsync(cancellationToken: cancellationToken);
+    // Returns one page of inventories.
+    public Task<PagedResult<Inventory>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default) =>
+        inventories.GetAsync(page, cancellationToken: cancellationToken);
 
     // Returns one inventory, or null if not found.
     public async Task<Inventory?> GetByKeyAsync(int itemId, int locationId,

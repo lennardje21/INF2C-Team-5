@@ -20,13 +20,16 @@ public sealed class ShipmentsService(
     private const int MaxItems = 100;
     private const int MaxAmount = 1_000_000;
 
-    /// <summary>Returns all shipments with their items.</summary>
-    public async Task<IReadOnlyList<Shipment>> GetAllAsync(CancellationToken cancellationToken = default)
+    /// <summary>Returns one page of shipments with their items.</summary>
+    public async Task<PagedResult<Shipment>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default)
     {
-        var result = await shipments.GetAsync(cancellationToken: cancellationToken);
-        var itemsByShipment = (await shipmentItems.GetAsync(cancellationToken: cancellationToken))
+        var result = await shipments.GetAsync(page, cancellationToken: cancellationToken);
+        var itemsByShipment = (await shipmentItems.GetAsync(
+                new Dictionary<string, object?> { ["shipment_id"] = result.Items.Select(s => s.Id) },
+                cancellationToken))
             .ToLookup(i => i.ShipmentId);
-        foreach (var shipment in result)
+        foreach (var shipment in result.Items)
             shipment.Items = itemsByShipment[shipment.Id].ToList();
         return result;
     }

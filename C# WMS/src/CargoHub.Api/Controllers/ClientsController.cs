@@ -1,5 +1,7 @@
+using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
@@ -9,11 +11,14 @@ namespace CargoHub.Api.Controllers;
 [Route("api/v2/clients")]
 public class ClientsController(ClientsService clientsService) : ControllerBase
 {
-    /// <summary>Returns all clients.</summary>
+    /// <summary>Returns one page of clients.</summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Client>>> GetClients(CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<Client>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<Client>>> GetClients(
+        [FromQuery] ListQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await clientsService.GetAllAsync(cancellationToken));
+        return Ok(await clientsService.GetPageAsync(query.ToPageRequest(), cancellationToken));
     }
 
     /// <summary>Returns one client.</summary>

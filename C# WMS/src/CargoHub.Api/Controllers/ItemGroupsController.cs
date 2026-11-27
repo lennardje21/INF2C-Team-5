@@ -1,5 +1,7 @@
+using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
@@ -9,11 +11,14 @@ namespace CargoHub.Api.Controllers;
 [Route("api/v2/item_groups")]
 public class ItemGroupsController(ItemGroupsService itemGroupsService) : ControllerBase
 {
-    /// Returns all item groups.
+    /// Returns one page of item groups.
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ItemGroup>>> GetItemGroups(CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<ItemGroup>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<ItemGroup>>> GetItemGroups(
+        [FromQuery] ListQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await itemGroupsService.GetAllAsync(cancellationToken));
+        return Ok(await itemGroupsService.GetPageAsync(query.ToPageRequest(), cancellationToken));
     }
 
     /// Returns one item group.

@@ -53,12 +53,11 @@ public sealed class InventoriesControllerTests(ApiFixture fixture)
     [Fact]
     public async Task GetInventories_ReturnsSeededInventories()
     {
-        var inventories = await _client.GetFromJsonAsync<List<Inventory>>(Url);
+        var inventories = await _client.GetPageAsync<Inventory>(Url);
         var expected = await fixture.QueryIntAsync("SELECT COUNT(*) FROM `inventory`");
 
-        Assert.NotNull(inventories);
-        Assert.Equal(expected, inventories.Count);
-        Assert.NotEmpty(inventories);
+        Assert.Equal(expected, inventories.Total);
+        Assert.NotEmpty(inventories.Items);
     }
 
     [Fact]

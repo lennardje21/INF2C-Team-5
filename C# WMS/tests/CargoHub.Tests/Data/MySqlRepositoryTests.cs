@@ -153,4 +153,283 @@ public sealed class MySqlRepositoryTests
         Assert.NotEmpty(orders);
         Assert.All(orders, order => Assert.Null(order.ShippingNotes));
     }
+
+    // Paging, filtering and sorting. These insert rows dated in 2099 inside a transaction that is
+    // rolled back, so the window from 2099-01-01 holds exactly the rows of the test and no seed data.
+
+    private static readonly PageRequest Year2099 = new(From: new DateOnly(2099, 1, 1), To: new DateOnly(2099, 12, 31));
+
+    private static DateTime Utc(int month, int day, int hour = 0, int minute = 0, int second = 0) =>
+        new(2099, month, day, hour, minute, second, DateTimeKind.Utc);
+
+    private static async Task<ItemGroup> InsertGroupAsync(MySqlRepository<ItemGroup> repository,
+        MySqlConnection connection, MySqlTransaction transaction, DateTime updatedAt, string? name = null)
+    {
+        var group = new ItemGroup
+        {
+            Name = name ?? $"Paging test {Guid.NewGuid():N}", Description = "Paging test",
+            CreatedAt = updatedAt, UpdatedAt = updatedAt
+        };
+        await repository.InsertAsync(group, connection, transaction);
+        return group;
+    }
+
+    // Five groups around the edges of 31 January 2099: the last microsecond of the day before,
+    // midnight, noon, the last microsecond of the day, and midnight of the day after.
+    private static async Task<ItemGroup[]> InsertDayEdgesAsync(MySqlRepository<ItemGroup> repository,
+        MySqlConnection connection, MySqlTransaction transaction)
+    {
+        var lastMicrosecond = TimeSpan.TicksPerSecond - 10;
+        return
+        [
+            await InsertGroupAsync(repository, connection, transaction, Utc(1, 30, 23, 59, 59).AddTicks(lastMicrosecond)),
+            await InsertGroupAsync(repository, connection, transaction, Utc(1, 31)),
+            await InsertGroupAsync(repository, connection, transaction, Utc(1, 31, 12)),
+            await InsertGroupAsync(repository, connection, transaction, Utc(1, 31, 23, 59, 59).AddTicks(lastMicrosecond)),
+            await InsertGroupAsync(repository, connection, transaction, Utc(2, 1))
+        ];
+    }
+
+    private static List<int> Ids(IEnumerable<ItemGroup> groups) => groups.Select(group => group.Id).ToList();
+
+    [MySqlFact]
+    public async Task PagedGetReturnsTheRequestedSliceAndTheTotal()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<ItemGroup>(factory);
+        await using var connection = await factory.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        var groups = await InsertDayEdgesAsync(repository, connection, transaction);
+
+        var first = await repository.GetAsync(connection, transaction, Year2099 with { Size = 2, Sort = SortDirection.Asc });
+        var second = await repository.GetAsync(connection, transaction, Year2099 with { Page = 2, Size = 2, Sort = SortDirection.Asc });
+        var third = await repository.GetAsync(connection, transaction, Year2099 with { Page = 3, Size = 2, Sort = SortDirection.Asc });
+
+        Assert.Equal(Ids(groups[..2]), Ids(first.Items));
+        Assert.Equal(Ids(groups[2..4]), Ids(second.Items));
+        Assert.Equal(Ids(groups[4..]), Ids(third.Items));
+        Assert.All(new[] { first, second, third }, page => Assert.Equal(5, page.Total));
+        Assert.All(new[] { first, second, third }, page => Assert.Equal(3, page.TotalPages));
+        Assert.Equal([1, 2, 3], new[] { first.Page, second.Page, third.Page });
+        await transaction.RollbackAsync();
+    }
+
+    [MySqlFact]
+    public async Task PagedGetPastTheEndReturnsNoRowsButTheTotal()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<ItemGroup>(factory);
+        await using var connection = await factory.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        await InsertDayEdgesAsync(repository, connection, transaction);
+
+        var past = await repository.GetAsync(connection, transaction, Year2099 with { Page = 4, Size = 2 });
+        var huge = await repository.GetAsync(connection, transaction, Year2099 with { Page = int.MaxValue, Size = 100 });
+
+        Assert.Empty(past.Items);
+        Assert.Equal((5, 3, 4), (past.Total, past.TotalPages, past.Page));
+        Assert.Empty(huge.Items);
+        Assert.Equal(5, huge.Total);
+        await transaction.RollbackAsync();
+    }
+
+    [MySqlFact]
+    public async Task DefaultsAreTheFirstPageNewestFirst()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<ItemGroup>(factory);
+        await using var connection = await factory.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        var groups = await InsertDayEdgesAsync(repository, connection, transaction);
+
+        var page = await repository.GetAsync(connection, transaction, new PageRequest());
+
+        // The rows of 2099 are newer than anything in the seed.
+        Assert.Equal(Ids(groups.AsEnumerable().Reverse()), Ids(page.Items.Take(5)));
+        Assert.Equal((1, 50), (page.Page, page.Size));
+        Assert.Equal(8, page.Total);
+        await transaction.RollbackAsync();
+    }
+
+    [MySqlFact]
+    public async Task ToCountsTheWholeDayAndFromStartsAtMidnight()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<ItemGroup>(factory);
+        await using var connection = await factory.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        var groups = await InsertDayEdgesAsync(repository, connection, transaction);
+        var day = new DateOnly(2099, 1, 31);
+
+        var oneDay = await repository.GetAsync(connection, transaction,
+            new PageRequest(From: day, To: day, Sort: SortDirection.Asc));
+        var upToTheDay = await repository.GetAsync(connection, transaction,
+            Year2099 with { To = day, Sort = SortDirection.Asc });
+        var fromTheDay = await repository.GetAsync(connection, transaction,
+            Year2099 with { From = day, Sort = SortDirection.Asc });
+
+        // Midnight, noon and the last microsecond of the day count; the neighbouring days do not.
+        Assert.Equal(Ids(groups[1..4]), Ids(oneDay.Items));
+        Assert.Equal(3, oneDay.Total);
+        Assert.Equal(Ids(groups[..4]), Ids(upToTheDay.Items));
+        Assert.Equal(Ids(groups[1..]), Ids(fromTheDay.Items));
+        await transaction.RollbackAsync();
+    }
+
+    [MySqlFact]
+    public async Task FromAndToAreOptionalAndIndependent()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<ItemGroup>(factory);
+        await using var connection = await factory.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        var groups = await InsertDayEdgesAsync(repository, connection, transaction);
+
+        var onlyFrom = await repository.GetAsync(connection, transaction,
+            new PageRequest(From: new DateOnly(2099, 2, 1), Sort: SortDirection.Asc));
+        var onlyTo = await repository.GetAsync(connection, transaction,
+            new PageRequest(To: new DateOnly(1999, 12, 31)));
+        var nothing = await repository.GetAsync(connection, transaction,
+            new PageRequest(From: new DateOnly(2100, 1, 1)));
+
+        Assert.Equal([groups[4].Id], Ids(onlyFrom.Items));
+        Assert.DoesNotContain(onlyTo.Items, group => group.UpdatedAt.Year == 2099);
+        Assert.Empty(nothing.Items);
+        Assert.Equal((0, 0), (nothing.Total, nothing.TotalPages));
+        await transaction.RollbackAsync();
+    }
+
+    [MySqlFact]
+    public async Task SortingOnUpdatedAtGoesBothWays()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<ItemGroup>(factory);
+        await using var connection = await factory.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        // Inserted out of order, so the key order cannot pass for the updated_at order.
+        var newest = await InsertGroupAsync(repository, connection, transaction, Utc(5, 1));
+        var oldest = await InsertGroupAsync(repository, connection, transaction, Utc(3, 1));
+        var middle = await InsertGroupAsync(repository, connection, transaction, Utc(4, 1));
+
+        var asc = await repository.GetAsync(connection, transaction, Year2099 with { Sort = SortDirection.Asc });
+        var desc = await repository.GetAsync(connection, transaction, Year2099 with { Sort = SortDirection.Desc });
+
+        Assert.Equal([oldest.Id, middle.Id, newest.Id], Ids(asc.Items));
+        Assert.Equal([newest.Id, middle.Id, oldest.Id], Ids(desc.Items));
+        await transaction.RollbackAsync();
+    }
+
+    [MySqlFact]
+    public async Task RowsWithTheSameUpdatedAtAreOrderedByKeySoPagesNeverOverlap()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<ItemGroup>(factory);
+        await using var connection = await factory.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        var groups = new List<ItemGroup>();
+        for (var i = 0; i < 5; i++)
+            groups.Add(await InsertGroupAsync(repository, connection, transaction, Utc(6, 1)));
+
+        var desc = new List<int>();
+        var asc = new List<int>();
+        for (var page = 1; page <= 3; page++)
+        {
+            desc.AddRange(Ids((await repository.GetAsync(connection, transaction,
+                Year2099 with { Page = page, Size = 2 })).Items));
+            asc.AddRange(Ids((await repository.GetAsync(connection, transaction,
+                Year2099 with { Page = page, Size = 2, Sort = SortDirection.Asc })).Items));
+        }
+
+        Assert.Equal(Ids(groups.AsEnumerable().Reverse()), desc);
+        Assert.Equal(Ids(groups), asc);
+        await transaction.RollbackAsync();
+    }
+
+    [MySqlFact]
+    public async Task PagedGetCombinesWithEqualityAndIdListFilters()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<ItemGroup>(factory);
+        await using var connection = await factory.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        var groups = await InsertDayEdgesAsync(repository, connection, transaction);
+
+        var byName = await repository.GetAsync(connection, transaction, Year2099,
+            new Dictionary<string, object?> { ["name"] = groups[2].Name });
+        var byIds = await repository.GetAsync(connection, transaction, Year2099 with { Sort = SortDirection.Asc },
+            new Dictionary<string, object?> { ["id"] = new[] { groups[1].Id, groups[3].Id, groups[4].Id } });
+        var byNoIds = await repository.GetAsync(connection, transaction, Year2099,
+            new Dictionary<string, object?> { ["id"] = Array.Empty<int>() });
+
+        Assert.Equal([groups[2].Id], Ids(byName.Items));
+        Assert.Equal(1, byName.Total);
+        Assert.Equal([groups[1].Id, groups[3].Id, groups[4].Id], Ids(byIds.Items));
+        Assert.Equal(3, byIds.Total);
+        Assert.Empty(byNoIds.Items);
+        Assert.Equal(0, byNoIds.Total);
+        await transaction.RollbackAsync();
+    }
+
+    [MySqlFact]
+    public async Task UnpagedGetAcceptsAListOfIds()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<ItemGroup>(factory);
+
+        var rows = await repository.GetAsync(new Dictionary<string, object?> { ["id"] = new[] { 1, 3, 999999 } });
+
+        Assert.Equal([1, 3], Ids(rows));
+    }
+
+    [MySqlFact]
+    public async Task PagedGetCountsAllRowsOfTheSeed()
+    {
+        var factory = Factory();
+
+        var orders = await new MySqlRepository<Order>(factory).GetAsync(new PageRequest());
+        var shipments = await new MySqlRepository<Shipment>(factory).GetAsync(new PageRequest(Size: 100));
+
+        Assert.Equal(4854, orders.Total);
+        Assert.Equal(98, orders.TotalPages);
+        Assert.Equal(50, orders.Items.Count);
+        Assert.Equal(6132, shipments.Total);
+        Assert.Equal(62, shipments.TotalPages);
+        Assert.Equal(100, shipments.Items.Count);
+    }
+
+    [MySqlFact]
+    public async Task PagedGetOrdersARowWithACompositeKeyByBothKeyColumns()
+    {
+        var factory = Factory();
+        var repository = new MySqlRepository<Inventory>(factory);
+        var all = await repository.GetAsync();
+
+        var page = await repository.GetAsync(new PageRequest(Size: 25));
+
+        var expected = all.OrderByDescending(row => row.UpdatedAt)
+            .ThenByDescending(row => row.ItemId).ThenByDescending(row => row.LocationId).Take(25)
+            .Select(row => (row.ItemId, row.LocationId)).ToList();
+        Assert.Equal(expected, page.Items.Select(row => (row.ItemId, row.LocationId)).ToList());
+        Assert.Equal(all.Count, page.Total);
+    }
+
+    [MySqlFact]
+    public async Task PagedGetRejectsARequestOutsideTheLimits()
+    {
+        var repository = new MySqlRepository<ItemGroup>(Factory());
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => repository.GetAsync(new PageRequest(Page: 0)));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => repository.GetAsync(new PageRequest(Size: 0)));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => repository.GetAsync(new PageRequest(Size: 101)));
+        await Assert.ThrowsAsync<ArgumentException>(() => repository.GetAsync(
+            new PageRequest(From: new DateOnly(2026, 2, 1), To: new DateOnly(2026, 1, 1))));
+    }
+
+    [MySqlFact]
+    public async Task PagedGetNeedsAnUpdatedAtColumn()
+    {
+        var repository = new MySqlRepository<OrderItem>(Factory());
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => repository.GetAsync(new PageRequest()));
+    }
 }

@@ -1,5 +1,7 @@
+using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
@@ -11,11 +13,14 @@ namespace CargoHub.Api.Controllers;
 [Route("api/v2/inventories")]
 public class InventoriesController(InventoriesService inventoriesService) : ControllerBase
 {
-    // Returns all inventories.
+    // Returns one page of inventories.
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Inventory>>> GetInventories(CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<Inventory>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<Inventory>>> GetInventories(
+        [FromQuery] ListQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await inventoriesService.GetAllAsync(cancellationToken));
+        return Ok(await inventoriesService.GetPageAsync(query.ToPageRequest(), cancellationToken));
     }
 
     // Returns the inventory of one item at one location.

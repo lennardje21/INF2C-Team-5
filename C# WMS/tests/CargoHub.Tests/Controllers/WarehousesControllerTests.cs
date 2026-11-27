@@ -36,9 +36,8 @@ public sealed class WarehousesControllerTests(ApiFixture fixture)
     [Fact]
     public async Task GetWarehouses_ReturnsSeededWarehouses()
     {
-        var warehouses = await _client.GetFromJsonAsync<List<Warehouse>>(Url);
+        var warehouses = (await _client.GetPageAsync<Warehouse>(Url)).Items;
 
-        Assert.NotNull(warehouses);
         Assert.NotEmpty(warehouses);
         Assert.Contains(warehouses, warehouse => warehouse.Id == 1);
     }

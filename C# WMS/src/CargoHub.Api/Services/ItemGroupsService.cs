@@ -14,9 +14,10 @@ public sealed class ItemGroupsService(
 {
     private const int MaxDescriptionBytes = 65_535;
 
-    /// Returns all item groups.
-    public Task<IReadOnlyList<ItemGroup>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        itemGroups.GetAsync(cancellationToken: cancellationToken);
+    /// Returns one page of item groups.
+    public Task<PagedResult<ItemGroup>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default) =>
+        itemGroups.GetAsync(page, cancellationToken: cancellationToken);
 
     /// Returns one item group, or null if it does not exist.
     public async Task<ItemGroup?> GetByIdAsync(int id, CancellationToken cancellationToken = default)

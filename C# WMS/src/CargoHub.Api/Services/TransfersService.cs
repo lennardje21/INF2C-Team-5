@@ -14,15 +14,17 @@ public sealed class TransfersService(
 {
     private static readonly string[] TransferStatuses = ["Scheduled", "In Transit", "Processed"];
 
-    // Get all transfers, including their items.
-    public async Task<IReadOnlyList<Transfer>> GetAllAsync(
-        CancellationToken cancellationToken = default)
+    // Get one page of transfers, including their items.
+    public async Task<PagedResult<Transfer>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default)
     {
-        var result = await transfers.GetAsync(cancellationToken: cancellationToken);
-        var itemsByTransfer = (await transferItems.GetAsync(cancellationToken: cancellationToken))
+        var result = await transfers.GetAsync(page, cancellationToken: cancellationToken);
+        var itemsByTransfer = (await transferItems.GetAsync(
+                new Dictionary<string, object?> { ["transfer_id"] = result.Items.Select(t => t.Id) },
+                cancellationToken))
             .ToLookup(item => item.TransferId);
 
-        foreach (var transfer in result)
+        foreach (var transfer in result.Items)
             transfer.Items = itemsByTransfer[transfer.Id].ToList();
 
         return result;

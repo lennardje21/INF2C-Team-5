@@ -27,13 +27,16 @@ public sealed class OrdersService(
     // shipping_notes is a TEXT column, which holds at most 65,535 bytes (UTF-8).
     private const int MaxShippingNotesBytes = 65_535;
 
-    /// <summary>Returns all orders with their items.</summary>
-    public async Task<IReadOnlyList<Order>> GetAllAsync(CancellationToken cancellationToken = default)
+    /// <summary>Returns one page of orders with their items.</summary>
+    public async Task<PagedResult<Order>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default)
     {
-        var result = await orders.GetAsync(cancellationToken: cancellationToken);
-        var itemsByOrder = (await orderItems.GetAsync(cancellationToken: cancellationToken))
+        var result = await orders.GetAsync(page, cancellationToken: cancellationToken);
+        var itemsByOrder = (await orderItems.GetAsync(
+                new Dictionary<string, object?> { ["order_id"] = result.Items.Select(o => o.Id) },
+                cancellationToken))
             .ToLookup(i => i.OrderId);
-        foreach (var order in result)
+        foreach (var order in result.Items)
             order.Items = WithRoundedPrices(itemsByOrder[order.Id]);
         return result;
     }

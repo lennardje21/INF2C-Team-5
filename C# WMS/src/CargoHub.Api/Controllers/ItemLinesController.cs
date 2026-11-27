@@ -1,5 +1,7 @@
+using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
@@ -9,11 +11,14 @@ namespace CargoHub.Api.Controllers;
 [Route("api/v2/item_lines")]
 public class ItemLinesController(ItemLinesService itemLinesService) : ControllerBase
 {
-    /// Returns all item lines.
+    /// Returns one page of item lines.
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ItemLine>>> GetItemLines(CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<ItemLine>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<ItemLine>>> GetItemLines(
+        [FromQuery] ListQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await itemLinesService.GetAllAsync(cancellationToken));
+        return Ok(await itemLinesService.GetPageAsync(query.ToPageRequest(), cancellationToken));
     }
 
     /// Returns one item line.

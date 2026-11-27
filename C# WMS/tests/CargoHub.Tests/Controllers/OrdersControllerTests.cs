@@ -55,9 +55,9 @@ public sealed class OrdersControllerTests(ApiFixture fixture)
     [Fact]
     public async Task GetOrders_ReturnsSeededOrdersWithItems()
     {
-        var orders = await _client.GetFromJsonAsync<List<Order>>(Url);
+        var orders = await _client.GetAllAsync<Order>(Url);
 
-        Assert.True(orders!.Count >= 4854);
+        Assert.True(orders.Count >= 4854);
         var first = orders.Single(o => o.Id == 1);
         Assert.Equal("ORD-000001", first.Reference);
         Assert.NotEmpty(first.Items);

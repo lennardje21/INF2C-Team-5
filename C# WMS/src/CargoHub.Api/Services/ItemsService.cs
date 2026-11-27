@@ -15,10 +15,11 @@ public sealed class ItemsService(
     private const int MaxDescriptionBytes = 65_535;
     private const decimal MaxUnitWeight = 999_999_999_999.999999m;
 
-    // Returns all items.
-    public Task<IReadOnlyList<Item>> GetAllAsync(CancellationToken cancellationToken = default)
+    // Returns one page of items.
+    public Task<PagedResult<Item>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default)
     {
-        return items.GetAsync(cancellationToken: cancellationToken);
+        return items.GetAsync(page, cancellationToken: cancellationToken);
     }
 
     // Returns one item, or null if it does not exist.

@@ -1,5 +1,7 @@
+using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
@@ -10,10 +12,12 @@ public class WarehousesController(WarehousesService warehousesService) : Control
 {
 	// GET: api/v2/warehouses
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Warehouse>>> GetWarehouses(
-        CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<Warehouse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<Warehouse>>> GetWarehouses(
+        [FromQuery] ListQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await warehousesService.GetAllAsync(cancellationToken));
+        return Ok(await warehousesService.GetPageAsync(query.ToPageRequest(), cancellationToken));
     }
 
 	// GET: api/v2/warehouses/{id}
