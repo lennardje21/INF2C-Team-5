@@ -38,6 +38,22 @@ builder
     .ValidateDataAnnotations()
     .ValidateOnStart();
 builder.Services.AddSingleton<CargoHub.Api.Services.IEmailService, CargoHub.Api.Services.EmailService>();
+
+// Blockade detection (FR-7): the stored times, the check itself, and the job that runs it.
+builder.Services.AddSingleton<CargoHub.Api.Services.IBlockadeSettingsService, CargoHub.Api.Services.BlockadeSettingsService>();
+builder.Services.AddScoped<CargoHub.Api.Services.IBlockadeDetectionService, CargoHub.Api.Services.BlockadeDetectionService>();
+builder.Services.AddHostedService<CargoHub.Api.Services.BlockadeDetectionWorker>();
+
+// Performance monitoring (NFR-2): request durations in perf-dd-mm-yyyy.log, a mail for slow
+// requests, and GET /api/v2/metrics/performance.
+builder
+    .Services.AddOptions<CargoHub.Api.Monitoring.PerformanceOptions>()
+    .Bind(builder.Configuration.GetSection(CargoHub.Api.Monitoring.PerformanceOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddSingleton<CargoHub.Api.Monitoring.PerformanceLog>();
+builder.Services.AddHostedService(services => services.GetRequiredService<CargoHub.Api.Monitoring.PerformanceLog>());
+builder.Services.AddSingleton<CargoHub.Api.Monitoring.SlowRequestNotifier>();
 builder
     .Services.AddHealthChecks()
     .AddCheck<CargoHub.Api.Data.MySqlHealthCheck>("mysql", timeout: TimeSpan.FromSeconds(4));
@@ -60,6 +76,9 @@ builder.Services.AddOpenApi(
 );
 
 var app = builder.Build();
+
+// First, so it also measures requests that end in an error.
+app.UseMiddleware<CargoHub.Api.Monitoring.PerformanceMiddleware>();
 
 // Return JSON errors for unhandled exceptions and otherwise empty error responses.
 app.UseExceptionHandler(errorApp =>
@@ -104,6 +123,18 @@ app.MapControllers();
 // For uptime monitors and the Docker healthcheck: 200 "Healthy", or 503 "Unhealthy" when
 // MySQL is down. Outside /api, so it needs no API key.
 app.MapHealthChecks("/health");
+
+// A deliberately slow endpoint to try out the slow-request mail: GET /dev/slow?ms=500.
+// Only when Performance:TestEndpointEnabled is true (appsettings.Development.json).
+if (app.Configuration.GetValue<bool>("Performance:TestEndpointEnabled"))
+{
+    app.MapGet("/dev/slow", async (int? ms, CancellationToken cancellationToken) =>
+    {
+        var delay = Math.Clamp(ms ?? 500, 0, 10_000);
+        await Task.Delay(delay, cancellationToken);
+        return Results.Ok(new { sleptMs = delay });
+    }).ExcludeFromDescription();
+}
 
 app.Run();
 

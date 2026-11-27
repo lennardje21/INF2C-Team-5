@@ -66,8 +66,13 @@ public sealed class ApiFixture : IAsyncLifetime
         {
             // Not "Development", so a developer's own user secrets are not loaded.
             builder.UseEnvironment("Testing");
+            // The blockade job is switched off here so it does not run during other tests.
             builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(
-                new Dictionary<string, string?> { ["ConnectionStrings:CargoHub"] = ConnectionString }));
+                new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:CargoHub"] = ConnectionString,
+                    ["BlockadeDetection:Enabled"] = "false"
+                }));
         });
         Client = _factory.CreateClient();
         Client.DefaultRequestHeaders.Add(ApiKeyMiddleware.HeaderName, apiKey);

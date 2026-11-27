@@ -27,10 +27,12 @@ x-api: &api
   # connection instead of failing.
   environment:
     ConnectionStrings__CargoHub: Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User ID=${MYSQL_USER};Password=${MYSQL_PASSWORD};Maximum Pool Size=60
+    BlockadeDetection__Enabled: ${BLOCKADE_ENABLED:-true}
     BlockadeDetection__OrderMaxMinutes: ${BLOCKADE_ORDER_MAX_MINUTES:-120}
     BlockadeDetection__ShipmentMaxMinutes: ${BLOCKADE_SHIPMENT_MAX_MINUTES:-240}
     BlockadeDetection__TransferMaxMinutes: ${BLOCKADE_TRANSFER_MAX_MINUTES:-240}
     BlockadeDetection__CheckIntervalMinutes: ${BLOCKADE_CHECK_INTERVAL_MINUTES:-15}
+    BlockadeDetection__MaxMailsPerCheck: ${BLOCKADE_MAX_MAILS_PER_CHECK:-25}
     # Mail goes through Resend over SMTP; the API key comes from deploy/.env.
     Email__Host: ${EMAIL_HOST:-smtp.resend.com}
     Email__Port: ${EMAIL_PORT:-587}
@@ -43,6 +45,13 @@ x-api: &api
     UptimeKuma__Username: ${UPTIME_KUMA_USERNAME:-}
     UptimeKuma__Password: ${UPTIME_KUMA_PASSWORD:-}
     UptimeKuma__Token: ${UPTIME_KUMA_TOKEN:-}
+    # Performance monitoring (NFR-2): slow requests are mailed to PERF_ALERT_EMAIL.
+    Performance__SlowRequestThresholdMs: ${PERF_SLOW_REQUEST_MS:-300}
+    Performance__AlertEmail: ${PERF_ALERT_EMAIL:-}
+  # perf-dd-mm-yyyy.log survives a deploy. api-a and api-b share the volume but each
+  # writes to its own subfolder, so they never write to the same file.
+  volumes:
+    - perf-logs:/app/logs
   # No published port: requests come in through nginx.
   # The runtime image has no curl, so bash sends the request itself.
   # Two failed checks 5s apart mark the container unhealthy, after which watchdog.sh
@@ -95,3 +104,4 @@ services:
 
 volumes:
   mysql-data:
+  perf-logs:
