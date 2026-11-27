@@ -36,12 +36,11 @@ public sealed class SuppliersControllerTests(ApiFixture fixture)
     [Fact]
     public async Task GetSuppliers_ReturnsSeededSuppliers()
     {
-        var suppliers = await _client.GetFromJsonAsync<List<Supplier>>(Url);
+        var suppliers = await _client.GetPageAsync<Supplier>(Url);
         var expected = await fixture.QueryIntAsync("SELECT COUNT(*) FROM `supplier`");
 
-        Assert.NotNull(suppliers);
-        Assert.Equal(expected, suppliers.Count);
-        Assert.NotEmpty(suppliers);
+        Assert.Equal(expected, suppliers.Total);
+        Assert.NotEmpty(suppliers.Items);
     }
 
     [Fact]

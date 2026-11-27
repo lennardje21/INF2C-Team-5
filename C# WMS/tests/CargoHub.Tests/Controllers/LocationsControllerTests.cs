@@ -29,9 +29,8 @@ public sealed class LocationsControllerTests(ApiFixture fixture)
     [Fact]
     public async Task GetLocations_ReturnsSeededLocations()
     {
-        var locations = await _client.GetFromJsonAsync<List<Location>>(Url);
+        var locations = (await _client.GetPageAsync<Location>(Url)).Items;
 
-        Assert.NotNull(locations);
         Assert.NotEmpty(locations);
         Assert.Contains(locations, location => location.WarehouseId > 0);
     }

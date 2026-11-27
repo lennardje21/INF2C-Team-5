@@ -11,9 +11,10 @@ public sealed class SuppliersService(
     MySqlRepository<Supplier> suppliers,
     MySqlRepository<Item> items)
 {
-    /// <summary>Returns all suppliers.</summary>
-    public Task<IReadOnlyList<Supplier>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        suppliers.GetAsync(cancellationToken: cancellationToken);
+    /// <summary>Returns one page of suppliers.</summary>
+    public Task<PagedResult<Supplier>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default) =>
+        suppliers.GetAsync(page, cancellationToken: cancellationToken);
 
     /// <summary>Returns one supplier, or null if not found.</summary>
     public async Task<Supplier?> GetByIdAsync(int id, CancellationToken cancellationToken = default)

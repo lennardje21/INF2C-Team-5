@@ -17,9 +17,10 @@ public sealed class AccountsService(
     MySqlConnectionFactory factory,
     MySqlRepository<Account> accounts)
 {
-    // Get every account the caller may see
-    public async Task<IReadOnlyList<Account>> GetAllAsync(
-        ApiUser caller, CancellationToken cancellationToken = default)
+    // Get one page of the accounts the caller may see. Which accounts those are is decided in code
+    // (AccountPolicy), not in SQL, and there are few of them, so the page is cut from the list in memory.
+    public async Task<PagedResult<Account>> GetPageAsync(
+        ApiUser caller, PageRequest page, CancellationToken cancellationToken = default)
     {
         await using var connection = await factory.OpenAsync(cancellationToken);
 
@@ -28,11 +29,11 @@ public sealed class AccountsService(
         if (caller.Role != AccountRoles.Superroot)
             filters["warehouse_id"] = caller.WarehouseId;
 
-        var result = (await accounts.GetAsync(connection, null, filters, cancellationToken))
-            .Where(account => AccountPolicy.CanView(caller, account))
-            .ToList();
+        var visible = (await accounts.GetAsync(connection, null, filters, cancellationToken))
+            .Where(account => AccountPolicy.CanView(caller, account));
+        var result = page.Apply(visible, account => account.UpdatedAt);
 
-        await LoadAccessAsync(connection, null, result, cancellationToken);
+        await LoadAccessAsync(connection, null, result.Items, cancellationToken);
 
         return result;
     }

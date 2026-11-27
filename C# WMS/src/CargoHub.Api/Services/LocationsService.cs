@@ -11,10 +11,10 @@ public sealed class LocationsService(
     MySqlConnectionFactory factory,
     MySqlRepository<Location> locations)
 {
-    // Returns all locations.
-    public Task<IReadOnlyList<Location>> GetAllAsync(
-        CancellationToken cancellationToken = default) =>
-        locations.GetAsync(cancellationToken: cancellationToken);
+    // Returns one page of locations.
+    public Task<PagedResult<Location>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default) =>
+        locations.GetAsync(page, cancellationToken: cancellationToken);
 
     // Returns one location, or null if it does not exist.
     public async Task<Location?> GetByIdAsync(

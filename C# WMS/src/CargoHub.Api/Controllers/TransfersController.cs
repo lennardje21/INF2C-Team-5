@@ -1,5 +1,7 @@
+using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
@@ -9,12 +11,14 @@ namespace CargoHub.Api.Controllers;
 [Route("api/v2/transfers")]
 public class TransfersController(TransfersService transfersService) : ControllerBase
 {
-    // Get all transfers, including their items.
+    // Get one page of transfers, including their items.
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Transfer>>> GetTransfers(
-        CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<Transfer>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<Transfer>>> GetTransfers(
+        [FromQuery] ListQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await transfersService.GetAllAsync(cancellationToken));
+        return Ok(await transfersService.GetPageAsync(query.ToPageRequest(), cancellationToken));
     }
 
     // Get a single transfer by ID, including its items. Returns 404 if not found.

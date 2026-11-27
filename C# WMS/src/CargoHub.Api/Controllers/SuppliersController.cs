@@ -1,5 +1,7 @@
+using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
@@ -9,11 +11,14 @@ namespace CargoHub.Api.Controllers;
 [Route("api/v2/suppliers")]
 public class SuppliersController(SuppliersService suppliersService) : ControllerBase
 {
-    /// <summary>Returns all suppliers.</summary>
+    /// <summary>Returns one page of suppliers.</summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Supplier>>> GetSuppliers(CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<Supplier>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<Supplier>>> GetSuppliers(
+        [FromQuery] ListQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await suppliersService.GetAllAsync(cancellationToken));
+        return Ok(await suppliersService.GetPageAsync(query.ToPageRequest(), cancellationToken));
     }
 
     /// <summary>Returns one supplier.</summary>

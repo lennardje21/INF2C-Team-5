@@ -1,5 +1,7 @@
+using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
@@ -9,11 +11,14 @@ namespace CargoHub.Api.Controllers;
 [Route("api/v2/shipments")]
 public class ShipmentsController(ShipmentsService shipmentsService) : ControllerBase
 {
-    /// <summary>Returns all shipments with their items.</summary>
+    /// <summary>Returns one page of shipments with their items.</summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Shipment>>> GetShipments(CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<Shipment>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<Shipment>>> GetShipments(
+        [FromQuery] ListQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await shipmentsService.GetAllAsync(cancellationToken));
+        return Ok(await shipmentsService.GetPageAsync(query.ToPageRequest(), cancellationToken));
     }
 
     /// <summary>Returns one shipment with its items.</summary>

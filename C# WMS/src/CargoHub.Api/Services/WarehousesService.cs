@@ -11,11 +11,11 @@ public sealed class WarehousesService(
     MySqlRepository<Warehouse> warehouses,
     MySqlRepository<Location> locations)
 {
-    // Get all warehouses
-    public Task<IReadOnlyList<Warehouse>> GetAllAsync(
-        CancellationToken cancellationToken = default)
+    // Get one page of warehouses
+    public Task<PagedResult<Warehouse>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default)
     {
-        return warehouses.GetAsync(cancellationToken: cancellationToken);
+        return warehouses.GetAsync(page, cancellationToken: cancellationToken);
     }
 
     // Get warehouse by id

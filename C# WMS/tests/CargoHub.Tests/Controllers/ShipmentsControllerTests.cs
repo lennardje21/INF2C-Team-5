@@ -47,9 +47,9 @@ public sealed class ShipmentsControllerTests(ApiFixture fixture)
     [Fact]
     public async Task GetShipments_ReturnsSeededShipmentsWithItems()
     {
-        var shipments = await _client.GetFromJsonAsync<List<Shipment>>(Url);
+        var shipments = await _client.GetAllAsync<Shipment>(Url);
 
-        Assert.True(shipments!.Count >= 6132);
+        Assert.True(shipments.Count >= 6132);
         var first = shipments.Single(s => s.Id == 1);
         Assert.Equal("SHP-000001", first.Reference);
         Assert.Equal(82, Assert.Single(first.Items).ItemId);

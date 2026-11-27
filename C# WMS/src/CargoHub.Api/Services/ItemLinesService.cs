@@ -14,9 +14,10 @@ public sealed class ItemLinesService(
 {
     private const int MaxDescriptionBytes = 65_535;
 
-    /// Returns all item lines.
-    public Task<IReadOnlyList<ItemLine>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        itemLines.GetAsync(cancellationToken: cancellationToken);
+    /// Returns one page of item lines.
+    public Task<PagedResult<ItemLine>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default) =>
+        itemLines.GetAsync(page, cancellationToken: cancellationToken);
 
     /// Returns one item line, or null if it does not exist.
     public async Task<ItemLine?> GetByIdAsync(int id, CancellationToken cancellationToken = default)

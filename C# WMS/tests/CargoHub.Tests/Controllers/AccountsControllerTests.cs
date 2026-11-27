@@ -99,7 +99,7 @@ public sealed class AccountsControllerTests(ApiFixture fixture) : IDisposable
     }
 
     private static async Task<List<int>> GetIdsAsync(HttpClient client) =>
-        (await client.GetFromJsonAsync<List<Account>>(Url))!.Select(a => a.Id).ToList();
+        (await client.GetAllAsync<Account>(Url)).Select(a => a.Id).ToList();
 
     // Per role: what it may do (FR-3.1, FR-3.2)
 

@@ -1,5 +1,7 @@
+using CargoHub.Api.Data;
 using CargoHub.Api.Models;
 using CargoHub.Api.Services;
+using CargoHub.Api.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoHub.Api.Controllers;
@@ -9,11 +11,14 @@ namespace CargoHub.Api.Controllers;
 [Route("api/v2/item_types")]
 public class ItemTypesController(ItemTypesService itemTypesService) : ControllerBase
 {
-    /// Returns all item types.
+    /// Returns one page of item types.
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ItemType>>> GetItemTypes(CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<ItemType>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<ItemType>>> GetItemTypes(
+        [FromQuery] ListQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await itemTypesService.GetAllAsync(cancellationToken));
+        return Ok(await itemTypesService.GetPageAsync(query.ToPageRequest(), cancellationToken));
     }
 
     /// Returns one item type.

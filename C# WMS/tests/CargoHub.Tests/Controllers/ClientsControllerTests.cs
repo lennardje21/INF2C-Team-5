@@ -35,9 +35,9 @@ public sealed class ClientsControllerTests(ApiFixture fixture)
     [Fact]
     public async Task GetClients_ReturnsSeededClients()
     {
-        var clients = await _client.GetFromJsonAsync<List<Client>>(Url);
+        var clients = await _client.GetAllAsync<Client>(Url);
 
-        Assert.True(clients!.Count >= 300);
+        Assert.True(clients.Count >= 300);
         Assert.Equal("Jumbo Amersfoort Leusderweg", clients.Single(c => c.Id == 1).Name);
     }
 

@@ -74,6 +74,29 @@ A missing or unknown key returns `401`; a key without permission for that action
 returns `403`. Use Postman, curl or the endpoint overview below: a browser address
 bar cannot send this header.
 
+## Lists: paging, filtering and sorting
+
+Every list endpoint (`/items`, `/orders`, `/shipments`, `/transfers`, `/warehouses`,
+`/locations`, `/clients`, `/suppliers`, `/inventories`, `/item_lines`, `/item_groups`,
+`/item_types` and `/accounts`) returns one page:
+
+```json
+{ "items": [...], "page": 1, "size": 50, "total": 6132, "totalPages": 123 }
+```
+
+| Parameter | Meaning | Default |
+|-----------|---------|---------|
+| `page`    | Page number, starting at 1. A page past the end gives `200` with empty `items`. | `1` |
+| `size`    | Rows per page, 1 to 100. | `50` |
+| `from`    | Only rows updated on or after this day (ISO 8601 date, UTC, e.g. `2026-01-01`). | none |
+| `to`      | Only rows updated on or before this day; the whole day counts. | none |
+| `sort`    | `asc` (oldest first) or `desc` (newest first), on `updated_at`. | `desc` |
+
+For example `/api/v2/orders?from=2026-01-01&to=2026-01-31&sort=asc&page=2`. An invalid
+value gives `400`, and `errors` names the parameter. Lists inside one record, such as
+`/orders/{id}/items`, are not paged and keep returning a plain array.
+
+
 ## Error responses
 
 Errors use `application/problem+json` with `status`, `title`, `detail`, `instance`

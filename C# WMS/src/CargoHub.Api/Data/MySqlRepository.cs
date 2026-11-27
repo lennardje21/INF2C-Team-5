@@ -35,6 +35,9 @@ public sealed class MySqlRepository<T>(MySqlConnectionFactory factory) where T :
         p => p);
     private static readonly string[] Keys = typeof(T) == typeof(Inventory)
         ? ["item_id", "location_id"] : ["id"];
+    private const string UpdatedAtColumn = "updated_at";
+    private static readonly string SelectFrom =
+        $"SELECT {string.Join(", ", Columns.Keys.Select(c => $"`{c}`"))} FROM `{Table}`";
 
     public async Task<IReadOnlyList<T>> GetAsync(
         IReadOnlyDictionary<string, object?>? filters = null,
@@ -50,21 +53,98 @@ public sealed class MySqlRepository<T>(MySqlConnectionFactory factory) where T :
     {
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
-        var conditions = new List<string>();
-        if (filters is not null)
-        {
-            foreach (var (column, value) in filters)
-            {
-                if (!Columns.ContainsKey(column))
-                    throw new ArgumentException($"Unknown column: {column}", nameof(filters));
-                var parameter = $"@p{conditions.Count}";
-                conditions.Add($"`{column}` <=> {parameter}");
-                command.Parameters.AddWithValue(parameter, ToDatabase(value));
-            }
-        }
-        command.CommandText = $"SELECT {string.Join(", ", Columns.Keys.Select(c => $"`{c}`"))} " +
-            $"FROM `{Table}`" + (conditions.Count == 0 ? "" : " WHERE " + string.Join(" AND ", conditions)) +
+        command.CommandText = SelectFrom + Where(Conditions(command, filters)) +
             $" ORDER BY {string.Join(", ", Keys.Select(k => $"`{k}`"))}";
+        return await ReadAsync(command, cancellationToken);
+    }
+
+    /// <summary>
+    /// One page of the rows that match the filters and the updated_at range of the request,
+    /// plus the total number of matching rows. Rows are ordered by updated_at and then by key,
+    /// both in the requested direction, so a page never overlaps the next.
+    /// </summary>
+    public async Task<PagedResult<T>> GetAsync(PageRequest page,
+        IReadOnlyDictionary<string, object?>? filters = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await factory.OpenAsync(cancellationToken);
+        return await GetAsync(connection, null, page, filters, cancellationToken);
+    }
+
+    public async Task<PagedResult<T>> GetAsync(MySqlConnection connection,
+        MySqlTransaction? transaction, PageRequest page,
+        IReadOnlyDictionary<string, object?>? filters = null,
+        CancellationToken cancellationToken = default)
+    {
+        page.EnsureValid();
+        if (!Columns.ContainsKey(UpdatedAtColumn))
+            throw new NotSupportedException($"{typeof(T).Name} has no {UpdatedAtColumn} column to page on.");
+
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        var conditions = Conditions(command, filters);
+        if (page.FromInclusive is { } from)
+        {
+            conditions.Add($"`{UpdatedAtColumn}` >= @from");
+            command.Parameters.AddWithValue("@from", ToDatabase(from));
+        }
+        if (page.ToExclusive is { } to)
+        {
+            conditions.Add($"`{UpdatedAtColumn}` < @to");
+            command.Parameters.AddWithValue("@to", ToDatabase(to));
+        }
+        var where = Where(conditions);
+
+        command.CommandText = $"SELECT COUNT(*) FROM `{Table}`{where}";
+        var total = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken),
+            CultureInfo.InvariantCulture);
+        if (page.Offset >= total)
+            return new PagedResult<T>([], page.Page, page.Size, total);
+
+        var direction = page.Sort == SortDirection.Asc ? "ASC" : "DESC";
+        command.CommandText = SelectFrom + where +
+            $" ORDER BY `{UpdatedAtColumn}` {direction}, " +
+            string.Join(", ", Keys.Select(k => $"`{k}` {direction}")) +
+            " LIMIT @limit OFFSET @offset";
+        command.Parameters.AddWithValue("@limit", page.Size);
+        command.Parameters.AddWithValue("@offset", page.Offset);
+        return new PagedResult<T>(await ReadAsync(command, cancellationToken), page.Page, page.Size, total);
+    }
+
+    // A value that is a list of ids matches any of them (IN); anything else must be equal (<=>, so null works).
+    private static List<string> Conditions(MySqlCommand command, IReadOnlyDictionary<string, object?>? filters)
+    {
+        var conditions = new List<string>();
+        var parameters = 0;
+        foreach (var (column, value) in filters ?? new Dictionary<string, object?>())
+        {
+            if (!Columns.ContainsKey(column))
+                throw new ArgumentException($"Unknown column: {column}", nameof(filters));
+            if (value is IEnumerable<int> ids)
+            {
+                var names = new List<string>();
+                foreach (var id in ids)
+                {
+                    var name = $"@p{parameters++}";
+                    names.Add(name);
+                    command.Parameters.AddWithValue(name, id);
+                }
+                conditions.Add(names.Count == 0 ? "FALSE" : $"`{column}` IN ({string.Join(", ", names)})");
+                continue;
+            }
+            var parameter = $"@p{parameters++}";
+            conditions.Add($"`{column}` <=> {parameter}");
+            command.Parameters.AddWithValue(parameter, ToDatabase(value));
+        }
+        return conditions;
+    }
+
+    private static string Where(List<string> conditions) =>
+        conditions.Count == 0 ? "" : " WHERE " + string.Join(" AND ", conditions);
+
+    private static async Task<IReadOnlyList<T>> ReadAsync(MySqlCommand command,
+        CancellationToken cancellationToken)
+    {
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var result = new List<T>();
         while (await reader.ReadAsync(cancellationToken))

@@ -14,9 +14,10 @@ public sealed class ItemTypesService(
 {
     private const int MaxDescriptionBytes = 65_535;
 
-    /// Returns all item types.
-    public Task<IReadOnlyList<ItemType>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        itemTypes.GetAsync(cancellationToken: cancellationToken);
+    /// Returns one page of item types.
+    public Task<PagedResult<ItemType>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default) =>
+        itemTypes.GetAsync(page, cancellationToken: cancellationToken);
 
     /// Returns one item type, or null if it does not exist.
     public async Task<ItemType?> GetByIdAsync(int id, CancellationToken cancellationToken = default)

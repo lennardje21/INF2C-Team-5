@@ -34,9 +34,8 @@ public sealed class TransfersControllerTests(ApiFixture fixture)
     [Fact]
     public async Task GetTransfers_ReturnsSeededTransfersWithItems()
     {
-        var transfers = await _client.GetFromJsonAsync<List<Transfer>>(Url);
+        var transfers = await _client.GetAllAsync<Transfer>(Url);
 
-        Assert.NotNull(transfers);
         Assert.True(transfers.Count >= 800);
         Assert.Contains(transfers, transfer => transfer.Items.Count > 0);
     }

@@ -44,12 +44,11 @@ public sealed class ItemsControllerTests(ApiFixture fixture)
     [Fact]
     public async Task GetItems_ReturnsSeededItems()
     {
-        var items = await _client.GetFromJsonAsync<List<Item>>(Url);
+        var items = await _client.GetPageAsync<Item>(Url);
         var expected = await fixture.QueryIntAsync("SELECT COUNT(*) FROM `item`");
 
-        Assert.NotNull(items);
-        Assert.Equal(expected, items.Count);
-        Assert.NotEmpty(items);
+        Assert.Equal(expected, items.Total);
+        Assert.NotEmpty(items.Items);
     }
 
     [Theory]
@@ -59,8 +58,8 @@ public sealed class ItemsControllerTests(ApiFixture fixture)
     [InlineData("suppliers")]
     public async Task GetRelatedItems_ReturnsOnlyMatchingItemsInV1Format(string resource)
     {
-        var allItems = await _client.GetFromJsonAsync<List<Item>>(Url);
-        Assert.NotNull(allItems);
+        // The related-items endpoints list in id order, the paged list in updated_at order.
+        var allItems = (await _client.GetAllAsync<Item>(Url)).OrderBy(item => item.Id).ToList();
         Assert.NotEmpty(allItems);
 
         int RelatedId(Item item) => resource switch

@@ -12,9 +12,10 @@ public sealed class ClientsService(
     MySqlRepository<Order> orders,
     MySqlRepository<OrderItem> orderItems)
 {
-    /// <summary>Returns all clients.</summary>
-    public Task<IReadOnlyList<Client>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        clients.GetAsync(cancellationToken: cancellationToken);
+    /// <summary>Returns one page of clients.</summary>
+    public Task<PagedResult<Client>> GetPageAsync(
+        PageRequest page, CancellationToken cancellationToken = default) =>
+        clients.GetAsync(page, cancellationToken: cancellationToken);
 
     /// <summary>Returns one client, or null if not found.</summary>
     public async Task<Client?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
